@@ -177,9 +177,9 @@
 
 - [ ] **CLSG-01**: `novel session start` displays a briefing from the last session log
 - [ ] **CLSG-02**: `novel session close` prompts for session summary and writes a session log
-- [ ] **CLSG-03**: `novel gate check` runs the full 33-item gate audit and displays a gap report
-- [ ] **CLSG-04**: `novel gate status` displays current gate status and blocking item count
-- [ ] **CLSG-05**: `novel gate certify` certifies the gate when all items pass
+- [x] **CLSG-03**: `novel gate check` runs the full 33-item gate audit and displays a gap report
+- [x] **CLSG-04**: `novel gate status` displays current gate status and blocking item count
+- [x] **CLSG-05**: `novel gate certify` certifies the gate when all items pass
 - [ ] **CLSG-06**: `novel query pov-balance` displays POV distribution by chapter and word count
 - [ ] **CLSG-07**: `novel query arc-health` displays arc progression for all POV characters
 - [ ] **CLSG-08**: `novel query thread-gaps` displays subplots overdue for a touchpoint
@@ -302,9 +302,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GATE-05 | Phase 6: Gate System | Complete |
 | GATE-06 | Phase 6: Gate System | Complete |
 | SEED-02 | Phase 6: Gate System | Complete |
-| CLSG-03 | Phase 6: Gate System | Pending |
-| CLSG-04 | Phase 6: Gate System | Pending |
-| CLSG-05 | Phase 6: Gate System | Pending |
+| CLSG-03 | Phase 6: Gate System | Complete |
+| CLSG-04 | Phase 6: Gate System | Complete |
+| CLSG-05 | Phase 6: Gate System | Complete |
 | SESS-01 | Phase 7: Session & Timeline | Pending |
 | SESS-02 | Phase 7: Session & Timeline | Pending |
 | SESS-03 | Phase 7: Session & Timeline | Pending |
