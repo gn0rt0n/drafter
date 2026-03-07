@@ -118,12 +118,12 @@ Plans:
   3. `certify_gate` writes a certification record when all 33 items pass, and refuses when any item fails
   4. The shared `check_gate()` helper is called at the top of every prose-phase tool and returns a `GateViolation` object (not exception) when gate is not certified
   5. `novel gate check`, `novel gate status`, and `novel gate certify` CLI commands work, and the gate-ready seed profile satisfies all 33 checklist items
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
-- [ ] 06-03: TBD
+- [ ] 06-01-PLAN.md — 5 MCP gate tools + GateAuditReport model + 33 SQL evidence queries in tools/gate.py (Wave 1)
+- [ ] 06-02-PLAN.md — check_gate() helper in mcp/gate.py + gate_ready seed profile + server.py wiring (Wave 2)
+- [ ] 06-03-PLAN.md — CLI gate commands (check/status/certify) + MCP tests for all 5 gate tools (Wave 3)
 
 ### Phase 7: Session & Timeline
 **Goal**: Claude can manage writing sessions with briefings and summaries, track project metrics, and validate timeline consistency including travel realism
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
 | 4. Chapters, Scenes & World | 5/5 | Complete   | 2026-03-07 |
 | 5. Plot & Arcs | 2/3 | Complete    | 2026-03-07 |
-| 6. Gate System | 0/0 | Not started | - |
+| 6. Gate System | 0/3 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |
 | 8. Canon, Knowledge & Foreshadowing | 0/0 | Not started | - |
 | 9. Names, Voice & Publishing | 0/0 | Not started | - |
