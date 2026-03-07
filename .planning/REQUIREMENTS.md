@@ -15,7 +15,7 @@
 ### Seed Data
 
 - [x] **SEED-01**: Minimal seed profile provides enough data to exercise every MCP domain (1 book, 2-3 characters, 1 chapter, 2 scenes, 1 session, representative entries in each domain)
-- [ ] **SEED-02**: Gate-ready seed profile satisfies all 33 architecture gate checklist items so gate certification can be tested with seed data
+- [x] **SEED-02**: Gate-ready seed profile satisfies all 33 architecture gate checklist items so gate certification can be tested with seed data
 - [x] **SEED-03**: `novel db seed [profile]` CLI command loads a named seed profile into the database
 
 ### Error Contract (Cross-Cutting)
@@ -88,7 +88,7 @@
 - [x] **GATE-03**: Claude can retrieve the gate checklist with per-item pass/fail status and missing record counts (`get_gate_checklist`)
 - [x] **GATE-04**: Claude can manually update a checklist item's status (`update_checklist_item`)
 - [x] **GATE-05**: Claude can certify the gate when all 33 items pass, writing a certification record (`certify_gate`)
-- [ ] **GATE-06**: A shared `check_gate()` helper function is called at the top of every prose-phase tool; returns a `GateViolation` object (not an exception) if gate is not certified
+- [x] **GATE-06**: A shared `check_gate()` helper function is called at the top of every prose-phase tool; returns a `GateViolation` object (not an exception) if gate is not certified
 
 ### MCP — Session & Project Domain
 
@@ -300,8 +300,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GATE-03 | Phase 6: Gate System | Complete |
 | GATE-04 | Phase 6: Gate System | Complete |
 | GATE-05 | Phase 6: Gate System | Complete |
-| GATE-06 | Phase 6: Gate System | Pending |
-| SEED-02 | Phase 6: Gate System | Pending |
+| GATE-06 | Phase 6: Gate System | Complete |
+| SEED-02 | Phase 6: Gate System | Complete |
 | CLSG-03 | Phase 6: Gate System | Pending |
 | CLSG-04 | Phase 6: Gate System | Pending |
 | CLSG-05 | Phase 6: Gate System | Pending |
