@@ -60,13 +60,13 @@
 
 - [x] **PLOT-01**: Claude can retrieve a plot thread by ID (`get_plot_thread`)
 - [x] **PLOT-02**: Claude can list all plot threads in the book (`list_plot_threads`)
-- [ ] **PLOT-03**: Claude can retrieve Chekhov's gun registry entries (`get_chekovs_guns`)
-- [ ] **PLOT-04**: Claude can retrieve a character arc (`get_arc`)
-- [ ] **PLOT-05**: Claude can retrieve arc health status for a character (`get_arc_health`)
-- [ ] **PLOT-06**: Claude can retrieve subplots that are overdue for a touchpoint (`get_subplot_touchpoint_gaps`)
+- [x] **PLOT-03**: Claude can retrieve Chekhov's gun registry entries (`get_chekovs_guns`)
+- [x] **PLOT-04**: Claude can retrieve a character arc (`get_arc`)
+- [x] **PLOT-05**: Claude can retrieve arc health status for a character (`get_arc_health`)
+- [x] **PLOT-06**: Claude can retrieve subplots that are overdue for a touchpoint (`get_subplot_touchpoint_gaps`)
 - [x] **PLOT-07**: Claude can create or update a plot thread (`upsert_plot_thread`)
-- [ ] **PLOT-08**: Claude can create or update a Chekhov's gun entry (`upsert_chekov`)
-- [ ] **PLOT-09**: Claude can log arc health for a character at a chapter (`log_arc_health`)
+- [x] **PLOT-08**: Claude can create or update a Chekhov's gun entry (`upsert_chekov`)
+- [x] **PLOT-09**: Claude can log arc health for a character at a chapter (`log_arc_health`)
 
 ### MCP — World Domain
 
@@ -288,13 +288,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WRLD-10 | Phase 4: Chapters, Scenes & World | Complete |
 | PLOT-01 | Phase 5: Plot & Arcs | Complete |
 | PLOT-02 | Phase 5: Plot & Arcs | Complete |
-| PLOT-03 | Phase 5: Plot & Arcs | Pending |
-| PLOT-04 | Phase 5: Plot & Arcs | Pending |
-| PLOT-05 | Phase 5: Plot & Arcs | Pending |
-| PLOT-06 | Phase 5: Plot & Arcs | Pending |
+| PLOT-03 | Phase 5: Plot & Arcs | Complete |
+| PLOT-04 | Phase 5: Plot & Arcs | Complete |
+| PLOT-05 | Phase 5: Plot & Arcs | Complete |
+| PLOT-06 | Phase 5: Plot & Arcs | Complete |
 | PLOT-07 | Phase 5: Plot & Arcs | Complete |
-| PLOT-08 | Phase 5: Plot & Arcs | Pending |
-| PLOT-09 | Phase 5: Plot & Arcs | Pending |
+| PLOT-08 | Phase 5: Plot & Arcs | Complete |
+| PLOT-09 | Phase 5: Plot & Arcs | Complete |
 | GATE-01 | Phase 6: Gate System | Pending |
 | GATE-02 | Phase 6: Gate System | Pending |
 | GATE-03 | Phase 6: Gate System | Pending |

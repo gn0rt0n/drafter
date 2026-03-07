@@ -200,7 +200,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
 | 4. Chapters, Scenes & World | 5/5 | Complete   | 2026-03-07 |
-| 5. Plot & Arcs | 1/3 | In Progress|  |
+| 5. Plot & Arcs | 2/3 | In Progress|  |
 | 6. Gate System | 0/0 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |
 | 8. Canon, Knowledge & Foreshadowing | 0/0 | Not started | - |
