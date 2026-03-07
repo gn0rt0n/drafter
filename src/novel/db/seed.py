@@ -9,12 +9,12 @@ def load_seed_profile(conn: sqlite3.Connection, profile: str) -> None:
 
     Args:
         conn: Open sync SQLite connection (caller is responsible for open/close).
-        profile: Seed profile name (e.g., "minimal").
+        profile: Seed profile name (e.g., "minimal", "gate_ready").
 
     Raises:
         ValueError: If profile name is not recognised.
     """
-    profiles = {"minimal": _load_minimal}
+    profiles = {"minimal": _load_minimal, "gate_ready": _load_gate_ready}
     if profile not in profiles:
         raise ValueError(f"Unknown seed profile '{profile}'. Available: {list(profiles)}")
     profiles[profile](conn)
@@ -868,5 +868,152 @@ def _load_minimal(conn: sqlite3.Connection) -> None:
          "Ithrel covers for Aeryn's late submission of the manifest anomaly report.",
          1, 2),
     )
+
+    conn.commit()
+
+
+def _load_gate_ready(conn: sqlite3.Connection) -> None:
+    """Extend minimal seed to satisfy all 34 architecture gate checklist items.
+
+    Calls _load_minimal() first, then adds the rows needed for each gate check.
+    All queries are relational ('all X must have Y'), so 3 chapters / 5 characters
+    / 6 scenes is sufficient — no need for 55 chapters or 6 POV characters.
+
+    Seed IDs from minimal: characters 1-5, chapters 1-3, scenes 1-6,
+    faction id=1 (Obsidian Court), location id=1 (The Ashen Citadel),
+    book id=1, act id=1.
+    """
+    _load_minimal(conn)
+
+    # --- voice_pov: all POV characters (ch1=char1, ch2=char1, ch3=char3) need voice_profiles ---
+    # minimal has voice_profile for char 1 (protagonist) only; ch3 POV is char 3 (mentor)
+    for char_id, speech, sentence_length in [
+        (2, "Clipped, tactical, rarely offers more than necessary.", "short"),
+        (3, "Measured and deliberate, always three steps ahead.", "long"),
+        (4, "Warm but guarded; uses humour to deflect.", "mixed"),
+        (5, "Formal register with archaic phrasing.", "long"),
+    ]:
+        conn.execute(
+            "INSERT OR IGNORE INTO voice_profiles "
+            "(character_id, speech_patterns, sentence_length, canon_status) "
+            "VALUES (?, ?, ?, 'approved')",
+            (char_id, speech, sentence_length),
+        )
+
+    # --- rel_pov_pairs: all POV character pairs need character_relationships ---
+    # minimal has (1,3),(1,4),(1,5) — add (1,2) for antagonist and (3,*) pairs
+    # Minimal seed chapters: ch1 POV=char1, ch2 POV=char1, ch3 POV=char3
+    # POV chars are 1 and 3, so the only pair needed is (1,3) — already in minimal.
+    # Add remaining character pairs for completeness and gate query coverage:
+    for a, b, rel_type in [
+        (1, 2, "rivalry"),
+        (2, 3, "neutral"),
+        (2, 4, "ally"),
+        (2, 5, "rival"),
+        (3, 4, "neutral"),
+        (3, 5, "neutral"),
+        (4, 5, "ally"),
+    ]:
+        conn.execute(
+            "INSERT OR IGNORE INTO character_relationships "
+            "(character_a_id, character_b_id, relationship_type, trust_level, "
+            "bond_strength, current_status, canon_status) "
+            "VALUES (?, ?, ?, 3, 2, 'neutral', 'approved')",
+            (min(a, b), max(a, b), rel_type),
+        )
+
+    # --- rel_perception: all POV chars need >= 1 perception_profile entry ---
+    # minimal has observer=1 -> subject=2 (antagonist); add observer=3 (mentor)
+    conn.execute(
+        "INSERT OR IGNORE INTO perception_profiles "
+        "(observer_id, subject_id, trust_level, emotional_valence) "
+        "VALUES (3, 1, 5, 'trusting')",
+    )
+
+    # --- struct_chapters_hooks: all 3 chapters need opening_hook_note + closing_hook_note ---
+    for ch_id, opening, closing in [
+        (1, "Open on the moment of refusal — Aeryn denies the summons.",
+            "Close on the cost: the letter burns, but the seal is already copied."),
+        (2, "Open mid-action — the citadel gate already closing.",
+            "Close on a revelation: the informant is family."),
+        (3, "Open in silence — the empty council chamber says everything.",
+            "Close on a decision that cannot be undone."),
+    ]:
+        conn.execute(
+            "UPDATE chapters SET opening_hook_note=?, closing_hook_note=? WHERE id=?",
+            (opening, closing, ch_id),
+        )
+
+    # --- struct_chapter_obligations: chapters 2 and 3 need obligations (ch1 already in minimal) ---
+    for ch_id, ob_type, desc in [
+        (2, "introduce_complication", "Reveal the faction's deeper agenda behind the contract."),
+        (3, "resolve_thread", "Close the 'missing seal' subplot before the midpoint break."),
+    ]:
+        conn.execute(
+            "INSERT INTO chapter_structural_obligations "
+            "(chapter_id, obligation_type, description) VALUES (?, ?, ?)",
+            (ch_id, ob_type, desc),
+        )
+
+    # --- scene_goals: scenes 2-6 need scene_character_goals (scene 1 already in minimal) ---
+    for scene_id, char_id, goal in [
+        (2, 2, "Obtain the contract seal before Aeryn notices it missing."),
+        (3, 1, "Reach the inner vault without triggering the ward sequence."),
+        (4, 3, "Delay the council vote by any means necessary."),
+        (5, 1, "Extract the informant without breaking cover."),
+        (6, 2, "Confirm the seal is genuine — or expose the forgery."),
+    ]:
+        conn.execute(
+            "INSERT OR IGNORE INTO scene_character_goals "
+            "(scene_id, character_id, goal) VALUES (?, ?, ?)",
+            (scene_id, char_id, goal),
+        )
+
+    # --- pacing_tension + pacing_beats: chapter 3 needs rows (ch1+ch2 already in minimal) ---
+    conn.execute(
+        "INSERT INTO tension_measurements "
+        "(chapter_id, tension_level, measurement_type) VALUES (3, 7, 'overall')"
+    )
+    conn.execute(
+        "INSERT INTO pacing_beats "
+        "(chapter_id, beat_type, description) VALUES (3, 'climax', 'The council vote and its aftermath.')"
+    )
+
+    # --- canon_domains: need >= 3 distinct domains (minimal has 'world' only) ---
+    for domain, fact in [
+        ("politics", "The Obsidian Court controls all trade licences east of the Vel."),
+        ("geography", "The Ashen Wastes cannot be crossed without a Kaelthari guide."),
+    ]:
+        conn.execute(
+            "INSERT INTO canon_facts "
+            "(domain, fact, certainty_level, canon_status) VALUES (?, ?, 'confirmed', 'approved')",
+            (domain, fact),
+        )
+
+    # --- names_characters + names_locations: all 5 chars + location need name_registry ---
+    # minimal has only 'Aeryn Vael'
+    for name, entity_type in [
+        ("Solvann Drex", "character"),
+        ("Ithrel Cass", "character"),
+        ("Mira Sundal", "character"),
+        ("Calder Veth", "character"),
+        ("The Ashen Citadel", "location"),
+    ]:
+        conn.execute(
+            "INSERT OR IGNORE INTO name_registry "
+            "(name, entity_type) VALUES (?, ?)",
+            (name, entity_type),
+        )
+
+    # --- All 34 gate_checklist_items with item_key, category, description ---
+    # Use INSERT OR IGNORE — minimal already has 'min_characters' row (if any)
+    # Import GATE_ITEM_META from tools.gate to avoid duplication
+    from novel.tools.gate import GATE_ITEM_META
+    for item_key, meta in GATE_ITEM_META.items():
+        conn.execute(
+            "INSERT OR IGNORE INTO gate_checklist_items "
+            "(gate_id, item_key, category, description) VALUES (1, ?, ?, ?)",
+            (item_key, meta["category"], meta["description"]),
+        )
 
     conn.commit()
