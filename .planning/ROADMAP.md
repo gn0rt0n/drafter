@@ -101,11 +101,12 @@ Plans:
   1. Claude can retrieve and list plot threads, and create/update plot thread records
   2. Claude can retrieve character arcs and arc health status, and log arc health at a chapter
   3. Claude can retrieve and create/update Chekhov's gun registry entries, and retrieve subplots overdue for touchpoints
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md — Plot thread tools: 3 tools in tools/plot.py (get_plot_thread, list_plot_threads, upsert_plot_thread) (Wave 1)
+- [ ] 05-02-PLAN.md — Arc tools: 6 tools in tools/arcs.py (get_arc, get_arc_health, get_chekovs_guns, upsert_chekov, get_subplot_touchpoint_gaps, log_arc_health) (Wave 1, parallel)
+- [ ] 05-03-PLAN.md — Server wiring + MCP client tests for all 9 new tools (Wave 2)
 
 ### Phase 6: Gate System
 **Goal**: The architecture gate correctly blocks prose-phase operations when the 33-item checklist is incomplete, with full audit, certification, and CLI access
@@ -199,7 +200,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
 | 4. Chapters, Scenes & World | 5/5 | Complete   | 2026-03-07 |
-| 5. Plot & Arcs | 0/0 | Not started | - |
+| 5. Plot & Arcs | 0/3 | Not started | - |
 | 6. Gate System | 0/0 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |
 | 8. Canon, Knowledge & Foreshadowing | 0/0 | Not started | - |
