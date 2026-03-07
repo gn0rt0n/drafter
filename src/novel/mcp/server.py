@@ -1,6 +1,6 @@
 """Novel MCP server — entry point for the novel-mcp command.
 
-Phase 3: Character and relationship tools registered.
+Phase 4: Character, relationship, chapter, scene, world, and magic tools registered.
 
 IMPORTANT: No print() statements here or anywhere in this module tree.
 All logging goes to stderr via the logging module. print() corrupts
@@ -15,7 +15,7 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
-from novel.tools import characters, relationships
+from novel.tools import characters, relationships, chapters, scenes, world, magic
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,12 @@ mcp = FastMCP("novel-mcp")
 # Register domain tools — Phase 3
 characters.register(mcp)
 relationships.register(mcp)
+
+# Register domain tools — Phase 4
+chapters.register(mcp)
+scenes.register(mcp)
+world.register(mcp)
+magic.register(mcp)
 
 
 def run() -> None:
