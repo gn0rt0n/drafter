@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-07T21:41:07.242Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-07T21:44:14.832Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -62,6 +62,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 03-mcp-server-core-characters-relationships P03 | 15 | 2 tasks | 4 files |
 | Phase 04-chapters-scenes-world P01 | 1 | 2 tasks | 2 files |
 | Phase 04-chapters-scenes-world P02 | 2 | 1 tasks | 1 files |
+| Phase 04-chapters-scenes-world P03 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 04-chapters-scenes-world]: ChapterPlan is a projection model defined in models/chapters.py alongside Chapter for semantic grouping — not inside the tools module
 - [Phase 04-chapters-scenes-world]: upsert_scene uses Scene.to_db_dict() to serialise narrative_functions before writing to SQLite — ensures JSON encoding is always correct
 - [Phase 04-chapters-scenes-world]: upsert_scene_goal uses ON CONFLICT(scene_id, character_id) DO UPDATE — consistent with Phase 03 decision against INSERT OR REPLACE on tables with FK children
+- [Phase 04-chapters-scenes-world]: upsert_location two-branch: None id INSERT + lastrowid, provided id ON CONFLICT(id) DO UPDATE (locations has no UNIQUE beyond PK)
+- [Phase 04-chapters-scenes-world]: upsert_faction uses ON CONFLICT(name) for None-id branch; always SELECT back by name since lastrowid=0 on conflict
+- [Phase 04-chapters-scenes-world]: upsert_faction does NOT write to faction_political_states — that is a separate time-stamped log table
 
 ### Pending Todos
 
@@ -114,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:41:07.240Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-07T21:44:14.830Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None

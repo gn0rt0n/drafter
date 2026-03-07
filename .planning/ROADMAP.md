@@ -198,7 +198,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
-| 4. Chapters, Scenes & World | 2/5 | In Progress|  |
+| 4. Chapters, Scenes & World | 3/5 | In Progress|  |
 | 5. Plot & Arcs | 0/0 | Not started | - |
 | 6. Gate System | 0/0 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |

@@ -70,16 +70,16 @@
 
 ### MCP — World Domain
 
-- [ ] **WRLD-01**: Claude can retrieve a location with its sensory profile (`get_location`)
-- [ ] **WRLD-02**: Claude can retrieve a faction's profile (`get_faction`)
-- [ ] **WRLD-03**: Claude can retrieve a faction's current political state (`get_faction_political_state`)
-- [ ] **WRLD-04**: Claude can retrieve a culture record (`get_culture`)
+- [x] **WRLD-01**: Claude can retrieve a location with its sensory profile (`get_location`)
+- [x] **WRLD-02**: Claude can retrieve a faction's profile (`get_faction`)
+- [x] **WRLD-03**: Claude can retrieve a faction's current political state (`get_faction_political_state`)
+- [x] **WRLD-04**: Claude can retrieve a culture record (`get_culture`)
 - [ ] **WRLD-05**: Claude can retrieve a magic system element with its rules and limitations (`get_magic_element`)
 - [ ] **WRLD-06**: Claude can retrieve a character's practitioner abilities (`get_practitioner_abilities`)
 - [ ] **WRLD-07**: Claude can log a magic use event (`log_magic_use`)
 - [ ] **WRLD-08**: Claude can check whether a proposed magic action is compliant with system rules (`check_magic_compliance`)
-- [ ] **WRLD-09**: Claude can create or update a location record (`upsert_location`)
-- [ ] **WRLD-10**: Claude can create or update a faction record (`upsert_faction`)
+- [x] **WRLD-09**: Claude can create or update a location record (`upsert_location`)
+- [x] **WRLD-10**: Claude can create or update a faction record (`upsert_faction`)
 
 ### MCP — Gate & Architecture Domain
 
@@ -276,16 +276,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAP-07 | Phase 4: Chapters, Scenes & World | Complete |
 | CHAP-08 | Phase 4: Chapters, Scenes & World | Complete |
 | CHAP-09 | Phase 4: Chapters, Scenes & World | Complete |
-| WRLD-01 | Phase 4: Chapters, Scenes & World | Pending |
-| WRLD-02 | Phase 4: Chapters, Scenes & World | Pending |
-| WRLD-03 | Phase 4: Chapters, Scenes & World | Pending |
-| WRLD-04 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-01 | Phase 4: Chapters, Scenes & World | Complete |
+| WRLD-02 | Phase 4: Chapters, Scenes & World | Complete |
+| WRLD-03 | Phase 4: Chapters, Scenes & World | Complete |
+| WRLD-04 | Phase 4: Chapters, Scenes & World | Complete |
 | WRLD-05 | Phase 4: Chapters, Scenes & World | Pending |
 | WRLD-06 | Phase 4: Chapters, Scenes & World | Pending |
 | WRLD-07 | Phase 4: Chapters, Scenes & World | Pending |
 | WRLD-08 | Phase 4: Chapters, Scenes & World | Pending |
-| WRLD-09 | Phase 4: Chapters, Scenes & World | Pending |
-| WRLD-10 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-09 | Phase 4: Chapters, Scenes & World | Complete |
+| WRLD-10 | Phase 4: Chapters, Scenes & World | Complete |
 | PLOT-01 | Phase 5: Plot & Arcs | Pending |
 | PLOT-02 | Phase 5: Plot & Arcs | Pending |
 | PLOT-03 | Phase 5: Plot & Arcs | Pending |
