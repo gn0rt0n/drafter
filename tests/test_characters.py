@@ -281,7 +281,11 @@ async def test_get_character_knowledge_not_found(mcp_instance):
 
 @pytest.mark.asyncio
 async def test_get_character_knowledge_chapter_scoping(mcp_instance, seeded_db_path):
-    """get_character_knowledge with chapter_id filters to chapter_id <= N."""
+    """get_character_knowledge with chapter_id filters to chapter_id <= N.
+
+    Uses chapters 1 and 3 (both exist in minimal seed). Queries with chapter_id=2
+    so chapter 3 is excluded.
+    """
     async with aiosqlite.connect(seeded_db_path) as conn:
         await conn.execute("PRAGMA foreign_keys=ON")
         await conn.execute(
@@ -290,7 +294,7 @@ async def test_get_character_knowledge_chapter_scoping(mcp_instance, seeded_db_p
         )
         await conn.execute(
             "INSERT INTO character_knowledge (character_id, chapter_id, knowledge_type, content) "
-            "VALUES (1, 5, 'fact', 'Knowledge at chapter 5')"
+            "VALUES (1, 3, 'fact', 'Knowledge at chapter 3')"
         )
         await conn.commit()
 
@@ -299,7 +303,7 @@ async def test_get_character_knowledge_chapter_scoping(mcp_instance, seeded_db_p
     knowledge_items = [try_parse(k, CharacterKnowledge) for k in raw]
     contents = [k.content for k in knowledge_items if isinstance(k, CharacterKnowledge)]
     assert "Knowledge at chapter 1" in contents, f"Expected ch1 knowledge in {contents}"
-    assert "Knowledge at chapter 5" not in contents, f"Ch5 knowledge should not appear: {contents}"
+    assert "Knowledge at chapter 3" not in contents, f"Ch3 knowledge should not appear at chapter_id=2: {contents}"
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +366,11 @@ async def test_get_character_location_not_found(mcp_instance):
 
 @pytest.mark.asyncio
 async def test_get_character_location_chapter_scoping(mcp_instance, seeded_db_path):
-    """get_character_location with chapter_id filters to chapter_id <= N."""
+    """get_character_location with chapter_id filters to chapter_id <= N.
+
+    Uses chapters 1 and 3 (both exist in minimal seed). Queries with chapter_id=2
+    so chapter 3 is excluded.
+    """
     async with aiosqlite.connect(seeded_db_path) as conn:
         await conn.execute("PRAGMA foreign_keys=ON")
         await conn.execute(
@@ -371,16 +379,16 @@ async def test_get_character_location_chapter_scoping(mcp_instance, seeded_db_pa
         )
         await conn.execute(
             "INSERT INTO character_locations (character_id, chapter_id, location_note) "
-            "VALUES (1, 10, 'Location at chapter 10')"
+            "VALUES (1, 3, 'Location at chapter 3')"
         )
         await conn.commit()
 
-    raw = await call_tool(mcp_instance, "get_character_location", character_id=1, chapter_id=5)
+    raw = await call_tool(mcp_instance, "get_character_location", character_id=1, chapter_id=2)
     assert isinstance(raw, list)
     locations = [try_parse(loc, CharacterLocation) for loc in raw]
     notes = [loc.location_note for loc in locations if isinstance(loc, CharacterLocation)]
     assert "Location at chapter 1" in notes, f"Expected ch1 location in {notes}"
-    assert "Location at chapter 10" not in notes, f"Ch10 location should not appear: {notes}"
+    assert "Location at chapter 3" not in notes, f"Ch3 location should not appear at chapter_id=2: {notes}"
 
 
 # ---------------------------------------------------------------------------
