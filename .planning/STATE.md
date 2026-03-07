@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-02-PLAN.md (relationship tools)
-last_updated: "2026-03-07T21:04:15.507Z"
+stopped_at: Completed 03-03-PLAN.md (wire server and MCP tests)
+last_updated: "2026-03-07T21:12:28.107Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 100
 ---
 
@@ -59,6 +59,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 02-pydantic-models-seed-data P04 | 2 | 2 tasks | 5 files |
 | Phase 03-mcp-server-core-characters-relationships P01 | 5 | 1 tasks | 3 files |
 | Phase 03-mcp-server-core-characters-relationships P02 | 4 | 1 tasks | 2 files |
+| Phase 03-mcp-server-core-characters-relationships P03 | 15 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 03-02]: get_relationship queries both orderings via OR clause — caller never needs to know canonical storage order
 - [Phase 03-02]: upsert_relationship canonicalizes (min, max) before INSERT to prevent duplicate dyad rows
 - [Phase 03-02]: TDD test helpers must use ON CONFLICT DO UPDATE not INSERT OR REPLACE when target table has FK children
+- [Phase 03-03]: MCP session entered per-test (not per-fixture) — anyio cancel scope teardown incompatible with pytest-asyncio fixture lifecycle
+- [Phase 03-03]: FastMCP serializes list[T] as N separate TextContent blocks — tests use [json.loads(c.text) for c in result.content]
+- [Phase 03-03]: Seed relationship pairs are (1,3), (1,4), (1,5) not (1,2) as plan context stated — corrected in tests
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:04:15.505Z
-Stopped at: Completed 03-02-PLAN.md (relationship tools)
+Last session: 2026-03-07T21:12:28.105Z
+Stopped at: Completed 03-03-PLAN.md (wire server and MCP tests)
 Resume file: None

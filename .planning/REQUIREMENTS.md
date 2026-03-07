@@ -22,7 +22,7 @@
 
 - [x] **ERRC-01**: Every MCP tool returns `null` with a `not_found_message` field when a record is not found — never raises an exception
 - [x] **ERRC-02**: Every MCP tool returns a record with `is_valid: false` and `errors: []` on validation failure — never raises an exception
-- [ ] **ERRC-03**: Prose-phase tools return a `requires_action` field describing what gate action must happen first when gate is not certified
+- [x] **ERRC-03**: Prose-phase tools return a `requires_action` field describing what gate action must happen first when gate is not certified
 - [x] **ERRC-04**: No `print()` exists in MCP server code — all logging goes to stderr via the `logging` module
 
 ### MCP — Characters Domain
@@ -252,7 +252,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-02 | Phase 2: Pydantic Models & Seed Data | Complete |
 | ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | ERRC-02 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
-| ERRC-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-03 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | ERRC-04 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | CHAR-01 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | CHAR-02 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
