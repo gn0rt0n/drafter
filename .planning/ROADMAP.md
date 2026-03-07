@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Project Foundation & Database** - pyproject.toml, migrations, connection factory, and database CLI commands (completed 2026-03-07)
 - [ ] **Phase 2: Pydantic Models & Seed Data** - Domain models, error contract types, minimal seed profile, and schema validation tests
 - [x] **Phase 3: MCP Server Core, Characters & Relationships** - FastMCP server setup, error contract enforcement, and first two domain tool modules (completed 2026-03-07)
-- [ ] **Phase 4: Chapters, Scenes & World** - Chapter/scene structure tools and world-building domain tools
+- [x] **Phase 4: Chapters, Scenes & World** - Chapter/scene structure tools and world-building domain tools (completed 2026-03-07)
 - [ ] **Phase 5: Plot & Arcs** - Plot threads, character arcs, Chekhov's guns, and subplot tracking tools
 - [ ] **Phase 6: Gate System** - Architecture gate with 33 SQL checks, gate enforcement helper, gate-ready seed, and gate CLI commands
 - [ ] **Phase 7: Session & Timeline** - Session management, project metrics, timeline events, and travel validation tools
@@ -198,7 +198,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
-| 4. Chapters, Scenes & World | 4/5 | In Progress|  |
+| 4. Chapters, Scenes & World | 5/5 | Complete   | 2026-03-07 |
 | 5. Plot & Arcs | 0/0 | Not started | - |
 | 6. Gate System | 0/0 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |
