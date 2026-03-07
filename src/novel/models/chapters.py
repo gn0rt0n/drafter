@@ -41,3 +41,15 @@ class ChapterStructuralObligation(BaseModel):
     notes: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class ChapterPlan(BaseModel):
+    """Writing-focused subset of Chapter returned by get_chapter_plan."""
+    chapter_id: int
+    summary: str | None
+    opening_state: str | None
+    closing_state: str | None
+    opening_hook_note: str | None
+    closing_hook_note: str | None
+    structural_function: str | None
+    hook_strength_rating: int | None
