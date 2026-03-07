@@ -7,10 +7,10 @@
 
 ### Project Setup
 
-- [ ] **SETUP-01**: `pyproject.toml` configures two entry points — `novel` (CLI) and `novel-mcp` (MCP server) — both invocable via `uv run` with no global installs
+- [x] **SETUP-01**: `pyproject.toml` configures two entry points — `novel` (CLI) and `novel-mcp` (MCP server) — both invocable via `uv run` with no global installs
 - [ ] **SETUP-02**: All 21 SQL migration files exist and define the complete narrative schema (books, characters, world, plot, timeline, gate, publishing, session, etc.)
 - [ ] **SETUP-03**: `novel db migrate` runs all migrations in order, with clean-rebuild support (drop + recreate), completing in under 5 seconds
-- [ ] **SETUP-04**: Database connection factory enables WAL mode and `PRAGMA foreign_keys=ON` on every connection (both sync sqlite3 and async aiosqlite)
+- [x] **SETUP-04**: Database connection factory enables WAL mode and `PRAGMA foreign_keys=ON` on every connection (both sync sqlite3 and async aiosqlite)
 
 ### Seed Data
 
@@ -238,10 +238,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-01 | Phase 1: Project Foundation & Database | Complete |
 | SETUP-02 | Phase 1: Project Foundation & Database | Pending |
 | SETUP-03 | Phase 1: Project Foundation & Database | Pending |
-| SETUP-04 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-04 | Phase 1: Project Foundation & Database | Complete |
 | CLDB-01 | Phase 1: Project Foundation & Database | Pending |
 | CLDB-02 | Phase 1: Project Foundation & Database | Pending |
 | CLDB-03 | Phase 1: Project Foundation & Database | Pending |
