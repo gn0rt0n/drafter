@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "drafter"
+version = "0.1.0"
+description = "Python MCP server and CLI for novel-scale writing projects"
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.24.0",
+    "aiosqlite>=0.17.0",
+    "mcp>=1.26.0,<2.0.0",
+]
+
+[project.scripts]
+novel = "novel.cli:app"
+novel-mcp = "novel.mcp.server:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/novel"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
