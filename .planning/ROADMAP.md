@@ -67,12 +67,12 @@ Plans:
   3. Claude can retrieve, list, create, and update relationships and perception profiles, including relationship change logging
   4. Every tool returns `null` with `not_found_message` for missing records, `is_valid: false` with `errors` for validation failures, and no `print()` statements exist in server code
   5. In-memory FastMCP client tests verify callable interface for all character and relationship tools
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — Character domain tools: 7 tools in tools/characters.py via register(mcp) (Wave 1)
+- [ ] 03-02-PLAN.md — Relationship domain tools: 6 tools in tools/relationships.py via register(mcp) (Wave 1, parallel)
+- [ ] 03-03-PLAN.md — Server wiring + pytest-asyncio + conftest + MCP client tests for all 13 tools (Wave 2)
 
 ### Phase 4: Chapters, Scenes & World
 **Goal**: Claude can manage the full chapter/scene structure and world-building data (locations, factions, cultures, magic system) through MCP tools
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 |-------|----------------|--------|-----------|
 | 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
-| 3. MCP Server Core, Characters & Relationships | 0/0 | Not started | - |
+| 3. MCP Server Core, Characters & Relationships | 0/3 | Not started | - |
 | 4. Chapters, Scenes & World | 0/0 | Not started | - |
 | 5. Plot & Arcs | 0/0 | Not started | - |
 | 6. Gate System | 0/0 | Not started | - |
