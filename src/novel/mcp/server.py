@@ -1,6 +1,6 @@
 """Novel MCP server — entry point for the novel-mcp command.
 
-Phase 1: Server scaffold only. MCP tools are registered in Phase 3+.
+Phase 3: Character and relationship tools registered.
 
 IMPORTANT: No print() statements here or anywhere in this module tree.
 All logging goes to stderr via the logging module. print() corrupts
@@ -15,10 +15,16 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
+from novel.tools import characters, relationships
+
 logger = logging.getLogger(__name__)
 
-# FastMCP instance — tools registered in Phase 3+ via @mcp.tool() decorators
+# FastMCP instance — tools registered via register() calls below
 mcp = FastMCP("novel-mcp")
+
+# Register domain tools — Phase 3
+characters.register(mcp)
+relationships.register(mcp)
 
 
 def run() -> None:
