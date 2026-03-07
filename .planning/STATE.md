@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-07T21:59:12.099Z"
+stopped_at: Completed 05-plot-arcs-01-PLAN.md
+last_updated: "2026-03-07T22:14:37.641Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 18
+  completed_plans: 16
   percent: 100
 ---
 
@@ -65,6 +65,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 04-chapters-scenes-world P03 | 2 | 1 tasks | 1 files |
 | Phase 04-chapters-scenes-world P04 | 2 | 2 tasks | 2 files |
 | Phase 04-chapters-scenes-world P05 | 3 | 3 tasks | 5 files |
+| Phase 05-plot-arcs P01 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,8 @@ Recent decisions affecting current work:
 - [Phase 04-chapters-scenes-world]: MagicComplianceResult defined in models/magic.py alongside other magic domain models — semantic grouping over module locality
 - [Phase 04-chapters-scenes-world]: check_magic_compliance is read-only: no conn.commit() call — logging is always a separate log_magic_use call
 - [Phase 04-chapters-scenes-world]: log_magic_use is append-only with no ON CONFLICT clause — magic_use_log is an audit trail, not an upsertable record
+- [Phase 05-plot-arcs]: upsert_plot_thread uses ON CONFLICT(id) DO UPDATE (not INSERT OR REPLACE) — plot_threads has FK children in chapter_plot_threads and subplot_touchpoint_log
+- [Phase 05-plot-arcs]: upsert_plot_thread does NOT touch chapter_plot_threads junction table — junction management is via chapter tools
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:59:12.097Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-plot-arcs/05-CONTEXT.md
+Last session: 2026-03-07T22:14:37.638Z
+Stopped at: Completed 05-plot-arcs-01-PLAN.md
+Resume file: None
