@@ -46,13 +46,13 @@
 
 ### MCP — Chapters & Scenes Domain
 
-- [ ] **CHAP-01**: Claude can retrieve a chapter with its plan and metadata (`get_chapter`)
-- [ ] **CHAP-02**: Claude can retrieve a chapter's writing plan (`get_chapter_plan`)
-- [ ] **CHAP-03**: Claude can retrieve a chapter's structural obligations (`get_chapter_obligations`)
+- [x] **CHAP-01**: Claude can retrieve a chapter with its plan and metadata (`get_chapter`)
+- [x] **CHAP-02**: Claude can retrieve a chapter's writing plan (`get_chapter_plan`)
+- [x] **CHAP-03**: Claude can retrieve a chapter's structural obligations (`get_chapter_obligations`)
 - [ ] **CHAP-04**: Claude can retrieve a scene with full details (`get_scene`)
 - [ ] **CHAP-05**: Claude can retrieve character goals for a scene (`get_scene_character_goals`)
-- [ ] **CHAP-06**: Claude can list all chapters in the book (`list_chapters`)
-- [ ] **CHAP-07**: Claude can create or update a chapter record (`upsert_chapter`)
+- [x] **CHAP-06**: Claude can list all chapters in the book (`list_chapters`)
+- [x] **CHAP-07**: Claude can create or update a chapter record (`upsert_chapter`)
 - [ ] **CHAP-08**: Claude can create or update a scene record (`upsert_scene`)
 - [ ] **CHAP-09**: Claude can create or update a character goal for a scene (`upsert_scene_goal`)
 
@@ -267,13 +267,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-04 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | REL-05 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | REL-06 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
-| CHAP-01 | Phase 4: Chapters, Scenes & World | Pending |
-| CHAP-02 | Phase 4: Chapters, Scenes & World | Pending |
-| CHAP-03 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-01 | Phase 4: Chapters, Scenes & World | Complete |
+| CHAP-02 | Phase 4: Chapters, Scenes & World | Complete |
+| CHAP-03 | Phase 4: Chapters, Scenes & World | Complete |
 | CHAP-04 | Phase 4: Chapters, Scenes & World | Pending |
 | CHAP-05 | Phase 4: Chapters, Scenes & World | Pending |
-| CHAP-06 | Phase 4: Chapters, Scenes & World | Pending |
-| CHAP-07 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-06 | Phase 4: Chapters, Scenes & World | Complete |
+| CHAP-07 | Phase 4: Chapters, Scenes & World | Complete |
 | CHAP-08 | Phase 4: Chapters, Scenes & World | Pending |
 | CHAP-09 | Phase 4: Chapters, Scenes & World | Pending |
 | WRLD-01 | Phase 4: Chapters, Scenes & World | Pending |
