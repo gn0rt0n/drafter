@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-01-PLAN.md (character tools)
-last_updated: "2026-03-07T20:58:16.190Z"
+stopped_at: Completed 03-02-PLAN.md (relationship tools)
+last_updated: "2026-03-07T21:04:15.507Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 2
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 100
 ---
 
@@ -58,6 +58,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 02-pydantic-models-seed-data P03 | 6 | 2 tasks | 9 files |
 | Phase 02-pydantic-models-seed-data P04 | 2 | 2 tasks | 5 files |
 | Phase 03-mcp-server-core-characters-relationships P01 | 5 | 1 tasks | 3 files |
+| Phase 03-mcp-server-core-characters-relationships P02 | 4 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 02-04]: TABLE_MODEL_MAP covers all 68 production tables — registry-driven so new tables are caught by extending the map
 - [Phase 03-01]: cursor.lastrowid used for aiosqlite INSERT row ID — aiosqlite Connection does not expose lastrowid, only the cursor from execute() does
 - [Phase 03-01]: register(mcp: FastMCP) -> None domain tool registration pattern established — tools as local async functions inside register(), each decorated with @mcp.tool()
+- [Phase 03-02]: get_relationship queries both orderings via OR clause — caller never needs to know canonical storage order
+- [Phase 03-02]: upsert_relationship canonicalizes (min, max) before INSERT to prevent duplicate dyad rows
+- [Phase 03-02]: TDD test helpers must use ON CONFLICT DO UPDATE not INSERT OR REPLACE when target table has FK children
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T20:58:16.188Z
-Stopped at: Completed 03-01-PLAN.md (character tools)
+Last session: 2026-03-07T21:04:15.505Z
+Stopped at: Completed 03-02-PLAN.md (relationship tools)
 Resume file: None

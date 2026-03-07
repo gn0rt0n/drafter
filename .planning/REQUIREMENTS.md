@@ -37,12 +37,12 @@
 
 ### MCP — Relationships Domain
 
-- [ ] **REL-01**: Claude can retrieve the relationship between two characters (`get_relationship`)
-- [ ] **REL-02**: Claude can retrieve how one character perceives another (`get_perception_profile`)
-- [ ] **REL-03**: Claude can list all relationships for a character (`list_relationships`)
-- [ ] **REL-04**: Claude can create or update a character relationship (`upsert_relationship`)
-- [ ] **REL-05**: Claude can create or update a perception profile (`upsert_perception_profile`)
-- [ ] **REL-06**: Claude can log a change event in a character relationship (`log_relationship_change`)
+- [x] **REL-01**: Claude can retrieve the relationship between two characters (`get_relationship`)
+- [x] **REL-02**: Claude can retrieve how one character perceives another (`get_perception_profile`)
+- [x] **REL-03**: Claude can list all relationships for a character (`list_relationships`)
+- [x] **REL-04**: Claude can create or update a character relationship (`upsert_relationship`)
+- [x] **REL-05**: Claude can create or update a perception profile (`upsert_perception_profile`)
+- [x] **REL-06**: Claude can log a change event in a character relationship (`log_relationship_change`)
 
 ### MCP — Chapters & Scenes Domain
 
@@ -261,12 +261,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAR-05 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | CHAR-06 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | CHAR-07 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
-| REL-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| REL-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| REL-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| REL-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| REL-05 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| REL-06 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-01 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| REL-02 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| REL-03 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| REL-04 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| REL-05 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| REL-06 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | CHAP-01 | Phase 4: Chapters, Scenes & World | Pending |
 | CHAP-02 | Phase 4: Chapters, Scenes & World | Pending |
 | CHAP-03 | Phase 4: Chapters, Scenes & World | Pending |
