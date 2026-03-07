@@ -14,12 +14,11 @@ Claude Code can query and update all story data through typed MCP tool calls —
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ 21 SQL migration files define the complete narrative schema — Phase 1 (69 tables, FK-safe, 0 violations)
+- ✓ `novel db migrate` builds a clean database from scratch in under 5 seconds — Phase 1 (~20ms, idempotent)
 
 ### Active
 
-- [ ] 21 SQL migration files define the complete narrative schema
-- [ ] `novel db migrate` builds a clean database from scratch in under 5 seconds
 - [ ] All ~80 MCP tools across 14 domains are callable from Claude Code with correct return types
 - [ ] `novel` CLI wraps all operational subcommands (db, export, import, query, session, gate, name)
 - [ ] Seed data files enable fast test/verify cycles without touching the real manuscript
@@ -60,8 +59,11 @@ Reference documents in `project-overview/`:
 | drafter = novel-tools Python repo only | Plugin is separate; engine must be stable first | — Pending |
 | Seed files for all testing | Keeps dev loop fast; real manuscript untouched | — Pending |
 | Build order: DB → MCP → CLI → Plugin (separate) | Each layer depends on the previous | — Pending |
-| SQLite over Postgres | Single-file, travels with git, no server setup | — Pending |
-| UV over pip/venv | No global installs, reproducible, fast | — Pending |
+| SQLite over Postgres | Single-file, travels with git, no server setup | ✓ Confirmed — FK enforcement verified, 20ms migrations |
+| UV over pip/venv | No global installs, reproducible, fast | ✓ Confirmed — 38 packages, uv.lock tracked in git |
+| mcp>=1.26.0,<2.0.0 bundled FastMCP (not standalone PyPI) | Standalone fastmcp diverged from SDK | ✓ Phase 1 — server stub starts cleanly on stdio |
+| Nullable FKs for acts↔chapters and factions↔characters | Circular FK dependencies can't be avoided | ✓ Phase 1 — resolves DDL ordering, DML enforcement intact |
+| `run()` function as novel-mcp entry point (not FastMCP instance) | Allows logging config before server loop | ✓ Phase 1 |
 
 ---
-*Last updated: 2026-03-07 after initialization*
+*Last updated: 2026-03-07 after Phase 1*
