@@ -197,7 +197,7 @@
 
 ### Testing
 
-- [ ] **TEST-01**: Schema validation test compares Pydantic model fields against `PRAGMA table_info` for every domain — fails if models drift from migrations
+- [x] **TEST-01**: Schema validation test compares Pydantic model fields against `PRAGMA table_info` for every domain — fails if models drift from migrations
 - [ ] **TEST-02**: Clean-rebuild test runs `novel db migrate` from scratch, validates all FK constraints with `PRAGMA foreign_key_check`, and confirms all seed data inserts cleanly with `PRAGMA foreign_keys=ON`
 - [ ] **TEST-03**: In-memory MCP tool tests use the FastMCP in-memory client to call every tool, verifying callable interface and error contract compliance (not-found returns null, validation returns is_valid:false, gate violation returns requires_action)
 - [ ] **TEST-04**: Tool selection accuracy check validates that representative natural-language queries trigger the correct tools at 80-tool scale (Claude Code Tool Search validation)
@@ -248,7 +248,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLDB-04 | Phase 1: Project Foundation & Database | Complete |
 | SEED-01 | Phase 2: Pydantic Models & Seed Data | Pending |
 | SEED-03 | Phase 2: Pydantic Models & Seed Data | Pending |
-| TEST-01 | Phase 2: Pydantic Models & Seed Data | Pending |
+| TEST-01 | Phase 2: Pydantic Models & Seed Data | Complete |
 | TEST-02 | Phase 2: Pydantic Models & Seed Data | Pending |
 | ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
 | ERRC-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |

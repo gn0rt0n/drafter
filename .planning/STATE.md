@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-07T19:49:08.870Z"
+stopped_at: Completed 02-pydantic-models-seed-data/02-01-PLAN.md
+last_updated: "2026-03-07T20:07:47.110Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 7
+  completed_plans: 4
   percent: 100
 ---
 
@@ -53,6 +53,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 01 P01 | 2 | 2 tasks | 16 files |
 | Phase 01 P02 | 8 | 2 tasks | 21 files |
 | Phase 01 P03 | 4 | 1 tasks | 1 files |
+| Phase 02-pydantic-models-seed-data P01 | 20 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Migration 021 bundles 24 tables in a single file to keep total at exactly 21 migration files while covering all literary/utility domains
 - [Phase 01]: seed raises Exit(code=0) on Phase 1 ValueError - expected stub behavior, not an error
 - [Phase 01]: reset uses single get_connection() context for both drop_all_tables and apply_migrations - keeps reset atomic
+- [Phase 02-01]: SQL migration files are ground truth for field names — plan descriptions that diverged from actual SQL were corrected to match migrations exactly
+- [Phase 02-01]: FactionPoliticalState and ObjectState placed in world.py even though defined in migration 021 — semantic grouping preferred over migration file grouping
+- [Phase 02-01]: Only models with JSON TEXT columns get to_db_dict() — non-JSON models use model.model_dump() directly for INSERT construction
 
 ### Pending Todos
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T19:49:08.868Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-pydantic-models-seed-data/02-CONTEXT.md
+Last session: 2026-03-07T20:07:47.108Z
+Stopped at: Completed 02-pydantic-models-seed-data/02-01-PLAN.md
+Resume file: None
