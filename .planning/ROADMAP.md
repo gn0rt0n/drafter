@@ -84,12 +84,14 @@ Plans:
   3. Claude can retrieve locations with sensory profiles, factions with political state, cultures, and magic system elements
   4. Claude can check magic compliance, log magic use events, retrieve practitioner abilities, and create/update locations and factions
   5. All new tools follow the established error contract and pass in-memory FastMCP client tests
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Chapter tools: ChapterPlan model + 5 tools in tools/chapters.py (Wave 1)
+- [ ] 04-02-PLAN.md — Scene tools: 4 tools in tools/scenes.py with JSON serialization (Wave 1, parallel)
+- [ ] 04-03-PLAN.md — World tools: 6 tools in tools/world.py for locations, factions, political state, cultures (Wave 1, parallel)
+- [ ] 04-04-PLAN.md — Magic tools: MagicComplianceResult model + 4 tools in tools/magic.py incl. check_magic_compliance (Wave 1, parallel)
+- [ ] 04-05-PLAN.md — Server wiring + MCP client tests for all 19 new tools (Wave 2)
 
 ### Phase 5: Plot & Arcs
 **Goal**: Claude can manage plot threads, character arcs, Chekhov's gun tracking, and subplot gap detection through MCP tools
@@ -196,7 +198,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
 | 2. Pydantic Models & Seed Data | 2/4 | In Progress|  |
 | 3. MCP Server Core, Characters & Relationships | 3/3 | Complete    | 2026-03-07 |
-| 4. Chapters, Scenes & World | 0/0 | Not started | - |
+| 4. Chapters, Scenes & World | 0/5 | Not started | - |
 | 5. Plot & Arcs | 0/0 | Not started | - |
 | 6. Gate System | 0/0 | Not started | - |
 | 7. Session & Timeline | 0/0 | Not started | - |
