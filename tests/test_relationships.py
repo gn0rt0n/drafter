@@ -103,7 +103,12 @@ def try_parse(data, *model_classes):
 
 
 async def insert_relationship(db_path: str, a_id: int, b_id: int, rel_type: str = "ally") -> int:
-    """Insert a character_relationships row (canonical order) and return the new id."""
+    """Insert or update a character_relationships row (canonical order) and return the row id.
+
+    Uses ON CONFLICT DO UPDATE to avoid UNIQUE conflicts when the seed already
+    inserted a row for the same pair without deleting the existing row (which
+    would cascade-fail FK children in relationship_change_events).
+    """
     ca, cb = min(a_id, b_id), max(a_id, b_id)
     async with aiosqlite.connect(db_path) as conn:
         await conn.execute("PRAGMA foreign_keys=ON")
@@ -111,11 +116,20 @@ async def insert_relationship(db_path: str, a_id: int, b_id: int, rel_type: str 
             """INSERT INTO character_relationships
                (character_a_id, character_b_id, relationship_type,
                 bond_strength, trust_level, current_status, canon_status, updated_at)
-               VALUES (?, ?, ?, 50, 50, 'active', 'draft', datetime('now'))""",
+               VALUES (?, ?, ?, 50, 50, 'active', 'draft', datetime('now'))
+               ON CONFLICT(character_a_id, character_b_id) DO UPDATE SET
+                   relationship_type=excluded.relationship_type,
+                   updated_at=datetime('now')""",
             (ca, cb, rel_type),
         )
         await conn.commit()
-        return cursor.lastrowid
+        # Fetch the actual row id since lastrowid is 0 on DO UPDATE
+        cur2 = await conn.execute(
+            "SELECT id FROM character_relationships WHERE character_a_id = ? AND character_b_id = ?",
+            (ca, cb),
+        )
+        row = await cur2.fetchone()
+        return row[0]
 
 
 # ---------------------------------------------------------------------------
@@ -320,8 +334,9 @@ async def test_get_perception_profile_found(perc_mcp, seeded_perception_db_path)
     """get_perception_profile returns PerceptionProfile for an existing (observer, subject) pair."""
     async with aiosqlite.connect(seeded_perception_db_path) as conn:
         await conn.execute("PRAGMA foreign_keys=ON")
+        # Use OR REPLACE to handle the case where seed already inserted (1,2).
         await conn.execute(
-            """INSERT INTO perception_profiles
+            """INSERT OR REPLACE INTO perception_profiles
                (observer_id, subject_id, trust_level, emotional_valence, updated_at)
                VALUES (1, 2, 30, 'suspicious', datetime('now'))"""
         )
