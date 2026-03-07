@@ -49,11 +49,13 @@ Plans:
   1. Pydantic models exist for all 14 domains plus shared error types (NotFoundResponse, ValidationFailure, GateViolation) and every model field matches its corresponding SQL column from `PRAGMA table_info`
   2. `novel db seed minimal` loads a seed profile that populates every domain table with representative data (1 book, 2-3 characters, 1 chapter, 2 scenes, entries in each domain table)
   3. Schema validation test passes -- comparing every Pydantic model field against the SQL schema -- and clean-rebuild test confirms all FK constraints hold after migrate + seed
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Foundation models: shared error types + world + characters + relationships (Wave 1)
+- [ ] 02-02-PLAN.md — Narrative models: chapters + scenes + plot + arcs + voice (Wave 1, parallel)
+- [ ] 02-03-PLAN.md — Remaining models: sessions + timeline + canon + gate + publishing + magic + pacing; minimal seed data (Wave 1, parallel)
+- [ ] 02-04-PLAN.md — __init__.py re-exports + schema validation tests + clean-rebuild tests (Wave 2)
 
 ### Phase 3: MCP Server Core, Characters & Relationships
 **Goal**: A working MCP server callable from Claude Code with the error contract enforced and two tightly coupled domains (characters and relationships) fully operational
@@ -192,7 +194,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
-| 2. Pydantic Models & Seed Data | 0/0 | Not started | - |
+| 2. Pydantic Models & Seed Data | 0/4 | In progress | - |
 | 3. MCP Server Core, Characters & Relationships | 0/0 | Not started | - |
 | 4. Chapters, Scenes & World | 0/0 | Not started | - |
 | 5. Plot & Arcs | 0/0 | Not started | - |
