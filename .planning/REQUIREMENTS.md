@@ -14,9 +14,9 @@
 
 ### Seed Data
 
-- [ ] **SEED-01**: Minimal seed profile provides enough data to exercise every MCP domain (1 book, 2-3 characters, 1 chapter, 2 scenes, 1 session, representative entries in each domain)
+- [x] **SEED-01**: Minimal seed profile provides enough data to exercise every MCP domain (1 book, 2-3 characters, 1 chapter, 2 scenes, 1 session, representative entries in each domain)
 - [ ] **SEED-02**: Gate-ready seed profile satisfies all 33 architecture gate checklist items so gate certification can be tested with seed data
-- [ ] **SEED-03**: `novel db seed [profile]` CLI command loads a named seed profile into the database
+- [x] **SEED-03**: `novel db seed [profile]` CLI command loads a named seed profile into the database
 
 ### Error Contract (Cross-Cutting)
 
@@ -246,8 +246,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLDB-02 | Phase 1: Project Foundation & Database | Complete |
 | CLDB-03 | Phase 1: Project Foundation & Database | Complete |
 | CLDB-04 | Phase 1: Project Foundation & Database | Complete |
-| SEED-01 | Phase 2: Pydantic Models & Seed Data | Pending |
-| SEED-03 | Phase 2: Pydantic Models & Seed Data | Pending |
+| SEED-01 | Phase 2: Pydantic Models & Seed Data | Complete |
+| SEED-03 | Phase 2: Pydantic Models & Seed Data | Complete |
 | TEST-01 | Phase 2: Pydantic Models & Seed Data | Complete |
 | TEST-02 | Phase 2: Pydantic Models & Seed Data | Pending |
 | ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
