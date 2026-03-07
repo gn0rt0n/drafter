@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-07T21:44:14.832Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-07T21:47:50.507Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
   percent: 100
 ---
 
@@ -63,6 +63,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 04-chapters-scenes-world P01 | 1 | 2 tasks | 2 files |
 | Phase 04-chapters-scenes-world P02 | 2 | 1 tasks | 1 files |
 | Phase 04-chapters-scenes-world P03 | 2 | 1 tasks | 1 files |
+| Phase 04-chapters-scenes-world P04 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 04-chapters-scenes-world]: upsert_location two-branch: None id INSERT + lastrowid, provided id ON CONFLICT(id) DO UPDATE (locations has no UNIQUE beyond PK)
 - [Phase 04-chapters-scenes-world]: upsert_faction uses ON CONFLICT(name) for None-id branch; always SELECT back by name since lastrowid=0 on conflict
 - [Phase 04-chapters-scenes-world]: upsert_faction does NOT write to faction_political_states — that is a separate time-stamped log table
+- [Phase 04-chapters-scenes-world]: MagicComplianceResult defined in models/magic.py alongside other magic domain models — semantic grouping over module locality
+- [Phase 04-chapters-scenes-world]: check_magic_compliance is read-only: no conn.commit() call — logging is always a separate log_magic_use call
+- [Phase 04-chapters-scenes-world]: log_magic_use is append-only with no ON CONFLICT clause — magic_use_log is an audit trail, not an upsertable record
 
 ### Pending Todos
 
@@ -118,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:44:14.830Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-07T21:47:50.505Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
