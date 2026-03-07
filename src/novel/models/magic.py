@@ -75,3 +75,18 @@ class NameRegistryEntry(BaseModel):
     introduced_chapter_id: int | None = None
     notes: str | None = None
     created_at: str | None = None
+
+
+class MagicComplianceResult(BaseModel):
+    """Structured result returned by check_magic_compliance (WRLD-08).
+
+    compliant: True if no violations AND character_has_ability is True.
+    violations: list of rule violations detected.
+    applicable_rules: rules/limitations/costs text from the magic element.
+    character_has_ability: True=registered, False=not registered, None=ability concept not applicable.
+    """
+
+    compliant: bool
+    violations: list[str]
+    applicable_rules: list[str]
+    character_has_ability: bool | None
