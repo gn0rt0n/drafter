@@ -20,20 +20,20 @@
 
 ### Error Contract (Cross-Cutting)
 
-- [ ] **ERRC-01**: Every MCP tool returns `null` with a `not_found_message` field when a record is not found — never raises an exception
-- [ ] **ERRC-02**: Every MCP tool returns a record with `is_valid: false` and `errors: []` on validation failure — never raises an exception
+- [x] **ERRC-01**: Every MCP tool returns `null` with a `not_found_message` field when a record is not found — never raises an exception
+- [x] **ERRC-02**: Every MCP tool returns a record with `is_valid: false` and `errors: []` on validation failure — never raises an exception
 - [ ] **ERRC-03**: Prose-phase tools return a `requires_action` field describing what gate action must happen first when gate is not certified
-- [ ] **ERRC-04**: No `print()` exists in MCP server code — all logging goes to stderr via the `logging` module
+- [x] **ERRC-04**: No `print()` exists in MCP server code — all logging goes to stderr via the `logging` module
 
 ### MCP — Characters Domain
 
-- [ ] **CHAR-01**: Claude can retrieve a character's full profile by ID (`get_character`)
-- [ ] **CHAR-02**: Claude can retrieve a character's state (location, injuries, beliefs, knowledge) at a given chapter (`get_character_state`)
-- [ ] **CHAR-03**: Claude can list all characters in the book (`list_characters`)
-- [ ] **CHAR-04**: Claude can create or update a character record (`upsert_character`)
-- [ ] **CHAR-05**: Claude can log what a character learns at a specific chapter (`log_character_knowledge`)
-- [ ] **CHAR-06**: Claude can retrieve a character's injury history (`get_character_injuries`)
-- [ ] **CHAR-07**: Claude can retrieve a character's current beliefs (`get_character_beliefs`)
+- [x] **CHAR-01**: Claude can retrieve a character's full profile by ID (`get_character`)
+- [x] **CHAR-02**: Claude can retrieve a character's state (location, injuries, beliefs, knowledge) at a given chapter (`get_character_state`)
+- [x] **CHAR-03**: Claude can list all characters in the book (`list_characters`)
+- [x] **CHAR-04**: Claude can create or update a character record (`upsert_character`)
+- [x] **CHAR-05**: Claude can log what a character learns at a specific chapter (`log_character_knowledge`)
+- [x] **CHAR-06**: Claude can retrieve a character's injury history (`get_character_injuries`)
+- [x] **CHAR-07**: Claude can retrieve a character's current beliefs (`get_character_beliefs`)
 
 ### MCP — Relationships Domain
 
@@ -250,17 +250,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEED-03 | Phase 2: Pydantic Models & Seed Data | Complete |
 | TEST-01 | Phase 2: Pydantic Models & Seed Data | Complete |
 | TEST-02 | Phase 2: Pydantic Models & Seed Data | Complete |
-| ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| ERRC-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| ERRC-02 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | ERRC-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| ERRC-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-05 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-06 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
-| CHAR-07 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-04 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-01 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-02 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-03 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-04 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-05 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-06 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
+| CHAR-07 | Phase 3: MCP Server Core, Characters & Relationships | Complete |
 | REL-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
 | REL-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
 | REL-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |

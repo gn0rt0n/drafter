@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-07T20:29:23.807Z"
+stopped_at: Completed 03-01-PLAN.md (character tools)
+last_updated: "2026-03-07T20:58:16.190Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
   percent: 100
 ---
 
@@ -57,6 +57,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 02-pydantic-models-seed-data P02 | 10 | 2 tasks | 5 files |
 | Phase 02-pydantic-models-seed-data P03 | 6 | 2 tasks | 9 files |
 | Phase 02-pydantic-models-seed-data P04 | 2 | 2 tasks | 5 files |
+| Phase 03-mcp-server-core-characters-relationships P01 | 5 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 02-03]: ThematicMirror.element_a_id/b_id are plain int (no FK annotation) — polymorphic references with no SQL FK constraints
 - [Phase 02-04]: pytest added as dev dependency (uv add --dev pytest) — plan assumed it was installed, auto-fixed as Rule 3 blocking issue
 - [Phase 02-04]: TABLE_MODEL_MAP covers all 68 production tables — registry-driven so new tables are caught by extending the map
+- [Phase 03-01]: cursor.lastrowid used for aiosqlite INSERT row ID — aiosqlite Connection does not expose lastrowid, only the cursor from execute() does
+- [Phase 03-01]: register(mcp: FastMCP) -> None domain tool registration pattern established — tools as local async functions inside register(), each decorated with @mcp.tool()
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T20:29:23.805Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-mcp-server-core-characters-relationships/03-CONTEXT.md
+Last session: 2026-03-07T20:58:16.188Z
+Stopped at: Completed 03-01-PLAN.md (character tools)
+Resume file: None
