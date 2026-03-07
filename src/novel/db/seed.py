@@ -969,14 +969,40 @@ def _load_gate_ready(conn: sqlite3.Connection) -> None:
             (scene_id, char_id, goal),
         )
 
-    # --- pacing_tension + pacing_beats: chapter 3 needs rows (ch1+ch2 already in minimal) ---
+    # --- pacing_tension + pacing_beats: chapters 2 and 3 need rows (ch1 already in minimal) ---
+    # minimal has tension for ch1+ch2 but pacing_beats only for ch1; ch2+ch3 need pacing_beats
     conn.execute(
         "INSERT INTO tension_measurements "
         "(chapter_id, tension_level, measurement_type) VALUES (3, 7, 'overall')"
     )
     conn.execute(
+        "INSERT OR IGNORE INTO pacing_beats "
+        "(chapter_id, beat_type, description) VALUES (2, 'rising-action', 'Aeryn follows the vault lead deeper.')"
+    )
+    conn.execute(
         "INSERT INTO pacing_beats "
         "(chapter_id, beat_type, description) VALUES (3, 'climax', 'The council vote and its aftermath.')"
+    )
+
+    # --- arcs_pov: all POV characters need a character_arc ---
+    # minimal gives arc to char_id=1 (Aeryn/protagonist); chapter 3 POV is char_id=3 (Ithrel Cass/mentor)
+    conn.execute(
+        "INSERT OR IGNORE INTO character_arcs "
+        "(character_id, arc_type, starting_state, desired_state, lie_believed, truth_to_learn, "
+        "opened_chapter_id, canon_status) "
+        "VALUES (3, 'disillusionment', "
+        "'Loyal keeper of the old order, certain that the gate must hold.', "
+        "'Sees that the gate has already fallen from within.', "
+        "'The Court''s secrets protect everyone equally.', "
+        "'The Court''s secrets protect only the Court.', "
+        "3, 'approved')"
+    )
+
+    # --- plot_chapter_coverage: all chapters need at least one chapter_plot_threads entry ---
+    # minimal links ch1 and ch2; ch3 is missing
+    conn.execute(
+        "INSERT OR IGNORE INTO chapter_plot_threads "
+        "(chapter_id, plot_thread_id, thread_role) VALUES (3, 1, 'converge')"
     )
 
     # --- canon_domains: need >= 3 distinct domains (minimal has 'world' only) ---
