@@ -34,11 +34,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `novel db migrate` creates a SQLite database with all tables from 21 migrations in under 5 seconds
   3. `novel db reset` drops and rebuilds the database cleanly, and `novel db status` displays migration version and table/row counts
   4. Every database connection (sync and async) enforces WAL mode and `PRAGMA foreign_keys=ON` -- verified by inserting an invalid FK reference and confirming rejection
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Project scaffold + entry points + connection factory
+- [ ] 01-02-PLAN.md — 21 SQL migration files (complete narrative schema)
+- [ ] 01-03-PLAN.md — Migration runner + CLI db commands + end-to-end verification
 
 ### Phase 2: Pydantic Models & Seed Data
 **Goal**: Typed input/output models exist for every domain, seed data enables tool testing without real manuscript content, and automated tests catch schema drift
@@ -190,7 +191,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation & Database | 0/0 | Not started | - |
+| 1. Project Foundation & Database | 0/3 | Not started | - |
 | 2. Pydantic Models & Seed Data | 0/0 | Not started | - |
 | 3. MCP Server Core, Characters & Relationships | 0/0 | Not started | - |
 | 4. Chapters, Scenes & World | 0/0 | Not started | - |
