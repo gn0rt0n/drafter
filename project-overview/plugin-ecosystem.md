@@ -3,11 +3,10 @@
 
 ---
 
-## The Philosophy
+## Purpose
+Manage a 250,000 word Epic Fantasy Novel, or series of novels, and be abel to maintain continuity across all forms of writing such as timelines, character arcs, knowledge states, etc.
 
-A novel this size — multiple POVs, sprawling worldbuilding, 55+ chapters — is more like a software project than a document. It needs the same discipline: version control, modular context files, specialized roles, and consistency checks running continuously.
-
-Claude Code is well-suited for this because it can read your entire directory, reason across files, execute tasks autonomously, and maintain context through well-crafted CLAUDE.md files at every level of your project tree. The goal is to build a system where you can ask any agent a question and it already knows the world, the characters, the rules, and the current state of the manuscript.
+The goal is to build a system where you can ask any agent a question and it already knows the world, the characters, the rules, and the current state of the manuscript.
 
 ---
 
@@ -150,7 +149,7 @@ Instructions for the Continuity Editor agent:
 
 ## Agent Roles
 
-These are the specialized Claude Code personas. Each lives as a markdown file in `/agents/` and serves as the system prompt when you invoke that agent. You can launch them in Claude Code using `claude --system-prompt agents/world-builder.md` or reference them in your own workflow scripts.
+These are the specialized Claude Code personas. Each lives as a markdown file in `/agents/` and serves as the system prompt when you invoke that agent.
 
 ---
 
@@ -168,10 +167,10 @@ These are the specialized Claude Code personas. Each lives as a markdown file in
 
 **Sample invocations**:
 ```
-"Expand the Northern Confederacy into a full faction document covering 
+"Expand the Northern Confederacy into a full faction document covering
 government, military, economy, and their view of the magic system."
 
-"I'm writing a scene in Keth Varal. What sensory details are established 
+"I'm writing a scene in Keth Varal. What sensory details are established
 about this city? What's missing that I should define before drafting?"
 ```
 
@@ -192,10 +191,10 @@ about this city? What's missing that I should define before drafting?"
 
 **Sample invocations**:
 ```
-"Summarize [Character]'s emotional state at the end of Chapter 22, 
+"Summarize [Character]'s emotional state at the end of Chapter 22,
 based on everything in their arc thread and the chapter summaries."
 
-"I need a new minor character who is a spymaster for the Eastern Throne. 
+"I need a new minor character who is a spymaster for the Eastern Throne.
 Create a full sheet consistent with the culture docs already in the bible."
 ```
 
@@ -217,10 +216,10 @@ Create a full sheet consistent with the culture docs already in the bible."
 
 **Sample invocations**:
 ```
-"Review the current master outline and list any subplots that go 
+"Review the current master outline and list any subplots that go
 more than 5 chapters without a touchpoint."
 
-"I want to restructure Act 2 to tighten the pacing. Show me the 
+"I want to restructure Act 2 to tighten the pacing. Show me the
 current chapter sequence for each POV thread and flag the slowest sections."
 ```
 
@@ -243,8 +242,8 @@ current chapter sequence for each POV thread and flag the slowest sections."
 
 **Sample invocations**:
 ```
-"Draft Chapter 14 using the plan in /outlines/chapter-plans/ch-14.md. 
-POV is [Character]. The scene takes place in [Location]. 
+"Draft Chapter 14 using the plan in /outlines/chapter-plans/ch-14.md.
+POV is [Character]. The scene takes place in [Location].
 Tone is tense but restrained — she doesn't know she's being watched yet."
 ```
 
@@ -266,8 +265,8 @@ Tone is tense but restrained — she doesn't know she's being watched yet."
 
 **Sample invocations**:
 ```
-"Run a continuity check on Chapter 22. Cross-reference against the 
-name registry, character sheets, magic rules, and master timeline. 
+"Run a continuity check on Chapter 22. Cross-reference against the
+name registry, character sheets, magic rules, and master timeline.
 Log any issues to contradictions-log.md."
 ```
 
@@ -288,10 +287,10 @@ Log any issues to contradictions-log.md."
 
 **Sample invocations**:
 ```
-"Chapter 18 introduces a new faction. Extract all new lore from this 
+"Chapter 18 introduces a new faction. Extract all new lore from this
 chapter and create/update the relevant story bible entries."
 
-"I've decided to change the capital city's name from Varath to Valdenmoor. 
+"I've decided to change the capital city's name from Varath to Valdenmoor.
 Find every reference to Varath across the project and flag them for update."
 ```
 
@@ -313,8 +312,8 @@ Find every reference to Varath across the project and flag them for update."
 
 **Sample invocations**:
 ```
-"Read the chapter summaries for Act 2 and give me a developmental 
-assessment. I'm worried the midpoint doesn't hit hard enough and 
+"Read the chapter summaries for Act 2 and give me a developmental
+assessment. I'm worried the midpoint doesn't hit hard enough and
 that [Character B]'s thread feels passive."
 ```
 
@@ -336,8 +335,8 @@ that [Character B]'s thread feels passive."
 
 **Sample invocations**:
 ```
-"Line edit Chapter 7. Preserve my voice but tighten the prose. 
-Flag anything that feels like telling rather than showing, and 
+"Line edit Chapter 7. Preserve my voice but tighten the prose.
+Flag anything that feels like telling rather than showing, and
 list any words used more than 3 times in the chapter."
 ```
 
@@ -357,8 +356,8 @@ list any words used more than 3 times in the chapter."
 
 **Sample invocations**:
 ```
-"I'm building a siege sequence for Chapter 31. Research medieval siege 
-warfare tactics — specifically how defenders would respond to a sustained 
+"I'm building a siege sequence for Chapter 31. Research medieval siege
+warfare tactics — specifically how defenders would respond to a sustained
 blockade over multiple months. Summarize for fiction use."
 ```
 
@@ -380,8 +379,8 @@ blockade over multiple months. Summarize for fiction use."
 
 **Sample invocations**:
 ```
-"Give me a chapter-by-chapter POV breakdown from Chapter 20 to 35. 
-Flag any character who disappears for more than 4 chapters and 
+"Give me a chapter-by-chapter POV breakdown from Chapter 20 to 35.
+Flag any character who disappears for more than 4 chapters and
 identify where dramatic irony opportunities exist between threads."
 ```
 
@@ -392,8 +391,6 @@ identify where dramatic irony opportunities exist between threads."
 These extend what Claude Code can do inside your project.
 
 **Filesystem MCP** — Essential. Gives Claude Code structured read/write access to your entire novel directory. Configure allowed paths carefully so agents can read broadly but only write to their designated areas.
-
-**Obsidian Integration** — Since you're already using Obsidian, you can sync your story bible to Obsidian vaults. The Obsidian MCP or a filesystem bridge lets agents read your Obsidian notes directly, and write new content back to it. This means your story bible lives in both places simultaneously.
 
 **Web Search** — Attach to the Research Agent specifically. You probably don't want web search running by default for writing agents, but the Research Agent should have it.
 

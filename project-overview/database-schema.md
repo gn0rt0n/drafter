@@ -16,7 +16,7 @@ This means:
 - Every fact is traceable to a source chapter, a decision, and a timestamp
 
 ### Recommended Stack
-SQLite
+SQLite with an MCP
 
 ### The Markdown Sync Model
 

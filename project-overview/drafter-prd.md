@@ -31,9 +31,9 @@ The ecosystem has four integrated layers:
 
 ## 2. Reference Documents
 
-- `epic-fantasy-agent-roster-v2.md` — Full definitions for all 40 agents, phasing, handoff points, sample invocations
-- `narrative-database-schema-complete.md` — Complete SQLite schema: all tables, fields, relationships, agent ownership map
-- `epic-fantasy-claude-ecosystem.md` — Original ecosystem overview
+- `./plugin-ecosystem.md` — Original ecosystem overview
+- `./agent-roster.md` — Full definitions for all 40 agents, phasing, handoff points, sample invocations
+- `./database-schema.md` — Complete SQLite schema: all tables, fields, relationships, agent ownership map
 
 This PRD does not re-document those systems. It specifies how to build them.
 
