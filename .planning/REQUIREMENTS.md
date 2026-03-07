@@ -83,11 +83,11 @@
 
 ### MCP — Gate & Architecture Domain
 
-- [ ] **GATE-01**: Claude can retrieve the current gate status (certified/not-certified, blocking item count) (`get_gate_status`)
-- [ ] **GATE-02**: Claude can run a full gate audit that evaluates all 33 SQL checklist queries and returns a gap report (`run_gate_audit`)
-- [ ] **GATE-03**: Claude can retrieve the gate checklist with per-item pass/fail status and missing record counts (`get_gate_checklist`)
-- [ ] **GATE-04**: Claude can manually update a checklist item's status (`update_checklist_item`)
-- [ ] **GATE-05**: Claude can certify the gate when all 33 items pass, writing a certification record (`certify_gate`)
+- [x] **GATE-01**: Claude can retrieve the current gate status (certified/not-certified, blocking item count) (`get_gate_status`)
+- [x] **GATE-02**: Claude can run a full gate audit that evaluates all 33 SQL checklist queries and returns a gap report (`run_gate_audit`)
+- [x] **GATE-03**: Claude can retrieve the gate checklist with per-item pass/fail status and missing record counts (`get_gate_checklist`)
+- [x] **GATE-04**: Claude can manually update a checklist item's status (`update_checklist_item`)
+- [x] **GATE-05**: Claude can certify the gate when all 33 items pass, writing a certification record (`certify_gate`)
 - [ ] **GATE-06**: A shared `check_gate()` helper function is called at the top of every prose-phase tool; returns a `GateViolation` object (not an exception) if gate is not certified
 
 ### MCP — Session & Project Domain
@@ -295,11 +295,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLOT-07 | Phase 5: Plot & Arcs | Complete |
 | PLOT-08 | Phase 5: Plot & Arcs | Complete |
 | PLOT-09 | Phase 5: Plot & Arcs | Complete |
-| GATE-01 | Phase 6: Gate System | Pending |
-| GATE-02 | Phase 6: Gate System | Pending |
-| GATE-03 | Phase 6: Gate System | Pending |
-| GATE-04 | Phase 6: Gate System | Pending |
-| GATE-05 | Phase 6: Gate System | Pending |
+| GATE-01 | Phase 6: Gate System | Complete |
+| GATE-02 | Phase 6: Gate System | Complete |
+| GATE-03 | Phase 6: Gate System | Complete |
+| GATE-04 | Phase 6: Gate System | Complete |
+| GATE-05 | Phase 6: Gate System | Complete |
 | GATE-06 | Phase 6: Gate System | Pending |
 | SEED-02 | Phase 6: Gate System | Pending |
 | CLSG-03 | Phase 6: Gate System | Pending |
