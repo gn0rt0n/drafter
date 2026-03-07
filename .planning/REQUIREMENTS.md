@@ -1,0 +1,271 @@
+# Requirements: Drafter
+
+**Defined:** 2026-03-07
+**Core Value:** Claude Code can query and update all story data through typed MCP tool calls — no raw SQL, no markdown parsing — enabling consistent AI collaboration at novel scale.
+
+## v1 Requirements
+
+### Project Setup
+
+- [ ] **SETUP-01**: `pyproject.toml` configures two entry points — `novel` (CLI) and `novel-mcp` (MCP server) — both invocable via `uv run` with no global installs
+- [ ] **SETUP-02**: All 21 SQL migration files exist and define the complete narrative schema (books, characters, world, plot, timeline, gate, publishing, session, etc.)
+- [ ] **SETUP-03**: `novel db migrate` runs all migrations in order, with clean-rebuild support (drop + recreate), completing in under 5 seconds
+- [ ] **SETUP-04**: Database connection factory enables WAL mode and `PRAGMA foreign_keys=ON` on every connection (both sync sqlite3 and async aiosqlite)
+
+### Seed Data
+
+- [ ] **SEED-01**: Minimal seed profile provides enough data to exercise every MCP domain (1 book, 2-3 characters, 1 chapter, 2 scenes, 1 session, representative entries in each domain)
+- [ ] **SEED-02**: Gate-ready seed profile satisfies all 33 architecture gate checklist items so gate certification can be tested with seed data
+- [ ] **SEED-03**: `novel db seed [profile]` CLI command loads a named seed profile into the database
+
+### Error Contract (Cross-Cutting)
+
+- [ ] **ERRC-01**: Every MCP tool returns `null` with a `not_found_message` field when a record is not found — never raises an exception
+- [ ] **ERRC-02**: Every MCP tool returns a record with `is_valid: false` and `errors: []` on validation failure — never raises an exception
+- [ ] **ERRC-03**: Prose-phase tools return a `requires_action` field describing what gate action must happen first when gate is not certified
+- [ ] **ERRC-04**: No `print()` exists in MCP server code — all logging goes to stderr via the `logging` module
+
+### MCP — Characters Domain
+
+- [ ] **CHAR-01**: Claude can retrieve a character's full profile by ID (`get_character`)
+- [ ] **CHAR-02**: Claude can retrieve a character's state (location, injuries, beliefs, knowledge) at a given chapter (`get_character_state`)
+- [ ] **CHAR-03**: Claude can list all characters in the book (`list_characters`)
+- [ ] **CHAR-04**: Claude can create or update a character record (`upsert_character`)
+- [ ] **CHAR-05**: Claude can log what a character learns at a specific chapter (`log_character_knowledge`)
+- [ ] **CHAR-06**: Claude can retrieve a character's injury history (`get_character_injuries`)
+- [ ] **CHAR-07**: Claude can retrieve a character's current beliefs (`get_character_beliefs`)
+
+### MCP — Relationships Domain
+
+- [ ] **REL-01**: Claude can retrieve the relationship between two characters (`get_relationship`)
+- [ ] **REL-02**: Claude can retrieve how one character perceives another (`get_perception_profile`)
+- [ ] **REL-03**: Claude can list all relationships for a character (`list_relationships`)
+- [ ] **REL-04**: Claude can create or update a character relationship (`upsert_relationship`)
+- [ ] **REL-05**: Claude can create or update a perception profile (`upsert_perception_profile`)
+- [ ] **REL-06**: Claude can log a change event in a character relationship (`log_relationship_change`)
+
+### MCP — Chapters & Scenes Domain
+
+- [ ] **CHAP-01**: Claude can retrieve a chapter with its plan and metadata (`get_chapter`)
+- [ ] **CHAP-02**: Claude can retrieve a chapter's writing plan (`get_chapter_plan`)
+- [ ] **CHAP-03**: Claude can retrieve a chapter's structural obligations (`get_chapter_obligations`)
+- [ ] **CHAP-04**: Claude can retrieve a scene with full details (`get_scene`)
+- [ ] **CHAP-05**: Claude can retrieve character goals for a scene (`get_scene_character_goals`)
+- [ ] **CHAP-06**: Claude can list all chapters in the book (`list_chapters`)
+- [ ] **CHAP-07**: Claude can create or update a chapter record (`upsert_chapter`)
+- [ ] **CHAP-08**: Claude can create or update a scene record (`upsert_scene`)
+- [ ] **CHAP-09**: Claude can create or update a character goal for a scene (`upsert_scene_goal`)
+
+### MCP — Plot & Arcs Domain
+
+- [ ] **PLOT-01**: Claude can retrieve a plot thread by ID (`get_plot_thread`)
+- [ ] **PLOT-02**: Claude can list all plot threads in the book (`list_plot_threads`)
+- [ ] **PLOT-03**: Claude can retrieve Chekhov's gun registry entries (`get_chekovs_guns`)
+- [ ] **PLOT-04**: Claude can retrieve a character arc (`get_arc`)
+- [ ] **PLOT-05**: Claude can retrieve arc health status for a character (`get_arc_health`)
+- [ ] **PLOT-06**: Claude can retrieve subplots that are overdue for a touchpoint (`get_subplot_touchpoint_gaps`)
+- [ ] **PLOT-07**: Claude can create or update a plot thread (`upsert_plot_thread`)
+- [ ] **PLOT-08**: Claude can create or update a Chekhov's gun entry (`upsert_chekov`)
+- [ ] **PLOT-09**: Claude can log arc health for a character at a chapter (`log_arc_health`)
+
+### MCP — World Domain
+
+- [ ] **WRLD-01**: Claude can retrieve a location with its sensory profile (`get_location`)
+- [ ] **WRLD-02**: Claude can retrieve a faction's profile (`get_faction`)
+- [ ] **WRLD-03**: Claude can retrieve a faction's current political state (`get_faction_political_state`)
+- [ ] **WRLD-04**: Claude can retrieve a culture record (`get_culture`)
+- [ ] **WRLD-05**: Claude can retrieve a magic system element with its rules and limitations (`get_magic_element`)
+- [ ] **WRLD-06**: Claude can retrieve a character's practitioner abilities (`get_practitioner_abilities`)
+- [ ] **WRLD-07**: Claude can log a magic use event (`log_magic_use`)
+- [ ] **WRLD-08**: Claude can check whether a proposed magic action is compliant with system rules (`check_magic_compliance`)
+- [ ] **WRLD-09**: Claude can create or update a location record (`upsert_location`)
+- [ ] **WRLD-10**: Claude can create or update a faction record (`upsert_faction`)
+
+### MCP — Gate & Architecture Domain
+
+- [ ] **GATE-01**: Claude can retrieve the current gate status (certified/not-certified, blocking item count) (`get_gate_status`)
+- [ ] **GATE-02**: Claude can run a full gate audit that evaluates all 33 SQL checklist queries and returns a gap report (`run_gate_audit`)
+- [ ] **GATE-03**: Claude can retrieve the gate checklist with per-item pass/fail status and missing record counts (`get_gate_checklist`)
+- [ ] **GATE-04**: Claude can manually update a checklist item's status (`update_checklist_item`)
+- [ ] **GATE-05**: Claude can certify the gate when all 33 items pass, writing a certification record (`certify_gate`)
+- [ ] **GATE-06**: A shared `check_gate()` helper function is called at the top of every prose-phase tool; returns a `GateViolation` object (not an exception) if gate is not certified
+
+### MCP — Session & Project Domain
+
+- [ ] **SESS-01**: Claude can start a new writing session with a briefing from the last session's log (`start_session`)
+- [ ] **SESS-02**: Claude can close the current session, logging a summary and carrying open items forward (`close_session`)
+- [ ] **SESS-03**: Claude can retrieve the most recent session log (`get_last_session`)
+- [ ] **SESS-04**: Claude can log an agent run record (`log_agent_run`)
+- [ ] **SESS-05**: Claude can retrieve project-level metrics (word count, chapter count, session count) (`get_project_metrics`)
+- [ ] **SESS-06**: Claude can log a project metrics snapshot (`log_project_snapshot`)
+- [ ] **SESS-07**: Claude can retrieve POV balance across chapters (chapter count and word count per POV character) (`get_pov_balance`)
+- [ ] **SESS-08**: Claude can retrieve open questions (`get_open_questions`)
+- [ ] **SESS-09**: Claude can log a new open question (`log_open_question`)
+- [ ] **SESS-10**: Claude can mark an open question as answered (`answer_open_question`)
+
+### MCP — Timeline Domain
+
+- [ ] **TIME-01**: Claude can retrieve all POV character positions at a given chapter (`get_pov_positions`)
+- [ ] **TIME-02**: Claude can retrieve a specific POV character's chronological position (`get_pov_position`)
+- [ ] **TIME-03**: Claude can retrieve a timeline event by ID (`get_event`)
+- [ ] **TIME-04**: Claude can list events within a chapter range or time range (`list_events`)
+- [ ] **TIME-05**: Claude can retrieve travel segments for a character (`get_travel_segments`)
+- [ ] **TIME-06**: Claude can validate whether travel between two locations is realistic given elapsed in-story time (`validate_travel_realism`)
+- [ ] **TIME-07**: Claude can create or update a timeline event (`upsert_event`)
+- [ ] **TIME-08**: Claude can create or update a POV chronological position (`upsert_pov_position`)
+
+### MCP — Canon & Continuity Domain
+
+- [ ] **CANO-01**: Claude can retrieve canon facts for a named domain (magic, politics, geography, etc.) (`get_canon_facts`)
+- [ ] **CANO-02**: Claude can log a new canon fact (`log_canon_fact`)
+- [ ] **CANO-03**: Claude can log a story decision (`log_decision`)
+- [ ] **CANO-04**: Claude can retrieve the decisions log (`get_decisions`)
+- [ ] **CANO-05**: Claude can log a continuity issue with severity (`log_continuity_issue`)
+- [ ] **CANO-06**: Claude can retrieve open continuity issues filtered by severity (`get_continuity_issues`)
+- [ ] **CANO-07**: Claude can mark a continuity issue as resolved (`resolve_continuity_issue`)
+
+### MCP — Knowledge & Reader State Domain
+
+- [ ] **KNOW-01**: Claude can retrieve reader information state at a chapter (what readers know at that point) (`get_reader_state`)
+- [ ] **KNOW-02**: Claude can retrieve the dramatic irony inventory (what readers know that characters don't) (`get_dramatic_irony_inventory`)
+- [ ] **KNOW-03**: Claude can retrieve planned and actual reveals for readers (`get_reader_reveals`)
+- [ ] **KNOW-04**: Claude can create or update reader information state (`upsert_reader_state`)
+- [ ] **KNOW-05**: Claude can log a dramatic irony entry (`log_dramatic_irony`)
+
+### MCP — Foreshadowing & Literary Domain
+
+- [ ] **FORE-01**: Claude can retrieve foreshadowing entries with plant and payoff chapters (`get_foreshadowing`)
+- [ ] **FORE-02**: Claude can retrieve prophecy registry entries (`get_prophecies`)
+- [ ] **FORE-03**: Claude can retrieve the motif registry (`get_motifs`)
+- [ ] **FORE-04**: Claude can retrieve motif occurrences in chapters or scenes (`get_motif_occurrences`)
+- [ ] **FORE-05**: Claude can retrieve thematic mirror pairs (`get_thematic_mirrors`)
+- [ ] **FORE-06**: Claude can retrieve opposition pairs (`get_opposition_pairs`)
+- [ ] **FORE-07**: Claude can log a foreshadowing entry (`log_foreshadowing`)
+- [ ] **FORE-08**: Claude can log a motif occurrence (`log_motif_occurrence`)
+
+### MCP — Names Domain
+
+- [ ] **NAME-01**: Claude can check whether a proposed name conflicts with existing names in the registry (`check_name`)
+- [ ] **NAME-02**: Claude can register a name in the registry with its cultural/linguistic context (`register_name`)
+- [ ] **NAME-03**: Claude can retrieve the full name registry (`get_name_registry`)
+- [ ] **NAME-04**: Claude can get name suggestions following the cultural and linguistic rules of a given faction or region (`generate_name_suggestions`)
+
+### MCP — Voice & Style Domain
+
+- [ ] **VOIC-01**: Claude can retrieve a character's voice profile (`get_voice_profile`)
+- [ ] **VOIC-02**: Claude can retrieve supernatural voice guidelines for writing supernatural elements (`get_supernatural_voice_guidelines`)
+- [ ] **VOIC-03**: Claude can log a voice drift instance for a character (`log_voice_drift`)
+- [ ] **VOIC-04**: Claude can retrieve the voice drift log for a character (`get_voice_drift_log`)
+- [ ] **VOIC-05**: Claude can create or update a voice profile (`upsert_voice_profile`)
+
+### MCP — Publishing Domain
+
+- [ ] **PUBL-01**: Claude can retrieve publishing assets (query letters, synopses, pitches) (`get_publishing_assets`)
+- [ ] **PUBL-02**: Claude can create or update a publishing asset (`upsert_publishing_asset`)
+- [ ] **PUBL-03**: Claude can retrieve submission tracker entries (`get_submissions`)
+- [ ] **PUBL-04**: Claude can log a new submission (`log_submission`)
+- [ ] **PUBL-05**: Claude can update a submission's status (`update_submission`)
+
+### CLI — Database Commands
+
+- [ ] **CLDB-01**: `novel db migrate` builds a clean database from all 21 migrations in under 5 seconds
+- [ ] **CLDB-02**: `novel db seed [profile]` loads a named seed profile (minimal or gate-ready)
+- [ ] **CLDB-03**: `novel db reset` drops and rebuilds the database (migrate + optional seed)
+- [ ] **CLDB-04**: `novel db status` displays migration version, table count, and row counts for key tables
+
+### CLI — Session, Gate & Query Commands
+
+- [ ] **CLSG-01**: `novel session start` displays a briefing from the last session log
+- [ ] **CLSG-02**: `novel session close` prompts for session summary and writes a session log
+- [ ] **CLSG-03**: `novel gate check` runs the full 33-item gate audit and displays a gap report
+- [ ] **CLSG-04**: `novel gate status` displays current gate status and blocking item count
+- [ ] **CLSG-05**: `novel gate certify` certifies the gate when all items pass
+- [ ] **CLSG-06**: `novel query pov-balance` displays POV distribution by chapter and word count
+- [ ] **CLSG-07**: `novel query arc-health` displays arc progression for all POV characters
+- [ ] **CLSG-08**: `novel query thread-gaps` displays subplots overdue for a touchpoint
+
+### CLI — Export Commands
+
+- [ ] **CLEX-01**: `novel export chapter [n]` regenerates the markdown file for a single chapter from database records
+- [ ] **CLEX-02**: `novel export all` regenerates all story content markdown files from the database
+
+### CLI — Name Commands
+
+- [ ] **CLNM-01**: `novel name check [name]` checks for conflicts in the name registry
+- [ ] **CLNM-02**: `novel name register [name]` registers a name with its context
+- [ ] **CLNM-03**: `novel name suggest [faction/region]` generates culturally consistent name suggestions
+
+### Testing
+
+- [ ] **TEST-01**: Schema validation test compares Pydantic model fields against `PRAGMA table_info` for every domain — fails if models drift from migrations
+- [ ] **TEST-02**: Clean-rebuild test runs `novel db migrate` from scratch, validates all FK constraints with `PRAGMA foreign_key_check`, and confirms all seed data inserts cleanly with `PRAGMA foreign_keys=ON`
+- [ ] **TEST-03**: In-memory MCP tool tests use the FastMCP in-memory client to call every tool, verifying callable interface and error contract compliance (not-found returns null, validation returns is_valid:false, gate violation returns requires_action)
+- [ ] **TEST-04**: Tool selection accuracy check validates that representative natural-language queries trigger the correct tools at 80-tool scale (Claude Code Tool Search validation)
+
+## v2 Requirements
+
+### Performance & Optimization
+
+- **OPTM-01**: Gate status caching — avoid re-running 33 SQL queries on every tool call
+- **OPTM-02**: Dynamic toolset loading — expose domain subsets based on current task context to reduce context window impact
+
+### Import
+
+- **IMPT-01**: `novel import world` parses existing location/faction/culture markdown into database records
+- **IMPT-02**: `novel import characters` parses existing character markdown into database records
+- **IMPT-03**: `novel import chapters` parses existing chapter markdown into database records
+- **IMPT-04**: `novel import all` runs all import scripts in dependency order
+
+### CLI Polish
+
+- **CLIP-01**: Rich colored CLI output for all commands
+- **CLIP-02**: `--dry-run` flag on all destructive CLI commands
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Real novel manuscript content | Seed files only during development — real manuscript stays untouched |
+| `novel-plugin/` (Claude Code plugin) | Separate repo; built after this engine is stable |
+| Web UI or REST API layer | CLI + MCP only; single-user tool |
+| SQLAlchemy or any ORM | Adds complexity without benefit for a single-file SQLite database |
+| Multiple database support | SQLite only; single-file design is a constraint, not a gap |
+| Standalone `fastmcp` PyPI package | SDK built-in (`mcp.server.fastmcp`) only; packages have diverged |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SETUP-01–04 | Phase 1 | Pending |
+| SEED-01–03 | Phase 2 | Pending |
+| ERRC-01–04 | Phase 3 | Pending |
+| CHAR-01–07 | Phase 3 | Pending |
+| REL-01–06 | Phase 3 | Pending |
+| CHAP-01–09 | Phase 3 | Pending |
+| PLOT-01–09 | Phase 3 | Pending |
+| WRLD-01–10 | Phase 3 | Pending |
+| GATE-01–06 | Phase 4 | Pending |
+| SESS-01–10 | Phase 5 | Pending |
+| TIME-01–08 | Phase 5 | Pending |
+| CANO-01–07 | Phase 5 | Pending |
+| KNOW-01–05 | Phase 5 | Pending |
+| FORE-01–08 | Phase 5 | Pending |
+| NAME-01–04 | Phase 5 | Pending |
+| VOIC-01–05 | Phase 5 | Pending |
+| PUBL-01–05 | Phase 5 | Pending |
+| CLDB-01–04 | Phase 1 | Pending |
+| CLSG-01–08 | Phase 6 | Pending |
+| CLEX-01–02 | Phase 6 | Pending |
+| CLNM-01–03 | Phase 6 | Pending |
+| TEST-01–04 | Phases 1–5 | Pending |
+
+**Coverage:**
+- v1 requirements: 84 total
+- Mapped to phases: 84
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-03-07*
+*Last updated: 2026-03-07 after initial definition*
