@@ -238,34 +238,143 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01–04 | Phase 1 | Pending |
-| SEED-01–03 | Phase 2 | Pending |
-| ERRC-01–04 | Phase 3 | Pending |
-| CHAR-01–07 | Phase 3 | Pending |
-| REL-01–06 | Phase 3 | Pending |
-| CHAP-01–09 | Phase 3 | Pending |
-| PLOT-01–09 | Phase 3 | Pending |
-| WRLD-01–10 | Phase 3 | Pending |
-| GATE-01–06 | Phase 4 | Pending |
-| SESS-01–10 | Phase 5 | Pending |
-| TIME-01–08 | Phase 5 | Pending |
-| CANO-01–07 | Phase 5 | Pending |
-| KNOW-01–05 | Phase 5 | Pending |
-| FORE-01–08 | Phase 5 | Pending |
-| NAME-01–04 | Phase 5 | Pending |
-| VOIC-01–05 | Phase 5 | Pending |
-| PUBL-01–05 | Phase 5 | Pending |
-| CLDB-01–04 | Phase 1 | Pending |
-| CLSG-01–08 | Phase 6 | Pending |
-| CLEX-01–02 | Phase 6 | Pending |
-| CLNM-01–03 | Phase 6 | Pending |
-| TEST-01–04 | Phases 1–5 | Pending |
+| SETUP-01 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-02 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-03 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-04 | Phase 1: Project Foundation & Database | Pending |
+| CLDB-01 | Phase 1: Project Foundation & Database | Pending |
+| CLDB-02 | Phase 1: Project Foundation & Database | Pending |
+| CLDB-03 | Phase 1: Project Foundation & Database | Pending |
+| CLDB-04 | Phase 1: Project Foundation & Database | Pending |
+| SEED-01 | Phase 2: Pydantic Models & Seed Data | Pending |
+| SEED-03 | Phase 2: Pydantic Models & Seed Data | Pending |
+| TEST-01 | Phase 2: Pydantic Models & Seed Data | Pending |
+| TEST-02 | Phase 2: Pydantic Models & Seed Data | Pending |
+| ERRC-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| ERRC-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-05 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-06 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAR-07 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-01 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-02 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-03 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-04 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-05 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| REL-06 | Phase 3: MCP Server Core, Characters & Relationships | Pending |
+| CHAP-01 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-02 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-03 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-04 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-05 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-06 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-07 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-08 | Phase 4: Chapters, Scenes & World | Pending |
+| CHAP-09 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-01 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-02 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-03 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-04 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-05 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-06 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-07 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-08 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-09 | Phase 4: Chapters, Scenes & World | Pending |
+| WRLD-10 | Phase 4: Chapters, Scenes & World | Pending |
+| PLOT-01 | Phase 5: Plot & Arcs | Pending |
+| PLOT-02 | Phase 5: Plot & Arcs | Pending |
+| PLOT-03 | Phase 5: Plot & Arcs | Pending |
+| PLOT-04 | Phase 5: Plot & Arcs | Pending |
+| PLOT-05 | Phase 5: Plot & Arcs | Pending |
+| PLOT-06 | Phase 5: Plot & Arcs | Pending |
+| PLOT-07 | Phase 5: Plot & Arcs | Pending |
+| PLOT-08 | Phase 5: Plot & Arcs | Pending |
+| PLOT-09 | Phase 5: Plot & Arcs | Pending |
+| GATE-01 | Phase 6: Gate System | Pending |
+| GATE-02 | Phase 6: Gate System | Pending |
+| GATE-03 | Phase 6: Gate System | Pending |
+| GATE-04 | Phase 6: Gate System | Pending |
+| GATE-05 | Phase 6: Gate System | Pending |
+| GATE-06 | Phase 6: Gate System | Pending |
+| SEED-02 | Phase 6: Gate System | Pending |
+| CLSG-03 | Phase 6: Gate System | Pending |
+| CLSG-04 | Phase 6: Gate System | Pending |
+| CLSG-05 | Phase 6: Gate System | Pending |
+| SESS-01 | Phase 7: Session & Timeline | Pending |
+| SESS-02 | Phase 7: Session & Timeline | Pending |
+| SESS-03 | Phase 7: Session & Timeline | Pending |
+| SESS-04 | Phase 7: Session & Timeline | Pending |
+| SESS-05 | Phase 7: Session & Timeline | Pending |
+| SESS-06 | Phase 7: Session & Timeline | Pending |
+| SESS-07 | Phase 7: Session & Timeline | Pending |
+| SESS-08 | Phase 7: Session & Timeline | Pending |
+| SESS-09 | Phase 7: Session & Timeline | Pending |
+| SESS-10 | Phase 7: Session & Timeline | Pending |
+| TIME-01 | Phase 7: Session & Timeline | Pending |
+| TIME-02 | Phase 7: Session & Timeline | Pending |
+| TIME-03 | Phase 7: Session & Timeline | Pending |
+| TIME-04 | Phase 7: Session & Timeline | Pending |
+| TIME-05 | Phase 7: Session & Timeline | Pending |
+| TIME-06 | Phase 7: Session & Timeline | Pending |
+| TIME-07 | Phase 7: Session & Timeline | Pending |
+| TIME-08 | Phase 7: Session & Timeline | Pending |
+| CANO-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-06 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-07 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| KNOW-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| KNOW-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| KNOW-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| KNOW-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| KNOW-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-06 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-07 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-08 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| NAME-01 | Phase 9: Names, Voice & Publishing | Pending |
+| NAME-02 | Phase 9: Names, Voice & Publishing | Pending |
+| NAME-03 | Phase 9: Names, Voice & Publishing | Pending |
+| NAME-04 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-01 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-02 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-03 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-04 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-05 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-01 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-02 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-03 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-04 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-05 | Phase 9: Names, Voice & Publishing | Pending |
+| CLSG-01 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLSG-02 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLSG-06 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLSG-07 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLSG-08 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLEX-01 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLEX-02 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLNM-01 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLNM-02 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLNM-03 | Phase 10: CLI Completion & Integration Testing | Pending |
+| TEST-03 | Phase 10: CLI Completion & Integration Testing | Pending |
+| TEST-04 | Phase 10: CLI Completion & Integration Testing | Pending |
 
 **Coverage:**
-- v1 requirements: 84 total
-- Mapped to phases: 84
-- Unmapped: 0 ✓
+- v1 requirements: 131 total
+- Mapped to phases: 131
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
