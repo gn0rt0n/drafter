@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-pydantic-models-seed-data/02-01-PLAN.md
-last_updated: "2026-03-07T20:07:47.110Z"
+stopped_at: Completed 02-pydantic-models-seed-data/02-02-PLAN.md
+last_updated: "2026-03-07T20:11:02.669Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 100
 ---
 
@@ -54,6 +54,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 01 P02 | 8 | 2 tasks | 21 files |
 | Phase 01 P03 | 4 | 1 tasks | 1 files |
 | Phase 02-pydantic-models-seed-data P01 | 20 | 2 tasks | 5 files |
+| Phase 02-pydantic-models-seed-data P02 | 10 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase 02-01]: SQL migration files are ground truth for field names — plan descriptions that diverged from actual SQL were corrected to match migrations exactly
 - [Phase 02-01]: FactionPoliticalState and ObjectState placed in world.py even though defined in migration 021 — semantic grouping preferred over migration file grouping
 - [Phase 02-01]: Only models with JSON TEXT columns get to_db_dict() — non-JSON models use model.model_dump() directly for INSERT construction
+- [Phase 02-02]: Migration SQL files are ground truth for field names — plan descriptions that diverged from actual SQL were corrected to match migrations exactly (pattern reinforced from 02-01)
+- [Phase 02-02]: SupernaturalVoiceGuideline placed in voice.py despite migration 021 — semantic grouping over migration file grouping (same as FactionPoliticalState in world.py)
+- [Phase 02-02]: ChapterCharacterArc placed in plot.py (plot-structure junction table) even though it references character_arcs table
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T20:07:47.108Z
-Stopped at: Completed 02-pydantic-models-seed-data/02-01-PLAN.md
+Last session: 2026-03-07T20:11:02.667Z
+Stopped at: Completed 02-pydantic-models-seed-data/02-02-PLAN.md
 Resume file: None
