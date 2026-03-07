@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-pydantic-models-seed-data/02-03-PLAN.md
-last_updated: "2026-03-07T20:18:41.823Z"
+stopped_at: Completed 02-pydantic-models-seed-data/02-04-PLAN.md
+last_updated: "2026-03-07T20:22:26.947Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 100
 ---
 
@@ -56,6 +56,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 02-pydantic-models-seed-data P01 | 20 | 2 tasks | 5 files |
 | Phase 02-pydantic-models-seed-data P02 | 10 | 2 tasks | 5 files |
 | Phase 02-pydantic-models-seed-data P03 | 6 | 2 tasks | 9 files |
+| Phase 02-pydantic-models-seed-data P04 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 02-03]: Migration SQL files are ground truth for column names — plan descriptions that diverged corrected to match SQL (pattern reinforced from 02-01, 02-02)
 - [Phase 02-03]: open_questions and decisions_log placed in sessions.py — session-context planning tables (semantic grouping over migration file grouping)
 - [Phase 02-03]: ThematicMirror.element_a_id/b_id are plain int (no FK annotation) — polymorphic references with no SQL FK constraints
+- [Phase 02-04]: pytest added as dev dependency (uv add --dev pytest) — plan assumed it was installed, auto-fixed as Rule 3 blocking issue
+- [Phase 02-04]: TABLE_MODEL_MAP covers all 68 production tables — registry-driven so new tables are caught by extending the map
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T20:18:41.821Z
-Stopped at: Completed 02-pydantic-models-seed-data/02-03-PLAN.md
+Last session: 2026-03-07T20:22:26.945Z
+Stopped at: Completed 02-pydantic-models-seed-data/02-04-PLAN.md
 Resume file: None
