@@ -148,6 +148,13 @@ None - no external service configuration required.
 - All 14 MCP tool domains have their backing tables defined
 - Zero FK violations confirmed on empty database — safe to build migration runner against
 
+## Self-Check: PASSED
+
+- All 21 migration files confirmed present on disk
+- Commits 01a9aff and f098653 confirmed in git log
+- SUMMARY.md created at .planning/phases/01-project-foundation-database/01-02-SUMMARY.md
+- STATE.md, ROADMAP.md, REQUIREMENTS.md updated
+
 ---
 *Phase: 01-project-foundation-database*
 *Completed: 2026-03-07*

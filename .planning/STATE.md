@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-07T19:34:26.786Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-03-07T19:37:16.640Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -52,6 +52,7 @@ Progress: [..........] 0%
 *Updated after each plan completion*
 | Phase 01 P01 | 2 | 2 tasks | 16 files |
 | Phase 01 P02 | 8 | 2 tasks | 21 files |
+| Phase 01 P03 | 4 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Recent decisions affecting current work:
 - [Phase 01]: db/cli.py stub created in Plan 01 so cli.py import resolves; full implementation deferred to Plan 03
 - [Phase 01]: Circular FK (acts<->chapters) resolved via nullable start/end_chapter_id on acts; circular FK (factions<->characters) resolved via nullable leader_character_id on factions
 - [Phase 01]: Migration 021 bundles 24 tables in a single file to keep total at exactly 21 migration files while covering all literary/utility domains
+- [Phase 01]: seed raises Exit(code=0) on Phase 1 ValueError - expected stub behavior, not an error
+- [Phase 01]: reset uses single get_connection() context for both drop_all_tables and apply_migrations - keeps reset atomic
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T19:34:26.785Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-07T19:37:16.639Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None

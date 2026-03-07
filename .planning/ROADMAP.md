@@ -12,7 +12,7 @@ Drafter delivers a complete Python MCP server with ~80 tools across 14 domains, 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Project Foundation & Database** - pyproject.toml, migrations, connection factory, and database CLI commands
+- [x] **Phase 1: Project Foundation & Database** - pyproject.toml, migrations, connection factory, and database CLI commands (completed 2026-03-07)
 - [ ] **Phase 2: Pydantic Models & Seed Data** - Domain models, error contract types, minimal seed profile, and schema validation tests
 - [ ] **Phase 3: MCP Server Core, Characters & Relationships** - FastMCP server setup, error contract enforcement, and first two domain tool modules
 - [ ] **Phase 4: Chapters, Scenes & World** - Chapter/scene structure tools and world-building domain tools
@@ -191,7 +191,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation & Database | 2/3 | In Progress|  |
+| 1. Project Foundation & Database | 3/3 | Complete   | 2026-03-07 |
 | 2. Pydantic Models & Seed Data | 0/0 | Not started | - |
 | 3. MCP Server Core, Characters & Relationships | 0/0 | Not started | - |
 | 4. Chapters, Scenes & World | 0/0 | Not started | - |

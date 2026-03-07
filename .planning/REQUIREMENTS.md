@@ -9,7 +9,7 @@
 
 - [x] **SETUP-01**: `pyproject.toml` configures two entry points — `novel` (CLI) and `novel-mcp` (MCP server) — both invocable via `uv run` with no global installs
 - [x] **SETUP-02**: All 21 SQL migration files exist and define the complete narrative schema (books, characters, world, plot, timeline, gate, publishing, session, etc.)
-- [ ] **SETUP-03**: `novel db migrate` runs all migrations in order, with clean-rebuild support (drop + recreate), completing in under 5 seconds
+- [x] **SETUP-03**: `novel db migrate` runs all migrations in order, with clean-rebuild support (drop + recreate), completing in under 5 seconds
 - [x] **SETUP-04**: Database connection factory enables WAL mode and `PRAGMA foreign_keys=ON` on every connection (both sync sqlite3 and async aiosqlite)
 
 ### Seed Data
@@ -168,10 +168,10 @@
 
 ### CLI — Database Commands
 
-- [ ] **CLDB-01**: `novel db migrate` builds a clean database from all 21 migrations in under 5 seconds
-- [ ] **CLDB-02**: `novel db seed [profile]` loads a named seed profile (minimal or gate-ready)
-- [ ] **CLDB-03**: `novel db reset` drops and rebuilds the database (migrate + optional seed)
-- [ ] **CLDB-04**: `novel db status` displays migration version, table count, and row counts for key tables
+- [x] **CLDB-01**: `novel db migrate` builds a clean database from all 21 migrations in under 5 seconds
+- [x] **CLDB-02**: `novel db seed [profile]` loads a named seed profile (minimal or gate-ready)
+- [x] **CLDB-03**: `novel db reset` drops and rebuilds the database (migrate + optional seed)
+- [x] **CLDB-04**: `novel db status` displays migration version, table count, and row counts for key tables
 
 ### CLI — Session, Gate & Query Commands
 
@@ -240,12 +240,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | SETUP-01 | Phase 1: Project Foundation & Database | Complete |
 | SETUP-02 | Phase 1: Project Foundation & Database | Complete |
-| SETUP-03 | Phase 1: Project Foundation & Database | Pending |
+| SETUP-03 | Phase 1: Project Foundation & Database | Complete |
 | SETUP-04 | Phase 1: Project Foundation & Database | Complete |
-| CLDB-01 | Phase 1: Project Foundation & Database | Pending |
-| CLDB-02 | Phase 1: Project Foundation & Database | Pending |
-| CLDB-03 | Phase 1: Project Foundation & Database | Pending |
-| CLDB-04 | Phase 1: Project Foundation & Database | Pending |
+| CLDB-01 | Phase 1: Project Foundation & Database | Complete |
+| CLDB-02 | Phase 1: Project Foundation & Database | Complete |
+| CLDB-03 | Phase 1: Project Foundation & Database | Complete |
+| CLDB-04 | Phase 1: Project Foundation & Database | Complete |
 | SEED-01 | Phase 2: Pydantic Models & Seed Data | Pending |
 | SEED-03 | Phase 2: Pydantic Models & Seed Data | Pending |
 | TEST-01 | Phase 2: Pydantic Models & Seed Data | Pending |
