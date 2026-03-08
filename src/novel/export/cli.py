@@ -6,6 +6,10 @@ Uses sync sqlite3 via novel.db.connection.get_connection() — never novel.mcp.d
 Commands:
     novel export chapter [n]  — regenerate markdown for a single chapter (CLEX-01)
     novel export all          — regenerate all chapter markdown files (CLEX-02)
+
+Note on schema: chapters table uses time_marker (TEXT) and elapsed_days_from_start (INTEGER)
+rather than start_day/end_day. Scenes have no title column — heading uses scene_number.
+Location is resolved via the first scene's location_id JOIN to locations.name.
 """
 from pathlib import Path
 
@@ -16,37 +20,41 @@ from novel.db.connection import get_connection
 app = typer.Typer(help="Export commands (regenerate chapter markdown files)")
 
 
-def _build_chapter_markdown(chapter_row: "sqlite3.Row", scenes: list) -> str:  # type: ignore[name-defined]  # noqa: F821
+def _build_chapter_markdown(
+    chapter_row: "sqlite3.Row",  # type: ignore[name-defined]  # noqa: F821
+    scenes: list,
+    location_name: str | None,
+) -> str:
     """Build chapter markdown string from chapter row and scene rows.
 
     Args:
         chapter_row: sqlite3.Row with chapter fields plus pov_character_name
         scenes: list of sqlite3.Row scene records ordered by scene_number
+        location_name: resolved location name from the first scene's location (or None)
 
     Returns:
-        Markdown string using the LOCKED format.
+        Markdown string using the chapter format.
     """
     n = chapter_row["chapter_number"]
     title = chapter_row["title"] or "Untitled"
     pov = chapter_row["pov_character_name"] or "(unknown)"
-    start_day = chapter_row["start_day"] if chapter_row["start_day"] is not None else "?"
-    end_day = chapter_row["end_day"] if chapter_row["end_day"] is not None else "?"
-    location = chapter_row["primary_location"] or "(unknown)"
+    time_marker = chapter_row["time_marker"] or "—"
+    location = location_name or "(unknown)"
 
     lines = [
         f"# Chapter {n}: {title}",
         "",
         f"**POV**: {pov}",
-        f"**Timeline**: Day {start_day} — Day {end_day}",
+        f"**Timeline**: {time_marker}",
         f"**Location**: {location}",
         "",
     ]
 
     if scenes:
         for scene in scenes:
-            scene_title = scene["title"] or f"Scene {scene['scene_number']}"
+            scene_heading = f"Scene {scene['scene_number']}"
             scene_summary = scene["summary"] or "(no summary)"
-            lines.append(f"## {scene_title}")
+            lines.append(f"## {scene_heading}")
             lines.append("")
             lines.append(scene_summary)
             lines.append("")
@@ -59,7 +67,27 @@ def _build_chapter_markdown(chapter_row: "sqlite3.Row", scenes: list) -> str:  #
     return "\n".join(lines)
 
 
-def _write_chapter(conn: "sqlite3.Connection", chapter_row: "sqlite3.Row", output_dir: Path) -> Path:  # type: ignore[name-defined]  # noqa: F821
+def _resolve_location(conn: "sqlite3.Connection", chapter_id: int) -> str | None:  # type: ignore[name-defined]  # noqa: F821
+    """Return the location name for the first scene of a chapter, or None."""
+    row = conn.execute(
+        """SELECT l.name
+           FROM scenes s
+           LEFT JOIN locations l ON l.id = s.location_id
+           WHERE s.chapter_id = ?
+           ORDER BY s.scene_number
+           LIMIT 1""",
+        (chapter_id,),
+    ).fetchone()
+    if row:
+        return row["name"]
+    return None
+
+
+def _write_chapter(
+    conn: "sqlite3.Connection",  # type: ignore[name-defined]  # noqa: F821
+    chapter_row: "sqlite3.Row",  # type: ignore[name-defined]  # noqa: F821
+    output_dir: Path,
+) -> Path:
     """Write a single chapter markdown file.
 
     Args:
@@ -76,7 +104,8 @@ def _write_chapter(conn: "sqlite3.Connection", chapter_row: "sqlite3.Row", outpu
         (chapter_row["id"],),
     ).fetchall()
 
-    content = _build_chapter_markdown(chapter_row, scenes)
+    location_name = _resolve_location(conn, chapter_row["id"])
+    content = _build_chapter_markdown(chapter_row, scenes, location_name)
 
     out_path = output_dir / f"chapter_{n:03d}.md"
     out_path.write_text(content, encoding="utf-8")

@@ -7,6 +7,10 @@ Commands:
     novel name check [name]           — check for name conflicts (CLNM-01)
     novel name register [name]        — register a name with context (CLNM-02)
     novel name suggest [faction]      — generate culturally consistent name suggestions (CLNM-03)
+
+Schema note: name_registry has columns: id, name, entity_type, culture_id,
+linguistic_notes, introduced_chapter_id, notes, created_at.
+No character_id, character_role, or faction column exists.
 """
 import sqlite3
 
@@ -23,10 +27,7 @@ def check(name: str = typer.Argument(..., help="Name to check for conflicts")) -
     try:
         with get_connection() as conn:
             rows = conn.execute(
-                """SELECT nr.name, c.name AS character_name
-                   FROM name_registry nr
-                   LEFT JOIN characters c ON c.id = nr.character_id
-                   WHERE LOWER(nr.name) = LOWER(?)""",
+                "SELECT name, entity_type, culture_id FROM name_registry WHERE LOWER(name) = LOWER(?)",
                 (name,),
             ).fetchall()
 
@@ -34,8 +35,7 @@ def check(name: str = typer.Argument(..., help="Name to check for conflicts")) -
             typer.echo("No conflict.")
         else:
             for row in rows:
-                char_name = row["character_name"] or "unassigned"
-                typer.echo(f"Conflict: {row['name']} (character: {char_name})")
+                typer.echo(f"Conflict: {row['name']} (entity_type: {row['entity_type']})")
 
     except typer.Exit:
         raise
@@ -47,24 +47,40 @@ def check(name: str = typer.Argument(..., help="Name to check for conflicts")) -
 @app.command()
 def register(
     name: str = typer.Argument(..., help="Name to register"),
-    role: str | None = typer.Option(None, "--role", help="Character role"),
-    faction: str | None = typer.Option(None, "--faction", help="Faction or region"),
+    entity_type: str | None = typer.Option(None, "--entity-type", help="Entity type (e.g. character, place)"),
+    culture: str | None = typer.Option(None, "--culture", help="Culture name to associate"),
     notes: str | None = typer.Option(None, "--notes", help="Additional notes"),
 ) -> None:
     """Register a name in the name_registry with optional context (CLNM-02)."""
     try:
-        if role is None:
-            role = typer.prompt("Character role (optional, Enter to skip)", default="") or None
-        if faction is None:
-            faction = typer.prompt("Faction/region (optional, Enter to skip)", default="") or None
+        if entity_type is None:
+            entity_type = (
+                typer.prompt("Entity type (character/place/etc, Enter for 'character')", default="character")
+                or "character"
+            )
+        if culture is None:
+            culture = typer.prompt("Culture name (optional, Enter to skip)", default="") or None
         if notes is None:
             notes = typer.prompt("Notes (optional, Enter to skip)", default="") or None
+
+        # Resolve culture name to culture_id if provided
+        culture_id: int | None = None
+        if culture:
+            with get_connection() as conn:
+                culture_row = conn.execute(
+                    "SELECT id FROM cultures WHERE LOWER(name) = LOWER(?)",
+                    (culture,),
+                ).fetchone()
+                if culture_row:
+                    culture_id = culture_row["id"]
+                else:
+                    typer.echo(f"Warning: culture '{culture}' not found — registering without culture_id.")
 
         with get_connection() as conn:
             try:
                 conn.execute(
-                    "INSERT INTO name_registry (name, character_role, faction, notes) VALUES (?, ?, ?, ?)",
-                    (name, role, faction, notes),
+                    "INSERT INTO name_registry (name, entity_type, culture_id, notes) VALUES (?, ?, ?, ?)",
+                    (name, entity_type or "character", culture_id, notes),
                 )
                 conn.commit()
             except sqlite3.IntegrityError:
@@ -96,7 +112,7 @@ def suggest(
             culture_id = culture_row["id"] if culture_row else None
 
             if culture_id is None:
-                # Try resolving via factions table
+                # Try resolving via factions table (factions have culture_id)
                 faction_row = conn.execute(
                     "SELECT culture_id FROM factions WHERE LOWER(name) = LOWER(?)",
                     (faction_or_region,),
@@ -108,15 +124,15 @@ def suggest(
                 typer.echo(f"No culture found for '{faction_or_region}'.")
                 return
 
-            # Query name_registry for names associated with this faction/region string
+            # Query name_registry for names associated with this culture
             rows = conn.execute(
-                "SELECT name FROM name_registry WHERE LOWER(faction) = LOWER(?) LIMIT 20",
-                (faction_or_region,),
+                "SELECT name FROM name_registry WHERE culture_id = ? LIMIT 20",
+                (culture_id,),
             ).fetchall()
 
         if not rows:
             typer.echo(
-                f"No names found for that culture/faction. Add names via 'novel name register'."
+                "No names found for that culture/faction. Add names via 'novel name register'."
             )
         else:
             for row in rows:
