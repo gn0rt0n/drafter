@@ -1,0 +1,309 @@
+"""Voice domain MCP tools.
+
+All 5 voice tools are registered via the register(mcp) function pattern.
+All tools call check_gate(conn) before any database logic — voice tools
+are prose-phase operations requiring gate certification.
+
+IMPORTANT: Never use the print function in this module. All logging goes to
+stderr via the logging module — using print corrupts the stdio protocol.
+"""
+import logging
+
+from mcp.server.fastmcp import FastMCP
+
+from novel.mcp.db import get_connection
+from novel.mcp.gate import check_gate
+from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.voice import SupernaturalVoiceGuideline, VoiceDriftLog, VoiceProfile
+
+logger = logging.getLogger(__name__)
+
+
+def register(mcp: FastMCP) -> None:
+    """Register all 5 voice domain tools with the given FastMCP instance.
+
+    Tools are defined as local async functions and decorated with @mcp.tool().
+    The FastMCP instance is always the one passed in — never imported globally.
+
+    All tools call check_gate(conn) at the top before any DB logic and return
+    GateViolation if the gate is not certified. Voice tools are prose-phase
+    operations that require gate certification.
+
+    Args:
+        mcp: The FastMCP server instance to register tools against.
+    """
+
+    # ------------------------------------------------------------------
+    # get_voice_profile (VOIC-01)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_voice_profile(
+        character_id: int,
+    ) -> VoiceProfile | NotFoundResponse | GateViolation:
+        """Retrieve the voice profile for a character.
+
+        Args:
+            character_id: ID of the character whose voice profile to fetch.
+
+        Returns:
+            VoiceProfile if found. NotFoundResponse if no profile exists for
+            the character. GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                "SELECT * FROM voice_profiles WHERE character_id = ?",
+                (character_id,),
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"No voice profile for character {character_id}"
+                )
+
+            return VoiceProfile(**dict(row))
+
+    # ------------------------------------------------------------------
+    # upsert_voice_profile (VOIC-02)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_voice_profile(
+        character_id: int,
+        profile_id: int | None = None,
+        sentence_length: str | None = None,
+        vocabulary_level: str | None = None,
+        speech_patterns: str | None = None,
+        verbal_tics: str | None = None,
+        avoids: str | None = None,
+        internal_voice_notes: str | None = None,
+        dialogue_sample: str | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> VoiceProfile | GateViolation:
+        """Create or update a voice profile for a character.
+
+        Two-branch upsert on character_id (UNIQUE column in voice_profiles):
+        - None profile_id: plain INSERT creates a new profile row.
+        - Provided profile_id: INSERT ... ON CONFLICT(character_id) DO UPDATE
+          updates the existing profile (character_id is the UNIQUE constraint).
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        Args:
+            character_id: ID of the character (UNIQUE — one profile per character).
+            profile_id: Existing profile ID for update branch (optional).
+            sentence_length: Typical sentence length style (optional).
+            vocabulary_level: Vocabulary complexity level (optional).
+            speech_patterns: Notable speech patterns (optional).
+            verbal_tics: Repeated verbal tics or mannerisms (optional).
+            avoids: Words or constructions the character avoids (optional).
+            internal_voice_notes: Notes on internal monologue voice (optional).
+            dialogue_sample: Sample dialogue illustrating the voice (optional).
+            notes: Additional notes (optional).
+            canon_status: Canon status of the profile (default "draft").
+
+        Returns:
+            The created or updated VoiceProfile record.
+            GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            if profile_id is None:
+                # None-id branch: plain INSERT
+                cursor = await conn.execute(
+                    """
+                    INSERT INTO voice_profiles
+                        (character_id, sentence_length, vocabulary_level,
+                         speech_patterns, verbal_tics, avoids,
+                         internal_voice_notes, dialogue_sample, notes,
+                         canon_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        character_id,
+                        sentence_length,
+                        vocabulary_level,
+                        speech_patterns,
+                        verbal_tics,
+                        avoids,
+                        internal_voice_notes,
+                        dialogue_sample,
+                        notes,
+                        canon_status,
+                    ),
+                )
+                new_id = cursor.lastrowid
+            else:
+                # Provided-id branch: INSERT ... ON CONFLICT(character_id) DO UPDATE
+                await conn.execute(
+                    """
+                    INSERT INTO voice_profiles
+                        (id, character_id, sentence_length, vocabulary_level,
+                         speech_patterns, verbal_tics, avoids,
+                         internal_voice_notes, dialogue_sample, notes,
+                         canon_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(character_id) DO UPDATE SET
+                        sentence_length=excluded.sentence_length,
+                        vocabulary_level=excluded.vocabulary_level,
+                        speech_patterns=excluded.speech_patterns,
+                        verbal_tics=excluded.verbal_tics,
+                        avoids=excluded.avoids,
+                        internal_voice_notes=excluded.internal_voice_notes,
+                        dialogue_sample=excluded.dialogue_sample,
+                        notes=excluded.notes,
+                        canon_status=excluded.canon_status,
+                        updated_at=datetime('now')
+                    """,
+                    (
+                        profile_id,
+                        character_id,
+                        sentence_length,
+                        vocabulary_level,
+                        speech_patterns,
+                        verbal_tics,
+                        avoids,
+                        internal_voice_notes,
+                        dialogue_sample,
+                        notes,
+                        canon_status,
+                    ),
+                )
+                new_id = profile_id
+
+            await conn.commit()
+
+            async with conn.execute(
+                "SELECT * FROM voice_profiles WHERE id = ?", (new_id,)
+            ) as cur:
+                row = await cur.fetchone()
+
+            return VoiceProfile(**dict(row))
+
+    # ------------------------------------------------------------------
+    # get_supernatural_voice_guidelines (VOIC-03)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_supernatural_voice_guidelines() -> (
+        list[SupernaturalVoiceGuideline] | GateViolation
+    ):
+        """Retrieve all supernatural voice guidelines ordered by element name.
+
+        Returns:
+            List of SupernaturalVoiceGuideline records ordered by element_name ASC
+            (may be empty). GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                "SELECT * FROM supernatural_voice_guidelines ORDER BY element_name ASC"
+            ) as cursor:
+                rows = await cursor.fetchall()
+
+            return [SupernaturalVoiceGuideline(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # log_voice_drift (VOIC-04)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_voice_drift(
+        character_id: int,
+        description: str,
+        drift_type: str = "vocabulary",
+        severity: str = "minor",
+        chapter_id: int | None = None,
+        scene_id: int | None = None,
+    ) -> VoiceDriftLog | GateViolation:
+        """Log a voice drift event for a character (append-only).
+
+        Append-only INSERT — each call creates a distinct drift log entry.
+        Voice drift events are discrete historical observations; they are not
+        upserted. Use get_voice_drift_log to retrieve the full drift history.
+
+        Args:
+            character_id: ID of the character exhibiting voice drift.
+            description: Description of the drift observed.
+            drift_type: Category of drift (default "vocabulary").
+            severity: Severity of the drift (default "minor").
+            chapter_id: Chapter where drift was observed (optional).
+            scene_id: Scene where drift was observed (optional).
+
+        Returns:
+            The newly created VoiceDriftLog record.
+            GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            cursor = await conn.execute(
+                """
+                INSERT INTO voice_drift_log
+                    (character_id, chapter_id, scene_id,
+                     drift_type, description, severity)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (character_id, chapter_id, scene_id, drift_type, description, severity),
+            )
+            new_id = cursor.lastrowid
+            await conn.commit()
+
+            async with conn.execute(
+                "SELECT * FROM voice_drift_log WHERE id = ?", (new_id,)
+            ) as cur:
+                row = await cur.fetchone()
+
+            return VoiceDriftLog(**dict(row))
+
+    # ------------------------------------------------------------------
+    # get_voice_drift_log (VOIC-05)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_voice_drift_log(
+        character_id: int,
+    ) -> list[VoiceDriftLog] | GateViolation:
+        """Retrieve voice drift log entries for a character.
+
+        Returns all drift log entries for the given character ordered by
+        created_at DESC (most recent first). An empty list is valid — a
+        character with no drift is in good shape, not an error state.
+
+        Args:
+            character_id: ID of the character whose drift log to fetch.
+
+        Returns:
+            List of VoiceDriftLog records ordered by created_at DESC
+            (may be empty). GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                """
+                SELECT * FROM voice_drift_log
+                WHERE character_id = ?
+                ORDER BY created_at DESC
+                """,
+                (character_id,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+
+            return [VoiceDriftLog(**dict(row)) for row in rows]
