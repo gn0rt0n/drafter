@@ -173,7 +173,7 @@ Plans:
 - [ ] 09-03-PLAN.md — Publishing domain: 5 gated tools in tools/publishing.py + server.py wiring + MCP tests for all 14 tools (Wave 2)
 
 ### Phase 10: CLI Completion & Integration Testing
-**Goal**: All remaining CLI subcommands work, and tool selection accuracy is validated at full 80-tool scale
+**Goal**: All remaining CLI subcommands work, and tool selection accuracy is validated at full 99-tool scale
 **Depends on**: Phase 9
 **Requirements**: CLSG-01, CLSG-02, CLSG-06, CLSG-07, CLSG-08, CLEX-01, CLEX-02, CLNM-01, CLNM-02, CLNM-03, TEST-03, TEST-04
 **Success Criteria** (what must be TRUE):
@@ -181,13 +181,13 @@ Plans:
   2. `novel query pov-balance`, `novel query arc-health`, and `novel query thread-gaps` display correct data from the database
   3. `novel export chapter [n]` regenerates a single chapter markdown and `novel export all` regenerates all chapter files from database records
   4. `novel name check`, `novel name register`, and `novel name suggest` work from the CLI
-  5. In-memory MCP tool tests cover every tool with error contract compliance, and tool selection accuracy check confirms representative queries trigger correct tools at 80-tool scale
-**Plans**: TBD
+  5. In-memory MCP tool tests cover every tool with error contract compliance, and tool selection accuracy check confirms representative queries trigger correct tools at 99-tool scale
+**Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
-- [ ] 10-03: TBD
+- [ ] 10-01-PLAN.md — Session + Query CLI: novel session start/close + novel query pov-balance/arc-health/thread-gaps (Wave 1)
+- [ ] 10-02-PLAN.md — Export + Name CLI: novel export chapter/all + novel name check/register/suggest (Wave 1, parallel)
+- [ ] 10-03-PLAN.md — Integration tests: TEST-03 error contract gap fills + TEST-04 test_tool_selection.py (Wave 2)
 
 ## Progress
 
@@ -205,7 +205,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
 | 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
-| 10. CLI Completion & Integration Testing | 0/0 | Not started | - |
+| 10. CLI Completion & Integration Testing | 0/3 | Not started | - |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
