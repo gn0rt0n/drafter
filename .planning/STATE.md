@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-08T02:11:11.936Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-03-08T02:18:14.136Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 27
-  completed_plans: 26
+  completed_plans: 27
   percent: 100
 ---
 
@@ -76,6 +76,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 07-session-timeline P03 | 7 | 2 tasks | 6 files |
 | Phase 08-canon-knowledge-foreshadowing P01 | 4 | 2 tasks | 2 files |
 | Phase 08-canon-knowledge-foreshadowing P02 | 2 | 1 tasks | 1 files |
+| Phase 08-canon-knowledge-foreshadowing P03 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -151,6 +152,9 @@ Recent decisions affecting current work:
 - [Phase 08-01]: Canon tools use append-only INSERT (no ON CONFLICT) for canon_facts, decisions_log, continuity_issues — all are audit log tables
 - [Phase 08-02]: get_reader_state uses WHERE chapter_id <= ? (cumulative semantics) — complete reader knowledge snapshot at any story point in one call
 - [Phase 08-02]: log_dramatic_irony is append-only (no ON CONFLICT) — irony entries are discrete events consistent with log_ naming convention
+- [Phase 08-03]: log_foreshadowing is upsert (two-branch): allows payoff to be filled in later without creating a duplicate plant entry
+- [Phase 08-03]: log_motif_occurrence is append-only: each motif appearance is a discrete historical event
+- [Phase 08-03]: Test FK compliance: use seed chapter IDs (1-3) not arbitrary chapter numbers
 
 ### Pending Todos
 
@@ -162,6 +166,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T02:11:11.933Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-03-08T02:18:14.134Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None

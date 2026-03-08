@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Plot & Arcs** - Plot threads, character arcs, Chekhov's guns, and subplot tracking tools (completed 2026-03-07)
 - [x] **Phase 6: Gate System** - Architecture gate with 33 SQL checks, gate enforcement helper, gate-ready seed, and gate CLI commands (completed 2026-03-07)
 - [x] **Phase 7: Session & Timeline** - Session management, project metrics, timeline events, and travel validation tools (completed 2026-03-08)
-- [ ] **Phase 8: Canon, Knowledge & Foreshadowing** - Continuity tracking, reader state, dramatic irony, foreshadowing, and literary device tools
+- [x] **Phase 8: Canon, Knowledge & Foreshadowing** - Continuity tracking, reader state, dramatic irony, foreshadowing, and literary device tools (completed 2026-03-08)
 - [ ] **Phase 9: Names, Voice & Publishing** - Name registry, voice profiles, and publishing asset tools
 - [ ] **Phase 10: CLI Completion & Integration Testing** - Remaining CLI subcommands (session, query, export, name) and full-scale tool selection validation
 
@@ -203,6 +203,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Plot & Arcs | 2/3 | Complete    | 2026-03-07 |
 | 6. Gate System | 3/3 | Complete    | 2026-03-07 |
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
-| 8. Canon, Knowledge & Foreshadowing | 2/3 | In Progress|  |
+| 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
 | 9. Names, Voice & Publishing | 0/0 | Not started | - |
 | 10. CLI Completion & Integration Testing | 0/0 | Not started | - |

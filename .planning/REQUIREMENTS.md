@@ -134,14 +134,14 @@
 
 ### MCP — Foreshadowing & Literary Domain
 
-- [ ] **FORE-01**: Claude can retrieve foreshadowing entries with plant and payoff chapters (`get_foreshadowing`)
-- [ ] **FORE-02**: Claude can retrieve prophecy registry entries (`get_prophecies`)
-- [ ] **FORE-03**: Claude can retrieve the motif registry (`get_motifs`)
-- [ ] **FORE-04**: Claude can retrieve motif occurrences in chapters or scenes (`get_motif_occurrences`)
-- [ ] **FORE-05**: Claude can retrieve thematic mirror pairs (`get_thematic_mirrors`)
-- [ ] **FORE-06**: Claude can retrieve opposition pairs (`get_opposition_pairs`)
-- [ ] **FORE-07**: Claude can log a foreshadowing entry (`log_foreshadowing`)
-- [ ] **FORE-08**: Claude can log a motif occurrence (`log_motif_occurrence`)
+- [x] **FORE-01**: Claude can retrieve foreshadowing entries with plant and payoff chapters (`get_foreshadowing`)
+- [x] **FORE-02**: Claude can retrieve prophecy registry entries (`get_prophecies`)
+- [x] **FORE-03**: Claude can retrieve the motif registry (`get_motifs`)
+- [x] **FORE-04**: Claude can retrieve motif occurrences in chapters or scenes (`get_motif_occurrences`)
+- [x] **FORE-05**: Claude can retrieve thematic mirror pairs (`get_thematic_mirrors`)
+- [x] **FORE-06**: Claude can retrieve opposition pairs (`get_opposition_pairs`)
+- [x] **FORE-07**: Claude can log a foreshadowing entry (`log_foreshadowing`)
+- [x] **FORE-08**: Claude can log a motif occurrence (`log_motif_occurrence`)
 
 ### MCP — Names Domain
 
@@ -335,14 +335,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KNOW-03 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | KNOW-04 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | KNOW-05 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
-| FORE-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-06 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-07 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| FORE-08 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| FORE-01 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-02 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-03 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-04 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-05 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-06 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-07 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| FORE-08 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | NAME-01 | Phase 9: Names, Voice & Publishing | Pending |
 | NAME-02 | Phase 9: Names, Voice & Publishing | Pending |
 | NAME-03 | Phase 9: Names, Voice & Publishing | Pending |
