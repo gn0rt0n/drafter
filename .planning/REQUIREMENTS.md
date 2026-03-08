@@ -186,14 +186,14 @@
 
 ### CLI — Export Commands
 
-- [ ] **CLEX-01**: `novel export chapter [n]` regenerates the markdown file for a single chapter from database records
-- [ ] **CLEX-02**: `novel export all` regenerates all story content markdown files from the database
+- [x] **CLEX-01**: `novel export chapter [n]` regenerates the markdown file for a single chapter from database records
+- [x] **CLEX-02**: `novel export all` regenerates all story content markdown files from the database
 
 ### CLI — Name Commands
 
-- [ ] **CLNM-01**: `novel name check [name]` checks for conflicts in the name registry
-- [ ] **CLNM-02**: `novel name register [name]` registers a name with its context
-- [ ] **CLNM-03**: `novel name suggest [faction/region]` generates culturally consistent name suggestions
+- [x] **CLNM-01**: `novel name check [name]` checks for conflicts in the name registry
+- [x] **CLNM-02**: `novel name register [name]` registers a name with its context
+- [x] **CLNM-03**: `novel name suggest [faction/region]` generates culturally consistent name suggestions
 
 ### Testing
 
@@ -362,11 +362,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLSG-06 | Phase 10: CLI Completion & Integration Testing | Complete |
 | CLSG-07 | Phase 10: CLI Completion & Integration Testing | Complete |
 | CLSG-08 | Phase 10: CLI Completion & Integration Testing | Complete |
-| CLEX-01 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLEX-02 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLNM-01 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLNM-02 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLNM-03 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLEX-01 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLEX-02 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLNM-01 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLNM-02 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLNM-03 | Phase 10: CLI Completion & Integration Testing | Complete |
 | TEST-03 | Phase 10: CLI Completion & Integration Testing | Pending |
 | TEST-04 | Phase 10: CLI Completion & Integration Testing | Pending |
 

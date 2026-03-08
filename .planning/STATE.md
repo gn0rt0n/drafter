@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 10-cli-completion-integration-testing 10-01-PLAN.md
-last_updated: "2026-03-08T22:59:53.087Z"
+stopped_at: Completed 10-02-PLAN.md (export + name CLI commands)
+last_updated: "2026-03-08T23:01:22.527Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 33
-  completed_plans: 31
+  completed_plans: 32
   percent: 100
 ---
 
@@ -81,6 +81,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 09-names-voice-publishing P01 | 3 | 1 tasks | 3 files |
 | Phase 09-names-voice-publishing P03 | 6 | 2 tasks | 4 files |
 | Phase 10-cli-completion-integration-testing P01 | 3 | 2 tasks | 5 files |
+| Phase 10-cli-completion-integration-testing P02 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Recent decisions affecting current work:
 - [Phase 09-03]: gate_ready seed has voice_profiles for all 5 characters — test fixture inserts 6th character (Tessan Vel) to test None-id CREATE branch of upsert_voice_profile
 - [Phase 10-01]: open_questions uses column 'question' not 'question_text' — migration 021 is ground truth, plan prose was incorrect
 - [Phase 10-01]: CLI SQL intentionally duplicated from MCP tools — isolation between sync CLI and async MCP layers by design
+- [Phase 10-02]: Plan context column names did not match actual migrations for chapters (no start_day/end_day/primary_location) and name_registry (no character_id/character_role/faction) — auto-fixed using migration SQL as ground truth
+- [Phase 10-02]: novel name register uses --entity-type and --culture flags (not --role/--faction) to match actual name_registry schema; suggest resolves culture_id via cultures.name then factions.culture_id
 
 ### Roadmap Evolution
 
@@ -185,6 +188,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T22:59:53.084Z
-Stopped at: Completed 10-cli-completion-integration-testing 10-01-PLAN.md
+Last session: 2026-03-08T23:01:22.525Z
+Stopped at: Completed 10-02-PLAN.md (export + name CLI commands)
 Resume file: None
