@@ -99,17 +99,17 @@
 - [x] **SESS-05**: Claude can retrieve project-level metrics (word count, chapter count, session count) (`get_project_metrics`)
 - [x] **SESS-06**: Claude can log a project metrics snapshot (`log_project_snapshot`)
 - [x] **SESS-07**: Claude can retrieve POV balance across chapters (chapter count and word count per POV character) (`get_pov_balance`)
-- [ ] **SESS-08**: Claude can retrieve open questions (`get_open_questions`)
-- [ ] **SESS-09**: Claude can log a new open question (`log_open_question`)
-- [ ] **SESS-10**: Claude can mark an open question as answered (`answer_open_question`)
+- [x] **SESS-08**: Claude can retrieve open questions (`get_open_questions`)
+- [x] **SESS-09**: Claude can log a new open question (`log_open_question`)
+- [x] **SESS-10**: Claude can mark an open question as answered (`answer_open_question`)
 
 ### MCP — Timeline Domain
 
-- [ ] **TIME-01**: Claude can retrieve all POV character positions at a given chapter (`get_pov_positions`)
-- [ ] **TIME-02**: Claude can retrieve a specific POV character's chronological position (`get_pov_position`)
-- [ ] **TIME-03**: Claude can retrieve a timeline event by ID (`get_event`)
-- [ ] **TIME-04**: Claude can list events within a chapter range or time range (`list_events`)
-- [ ] **TIME-05**: Claude can retrieve travel segments for a character (`get_travel_segments`)
+- [x] **TIME-01**: Claude can retrieve all POV character positions at a given chapter (`get_pov_positions`)
+- [x] **TIME-02**: Claude can retrieve a specific POV character's chronological position (`get_pov_position`)
+- [x] **TIME-03**: Claude can retrieve a timeline event by ID (`get_event`)
+- [x] **TIME-04**: Claude can list events within a chapter range or time range (`list_events`)
+- [x] **TIME-05**: Claude can retrieve travel segments for a character (`get_travel_segments`)
 - [ ] **TIME-06**: Claude can validate whether travel between two locations is realistic given elapsed in-story time (`validate_travel_realism`)
 - [ ] **TIME-07**: Claude can create or update a timeline event (`upsert_event`)
 - [ ] **TIME-08**: Claude can create or update a POV chronological position (`upsert_pov_position`)
@@ -312,14 +312,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-05 | Phase 7: Session & Timeline | Complete |
 | SESS-06 | Phase 7: Session & Timeline | Complete |
 | SESS-07 | Phase 7: Session & Timeline | Complete |
-| SESS-08 | Phase 7: Session & Timeline | Pending |
-| SESS-09 | Phase 7: Session & Timeline | Pending |
-| SESS-10 | Phase 7: Session & Timeline | Pending |
-| TIME-01 | Phase 7: Session & Timeline | Pending |
-| TIME-02 | Phase 7: Session & Timeline | Pending |
-| TIME-03 | Phase 7: Session & Timeline | Pending |
-| TIME-04 | Phase 7: Session & Timeline | Pending |
-| TIME-05 | Phase 7: Session & Timeline | Pending |
+| SESS-08 | Phase 7: Session & Timeline | Complete |
+| SESS-09 | Phase 7: Session & Timeline | Complete |
+| SESS-10 | Phase 7: Session & Timeline | Complete |
+| TIME-01 | Phase 7: Session & Timeline | Complete |
+| TIME-02 | Phase 7: Session & Timeline | Complete |
+| TIME-03 | Phase 7: Session & Timeline | Complete |
+| TIME-04 | Phase 7: Session & Timeline | Complete |
+| TIME-05 | Phase 7: Session & Timeline | Complete |
 | TIME-06 | Phase 7: Session & Timeline | Pending |
 | TIME-07 | Phase 7: Session & Timeline | Pending |
 | TIME-08 | Phase 7: Session & Timeline | Pending |

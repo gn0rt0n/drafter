@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 07-session-timeline-01-PLAN.md
-last_updated: "2026-03-08T01:33:30.585Z"
+stopped_at: Completed 07-session-timeline-02-PLAN.md
+last_updated: "2026-03-08T01:37:27.580Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
   percent: 100
 ---
 
@@ -72,6 +72,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 06-gate-system P02 | 10 | 2 tasks | 3 files |
 | Phase 06-gate-system P03 | 12 | 2 tasks | 5 files |
 | Phase 07-session-timeline P01 | 2 | 1 tasks | 2 files |
+| Phase 07-session-timeline P02 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase 07-session-timeline]: SessionStartResult carries briefing in MCP tool response body so Claude reads prior session context as MCP caller — not via stderr
 - [Phase 07-session-timeline]: start_session auto-closes open sessions before inserting new one; close_session auto-populates carried_forward from unanswered open_questions
 - [Phase 07-session-timeline]: get_project_metrics is live-only aggregate — does not write to project_metrics_snapshots; log_project_snapshot is the explicit persist tool
+- [Phase 07-session-timeline]: get_travel_segments returns empty list not NotFoundResponse — character with no travel is valid state, locked in CONTEXT.md
+- [Phase 07-session-timeline]: list_events prioritises exact chapter_id over start/end_chapter range when both provided — unambiguous semantics
+- [Phase 07-session-timeline]: get_open_questions filters answered_at IS NULL — only unanswered questions returned to Claude
 
 ### Pending Todos
 
@@ -147,6 +151,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T01:33:30.583Z
-Stopped at: Completed 07-session-timeline-01-PLAN.md
+Last session: 2026-03-08T01:37:27.577Z
+Stopped at: Completed 07-session-timeline-02-PLAN.md
 Resume file: None
