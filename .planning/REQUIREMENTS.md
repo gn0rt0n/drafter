@@ -199,8 +199,8 @@
 
 - [x] **TEST-01**: Schema validation test compares Pydantic model fields against `PRAGMA table_info` for every domain — fails if models drift from migrations
 - [x] **TEST-02**: Clean-rebuild test runs `novel db migrate` from scratch, validates all FK constraints with `PRAGMA foreign_key_check`, and confirms all seed data inserts cleanly with `PRAGMA foreign_keys=ON`
-- [ ] **TEST-03**: In-memory MCP tool tests use the FastMCP in-memory client to call every tool, verifying callable interface and error contract compliance (not-found returns null, validation returns is_valid:false, gate violation returns requires_action)
-- [ ] **TEST-04**: Tool selection accuracy check validates that representative natural-language queries trigger the correct tools at 80-tool scale (Claude Code Tool Search validation)
+- [x] **TEST-03**: In-memory MCP tool tests use the FastMCP in-memory client to call every tool, verifying callable interface and error contract compliance (not-found returns null, validation returns is_valid:false, gate violation returns requires_action)
+- [x] **TEST-04**: Tool selection accuracy check validates that representative natural-language queries trigger the correct tools at 80-tool scale (Claude Code Tool Search validation)
 
 ## v2 Requirements
 
@@ -367,8 +367,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLNM-01 | Phase 10: CLI Completion & Integration Testing | Complete |
 | CLNM-02 | Phase 10: CLI Completion & Integration Testing | Complete |
 | CLNM-03 | Phase 10: CLI Completion & Integration Testing | Complete |
-| TEST-03 | Phase 10: CLI Completion & Integration Testing | Pending |
-| TEST-04 | Phase 10: CLI Completion & Integration Testing | Pending |
+| TEST-03 | Phase 10: CLI Completion & Integration Testing | Complete |
+| TEST-04 | Phase 10: CLI Completion & Integration Testing | Complete |
 
 **Coverage:**
 - v1 requirements: 131 total

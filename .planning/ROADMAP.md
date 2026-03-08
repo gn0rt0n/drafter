@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Session & Timeline** - Session management, project metrics, timeline events, and travel validation tools (completed 2026-03-08)
 - [x] **Phase 8: Canon, Knowledge & Foreshadowing** - Continuity tracking, reader state, dramatic irony, foreshadowing, and literary device tools (completed 2026-03-08)
 - [x] **Phase 9: Names, Voice & Publishing** - Name registry, voice profiles, and publishing asset tools (completed 2026-03-08)
-- [ ] **Phase 10: CLI Completion & Integration Testing** - Remaining CLI subcommands (session, query, export, name) and full-scale tool selection validation
+- [x] **Phase 10: CLI Completion & Integration Testing** - Remaining CLI subcommands (session, query, export, name) and full-scale tool selection validation (completed 2026-03-08)
 
 ## Phase Details
 
@@ -205,14 +205,14 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
 | 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
-| 10. CLI Completion & Integration Testing | 2/3 | In Progress|  |
+| 10. CLI Completion & Integration Testing | 3/3 | Complete   | 2026-03-08 |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 11 to break down)
