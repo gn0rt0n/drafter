@@ -175,14 +175,14 @@
 
 ### CLI — Session, Gate & Query Commands
 
-- [ ] **CLSG-01**: `novel session start` displays a briefing from the last session log
-- [ ] **CLSG-02**: `novel session close` prompts for session summary and writes a session log
+- [x] **CLSG-01**: `novel session start` displays a briefing from the last session log
+- [x] **CLSG-02**: `novel session close` prompts for session summary and writes a session log
 - [x] **CLSG-03**: `novel gate check` runs the full 33-item gate audit and displays a gap report
 - [x] **CLSG-04**: `novel gate status` displays current gate status and blocking item count
 - [x] **CLSG-05**: `novel gate certify` certifies the gate when all items pass
-- [ ] **CLSG-06**: `novel query pov-balance` displays POV distribution by chapter and word count
-- [ ] **CLSG-07**: `novel query arc-health` displays arc progression for all POV characters
-- [ ] **CLSG-08**: `novel query thread-gaps` displays subplots overdue for a touchpoint
+- [x] **CLSG-06**: `novel query pov-balance` displays POV distribution by chapter and word count
+- [x] **CLSG-07**: `novel query arc-health` displays arc progression for all POV characters
+- [x] **CLSG-08**: `novel query thread-gaps` displays subplots overdue for a touchpoint
 
 ### CLI — Export Commands
 
@@ -357,11 +357,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUBL-03 | Phase 9: Names, Voice & Publishing | Complete |
 | PUBL-04 | Phase 9: Names, Voice & Publishing | Complete |
 | PUBL-05 | Phase 9: Names, Voice & Publishing | Complete |
-| CLSG-01 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLSG-02 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLSG-06 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLSG-07 | Phase 10: CLI Completion & Integration Testing | Pending |
-| CLSG-08 | Phase 10: CLI Completion & Integration Testing | Pending |
+| CLSG-01 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLSG-02 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLSG-06 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLSG-07 | Phase 10: CLI Completion & Integration Testing | Complete |
+| CLSG-08 | Phase 10: CLI Completion & Integration Testing | Complete |
 | CLEX-01 | Phase 10: CLI Completion & Integration Testing | Pending |
 | CLEX-02 | Phase 10: CLI Completion & Integration Testing | Pending |
 | CLNM-01 | Phase 10: CLI Completion & Integration Testing | Pending |

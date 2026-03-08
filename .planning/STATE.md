@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 10 context gathered
-last_updated: "2026-03-08T22:38:50.892Z"
+stopped_at: Completed 10-cli-completion-integration-testing 10-01-PLAN.md
+last_updated: "2026-03-08T22:59:53.087Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
   completed_phases: 9
-  total_plans: 30
-  completed_plans: 30
+  total_plans: 33
+  completed_plans: 31
   percent: 100
 ---
 
@@ -80,6 +80,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 09-names-voice-publishing P02 | 1 | 1 tasks | 1 files |
 | Phase 09-names-voice-publishing P01 | 3 | 1 tasks | 3 files |
 | Phase 09-names-voice-publishing P03 | 6 | 2 tasks | 4 files |
+| Phase 10-cli-completion-integration-testing P01 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,8 @@ Recent decisions affecting current work:
 - [Phase 09-03]: upsert_publishing_asset ON CONFLICT targets id (PK) not a named UNIQUE — publishing_assets has no UNIQUE beyond PK
 - [Phase 09-03]: update_submission SELECT-back after UPDATE required — SQLite does not error on UPDATE of missing row (matches resolve_continuity_issue pattern from Phase 08-01)
 - [Phase 09-03]: gate_ready seed has voice_profiles for all 5 characters — test fixture inserts 6th character (Tessan Vel) to test None-id CREATE branch of upsert_voice_profile
+- [Phase 10-01]: open_questions uses column 'question' not 'question_text' — migration 021 is ground truth, plan prose was incorrect
+- [Phase 10-01]: CLI SQL intentionally duplicated from MCP tools — isolation between sync CLI and async MCP layers by design
 
 ### Roadmap Evolution
 
@@ -182,6 +185,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T22:38:50.890Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-cli-completion-integration-testing/10-CONTEXT.md
+Last session: 2026-03-08T22:59:53.084Z
+Stopped at: Completed 10-cli-completion-integration-testing 10-01-PLAN.md
+Resume file: None
