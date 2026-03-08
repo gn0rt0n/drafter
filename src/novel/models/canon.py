@@ -181,3 +181,16 @@ class ReaderExperienceNote(BaseModel):
     note_type: str = "pacing"
     content: str
     created_at: str | None = None
+
+
+class StoryDecision(BaseModel):
+    """Represents a row in the decisions_log table (migration 021)."""
+
+    id: int | None = None
+    decision_type: str = "plot"
+    description: str
+    rationale: str | None = None
+    alternatives: str | None = None
+    session_id: int | None = None
+    chapter_id: int | None = None
+    created_at: str | None = None
