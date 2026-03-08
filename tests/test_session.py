@@ -336,3 +336,60 @@ async def test_answer_open_question(test_db_path):
     data = json.loads(result.content[0].text)
     assert data["answer"] == "Yes"
     assert data["answered_at"] is not None
+
+
+# ---------------------------------------------------------------------------
+# Error contract tests: gate violation (uncertified DB)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def uncertified_db_path(tmp_path):
+    """Fresh uncertified DB for gate violation tests.
+
+    Function-scoped to avoid conflict with the session-scoped certified_gate
+    autouse fixture. This DB has migrations + minimal seed but NO gate certification.
+    """
+    db_file = tmp_path / "uncertified.db"
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("PRAGMA foreign_keys=ON")
+    apply_migrations(conn)
+    load_seed_profile(conn, "minimal")
+    conn.commit()
+    conn.close()
+    return str(db_file)
+
+
+@pytest.mark.anyio
+async def test_start_session_gate_violation(uncertified_db_path):
+    """start_session returns requires_action when gate is uncertified.
+
+    Uses a fresh DB with no gate certification. start_session calls check_gate,
+    which must return a GateViolation response (not raise an error).
+    """
+    result = await _call_tool(uncertified_db_path, "start_session", {})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Error contract tests: not-found responses
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_close_session_not_found(test_db_path):
+    """close_session returns null or not_found_message for missing session_id.
+
+    session_id=99999 cannot exist in seed data. close_session does a SELECT-back
+    after UPDATE — if no row is found it returns NotFoundResponse or None.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "close_session",
+        {"session_id": 99999, "summary": "test summary for nonexistent session"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data is None or "not_found_message" in data

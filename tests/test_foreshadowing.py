@@ -346,3 +346,38 @@ async def test_log_motif_occurrence(test_db_path):
     assert data["motif_id"] == 1
     assert data["chapter_id"] == 2
     assert data["description"] == "Crow motif recurs"
+
+
+# ---------------------------------------------------------------------------
+# Error contract tests: gate violation (uncertified DB)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def uncertified_db_path(tmp_path):
+    """Fresh uncertified DB for gate violation tests.
+
+    Function-scoped to avoid conflict with the session-scoped certified_gate
+    autouse fixture. This DB has migrations + minimal seed but NO gate certification.
+    """
+    db_file = tmp_path / "uncertified.db"
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("PRAGMA foreign_keys=ON")
+    apply_migrations(conn)
+    load_seed_profile(conn, "minimal")
+    conn.commit()
+    conn.close()
+    return str(db_file)
+
+
+@pytest.mark.anyio
+async def test_get_foreshadowing_gate_violation(uncertified_db_path):
+    """get_foreshadowing returns requires_action when gate is uncertified.
+
+    Uses a fresh DB with no gate certification. All foreshadowing tools call check_gate,
+    which must return a GateViolation response (not raise an error).
+    """
+    result = await _call_tool(uncertified_db_path, "get_foreshadowing", {})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
