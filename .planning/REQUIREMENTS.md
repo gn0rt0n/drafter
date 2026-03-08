@@ -116,21 +116,21 @@
 
 ### MCP — Canon & Continuity Domain
 
-- [ ] **CANO-01**: Claude can retrieve canon facts for a named domain (magic, politics, geography, etc.) (`get_canon_facts`)
-- [ ] **CANO-02**: Claude can log a new canon fact (`log_canon_fact`)
-- [ ] **CANO-03**: Claude can log a story decision (`log_decision`)
-- [ ] **CANO-04**: Claude can retrieve the decisions log (`get_decisions`)
-- [ ] **CANO-05**: Claude can log a continuity issue with severity (`log_continuity_issue`)
-- [ ] **CANO-06**: Claude can retrieve open continuity issues filtered by severity (`get_continuity_issues`)
-- [ ] **CANO-07**: Claude can mark a continuity issue as resolved (`resolve_continuity_issue`)
+- [x] **CANO-01**: Claude can retrieve canon facts for a named domain (magic, politics, geography, etc.) (`get_canon_facts`)
+- [x] **CANO-02**: Claude can log a new canon fact (`log_canon_fact`)
+- [x] **CANO-03**: Claude can log a story decision (`log_decision`)
+- [x] **CANO-04**: Claude can retrieve the decisions log (`get_decisions`)
+- [x] **CANO-05**: Claude can log a continuity issue with severity (`log_continuity_issue`)
+- [x] **CANO-06**: Claude can retrieve open continuity issues filtered by severity (`get_continuity_issues`)
+- [x] **CANO-07**: Claude can mark a continuity issue as resolved (`resolve_continuity_issue`)
 
 ### MCP — Knowledge & Reader State Domain
 
-- [ ] **KNOW-01**: Claude can retrieve reader information state at a chapter (what readers know at that point) (`get_reader_state`)
-- [ ] **KNOW-02**: Claude can retrieve the dramatic irony inventory (what readers know that characters don't) (`get_dramatic_irony_inventory`)
-- [ ] **KNOW-03**: Claude can retrieve planned and actual reveals for readers (`get_reader_reveals`)
-- [ ] **KNOW-04**: Claude can create or update reader information state (`upsert_reader_state`)
-- [ ] **KNOW-05**: Claude can log a dramatic irony entry (`log_dramatic_irony`)
+- [x] **KNOW-01**: Claude can retrieve reader information state at a chapter (what readers know at that point) (`get_reader_state`)
+- [x] **KNOW-02**: Claude can retrieve the dramatic irony inventory (what readers know that characters don't) (`get_dramatic_irony_inventory`)
+- [x] **KNOW-03**: Claude can retrieve planned and actual reveals for readers (`get_reader_reveals`)
+- [x] **KNOW-04**: Claude can create or update reader information state (`upsert_reader_state`)
+- [x] **KNOW-05**: Claude can log a dramatic irony entry (`log_dramatic_irony`)
 
 ### MCP — Foreshadowing & Literary Domain
 
@@ -323,18 +323,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-06 | Phase 7: Session & Timeline | Complete |
 | TIME-07 | Phase 7: Session & Timeline | Complete |
 | TIME-08 | Phase 7: Session & Timeline | Complete |
-| CANO-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-06 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| CANO-07 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| KNOW-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| KNOW-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| KNOW-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| KNOW-04 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
-| KNOW-05 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
+| CANO-01 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-02 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-03 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-04 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-05 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-06 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| CANO-07 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| KNOW-01 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| KNOW-02 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| KNOW-03 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| KNOW-04 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
+| KNOW-05 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | FORE-01 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
 | FORE-02 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |
 | FORE-03 | Phase 8: Canon, Knowledge & Foreshadowing | Pending |

@@ -203,6 +203,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Plot & Arcs | 2/3 | Complete    | 2026-03-07 |
 | 6. Gate System | 3/3 | Complete    | 2026-03-07 |
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
-| 8. Canon, Knowledge & Foreshadowing | 0/3 | Not started | - |
+| 8. Canon, Knowledge & Foreshadowing | 2/3 | In Progress|  |
 | 9. Names, Voice & Publishing | 0/0 | Not started | - |
 | 10. CLI Completion & Integration Testing | 0/0 | Not started | - |

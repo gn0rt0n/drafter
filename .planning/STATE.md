@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-08T01:54:43.493Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-08T02:11:11.936Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 24
-  completed_plans: 24
+  total_plans: 27
+  completed_plans: 26
   percent: 100
 ---
 
@@ -74,6 +74,8 @@ Progress: [████████████████████] 3/3 pla
 | Phase 07-session-timeline P01 | 2 | 1 tasks | 2 files |
 | Phase 07-session-timeline P02 | 5 | 2 tasks | 2 files |
 | Phase 07-session-timeline P03 | 7 | 2 tasks | 6 files |
+| Phase 08-canon-knowledge-foreshadowing P01 | 4 | 2 tasks | 2 files |
+| Phase 08-canon-knowledge-foreshadowing P02 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -145,6 +147,10 @@ Recent decisions affecting current work:
 - [Phase 07-03]: upsert_event and log_open_question apply Python-level defaults before INSERT to avoid NOT NULL constraint failures when caller passes None
 - [Phase 07-03]: Gate certification uses session-scoped autouse synchronous sqlite3 fixture — avoids anyio cancel scope lifecycle issues with async session fixtures
 - [Phase 07-03]: chapters table uses actual_word_count not word_count — session.py get_project_metrics and log_project_snapshot bugs fixed
+- [Phase 08-01]: resolve_continuity_issue returns NotFoundResponse after UPDATE+SELECT — SQLite UPDATE does not error on missing row so SELECT-back is required to detect missing IDs
+- [Phase 08-01]: Canon tools use append-only INSERT (no ON CONFLICT) for canon_facts, decisions_log, continuity_issues — all are audit log tables
+- [Phase 08-02]: get_reader_state uses WHERE chapter_id <= ? (cumulative semantics) — complete reader knowledge snapshot at any story point in one call
+- [Phase 08-02]: log_dramatic_irony is append-only (no ON CONFLICT) — irony entries are discrete events consistent with log_ naming convention
 
 ### Pending Todos
 
@@ -156,6 +162,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T01:54:43.491Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-canon-knowledge-foreshadowing/08-CONTEXT.md
+Last session: 2026-03-08T02:11:11.933Z
+Stopped at: Completed 08-02-PLAN.md
+Resume file: None
