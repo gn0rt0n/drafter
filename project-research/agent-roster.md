@@ -127,8 +127,9 @@ Each agent below is justified because at this scale, its domain is large enough 
 - Assess whether the protagonist's transformation is structurally supported
 - Identify where the story's spine is being crowded out by subplots
 - Flag structural imbalances: Act 2 too long, Act 3 rushed — the most common problem in long fantasy
-- Evaluate the story's major turning points: inciting incident, midpoint, dark night of the soul, climax
-- Assess act-level word count proportions against targets
+- Use three-act structure to define overall pacing: act boundaries, escalation ceilings, and word count proportions per act
+- Use 7-point structure to design the novel's key turning points: Hook, Plot Turn 1, Pinch Point 1, Midpoint, Pinch Point 2, Plot Turn 2, Resolution — each mapped to a specific chapter
+- Coordinate with Arc Tracker to ensure each POV character's individual 7-point arc aligns with these story-level turning points
 - Escalate thematic concerns to Arc Tracker and Thematic Architecture Agent
 
 **Key context loaded**:
@@ -360,7 +361,8 @@ the right intervals?"
 **Workflow phase**: Phase 2, monitored through Phase 4
 
 **Core tasks**:
-- Maintain `arc_health_log` for every major character: stated arc, expected midpoint shift, current progress, expected resolution
+- Maintain `arc_health_log` for every POV character using 7-point structure: Hook (opening state), Plot Turn 1, Pinch Point 1, Midpoint (reactive-to-proactive shift), Pinch Point 2, Plot Turn 2, Resolution — chapter assignments for each beat, current progress, and health status
+- Verify each POV character's 7-point arc is synchronized against the main story's 3-act structure — arc beats must land at structurally appropriate act positions; flag desynchronization
 - Flag arcs that have stalled — characters who haven't had meaningful belief or behavior change in too many chapters
 - Identify passive arcs — characters having things done to them rather than making meaningful choices
 - Track thematic arcs: how does each POV character's story embody a different facet of the novel's central theme?
@@ -444,6 +446,7 @@ on the established timeline? What events would she have missed?"
 - Track emotional contrast between threads: when threads are intercut, are they creating effective contrast or unintentional tonal clashes?
 - Identify scenes where the choice of POV character is wrong — where the story would be better served by a different viewpoint
 - Track thread convergence points: when POV threads are about to intersect, ensure both are at the right narrative and emotional position
+- Track multi-POV arc synchronization: each POV character owns a distinct 7-point arc, but their parallel beats (Midpoints, Plot Turns, Pinch Points) should create deliberate thematic resonance or contrast — flag when arcs are structurally isolated from each other or misaligned with the 3-act spine
 
 **Key context loaded**:
 `chapters`, `character_arcs`, `pov_balance_snapshots`, `dramatic_irony_inventory`, `pov_chronological_position`

@@ -349,8 +349,9 @@ Agent file format:
 ---
 description: Story Architect — responsible for act-level structure, thematic throughline, and major turning points
 capabilities:
-  - Evaluate three-act health and structural integrity
-  - Define or revise act boundaries and major plot turns
+  - Evaluate three-act health and structural integrity — act boundaries, escalation ceilings, word count proportions
+  - Design key turning points using 7-point structure: Hook, Plot Turn 1, Pinch 1, Midpoint, Pinch 2, Plot Turn 2, Resolution — each mapped to a specific chapter
+  - Define or revise act boundaries and map 7-point beats to specific chapters
   - Map thematic throughline to structural beats
   - Identify structural gaps and escalation failures
   - Produce chapter-level structural obligation maps
@@ -629,7 +630,7 @@ Here's the full set, organized by domain:
 12. The three acts have defined boundary chapters and are not null on `inciting_incident`, `midpoint`, `climax` fields
 13. All `plot_threads` marked `is_primary = true` have defined resolution plans
 14. All `chekovs_gun_registry` entries have a non-null `planned_payoff_chapter`
-15. All 6 POV characters have at least one `character_arc` record with shape and major beat chapters defined
+15. All 6 POV characters have a `character_arc` record with all 7-point beat chapters defined (Hook, Plot Turn 1, Pinch 1, Midpoint, Pinch 2, Plot Turn 2, Resolution) and beats verified against act-structure alignment
 16. All 55 chapters have a POV character assignment in `chapters.pov_character_id`
 17. The `foreshadowing_registry` has no entries with `planted_chapter` but null `payoff_chapter`
 18. All `prophecy_registry` entries have at least one fulfillment path documented
