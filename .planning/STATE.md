@@ -156,6 +156,10 @@ Recent decisions affecting current work:
 - [Phase 08-03]: log_motif_occurrence is append-only: each motif appearance is a discrete historical event
 - [Phase 08-03]: Test FK compliance: use seed chapter IDs (1-3) not arbitrary chapter numbers
 
+### Roadmap Evolution
+
+- Phase 11 added: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
+
 ### Pending Todos
 
 None yet.
