@@ -368,6 +368,10 @@ def register(mcp: FastMCP) -> None:
             The created or updated Event row, or GateViolation if gate is
             not certified.
         """
+        # Apply SQL DEFAULT values for NOT NULL columns when caller passes None
+        effective_event_type = event_type if event_type is not None else "plot"
+        effective_canon_status = canon_status if canon_status is not None else "draft"
+
         async with get_connection() as conn:
             violation = await check_gate(conn)
             if violation:
@@ -381,7 +385,7 @@ def register(mcp: FastMCP) -> None:
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         name,
-                        event_type,
+                        effective_event_type,
                         chapter_id,
                         location_id,
                         in_story_date,
@@ -389,7 +393,7 @@ def register(mcp: FastMCP) -> None:
                         summary,
                         significance,
                         notes,
-                        canon_status,
+                        effective_canon_status,
                     ),
                 )
                 new_id = cursor.lastrowid
@@ -409,7 +413,7 @@ def register(mcp: FastMCP) -> None:
                     (
                         event_id,
                         name,
-                        event_type,
+                        effective_event_type,
                         chapter_id,
                         location_id,
                         in_story_date,
@@ -417,7 +421,7 @@ def register(mcp: FastMCP) -> None:
                         summary,
                         significance,
                         notes,
-                        canon_status,
+                        effective_canon_status,
                     ),
                 )
                 new_id = event_id

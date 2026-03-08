@@ -298,7 +298,7 @@ def register(mcp: FastMCP) -> None:
                 return violation
 
             wc_rows = await conn.execute_fetchall(
-                "SELECT COALESCE(SUM(word_count), 0) AS word_count FROM chapters",
+                "SELECT COALESCE(SUM(actual_word_count), 0) AS word_count FROM chapters",
                 [],
             )
             ch_rows = await conn.execute_fetchall(
@@ -354,7 +354,7 @@ def register(mcp: FastMCP) -> None:
 
             # Run same live aggregates as get_project_metrics
             wc_rows = await conn.execute_fetchall(
-                "SELECT COALESCE(SUM(word_count), 0) AS word_count FROM chapters",
+                "SELECT COALESCE(SUM(actual_word_count), 0) AS word_count FROM chapters",
                 [],
             )
             ch_rows = await conn.execute_fetchall(
@@ -421,7 +421,7 @@ def register(mcp: FastMCP) -> None:
             rows = await conn.execute_fetchall(
                 """SELECT pov_character_id AS character_id,
                           COUNT(*) AS chapter_count,
-                          COALESCE(SUM(word_count), 0) AS word_count
+                          COALESCE(SUM(actual_word_count), 0) AS word_count
                    FROM chapters
                    WHERE pov_character_id IS NOT NULL
                    GROUP BY pov_character_id
@@ -502,6 +502,10 @@ def register(mcp: FastMCP) -> None:
             The newly created OpenQuestion row, or GateViolation if gate is
             not certified.
         """
+        # Apply SQL DEFAULT values for NOT NULL columns when caller passes None
+        effective_domain = domain if domain is not None else "general"
+        effective_priority = priority if priority is not None else "normal"
+
         async with get_connection() as conn:
             violation = await check_gate(conn)
             if violation:
@@ -511,7 +515,7 @@ def register(mcp: FastMCP) -> None:
                 "INSERT INTO open_questions "
                 "(question, domain, session_id, priority, notes) "
                 "VALUES (?, ?, ?, ?, ?)",
-                (question, domain, session_id, priority, notes),
+                (question, effective_domain, session_id, effective_priority, notes),
             )
             new_id = cursor.lastrowid
             await conn.commit()
