@@ -68,3 +68,11 @@ class PovChronologicalPosition(BaseModel):
     notes: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class TravelValidationResult(BaseModel):
+    """Result of travel realism validation for a travel segment or character."""
+
+    is_realistic: bool
+    issues: list[str]
+    segment: TravelSegment | None = None
