@@ -4,6 +4,7 @@ Phase 6: Character, relationship, chapter, scene, world, magic, plot, arc,
 and gate tools registered.
 Phase 7: Session and timeline tools registered.
 Phase 8: Canon, knowledge, and foreshadowing tools registered.
+Phase 9 (partial): Names tools registered (gate-free).
 
 IMPORTANT: No print() statements here or anywhere in this module tree.
 All logging goes to stderr via the logging module. print() corrupts
@@ -18,7 +19,7 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
-from novel.tools import characters, relationships, chapters, scenes, world, magic, plot, arcs, gate, session, timeline, canon, knowledge, foreshadowing
+from novel.tools import characters, relationships, chapters, scenes, world, magic, plot, arcs, gate, session, timeline, canon, knowledge, foreshadowing, names
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,9 @@ timeline.register(mcp)
 canon.register(mcp)
 knowledge.register(mcp)
 foreshadowing.register(mcp)
+
+# Register domain tools — Phase 9 (names — gate-free)
+names.register(mcp)
 
 
 def run() -> None:
