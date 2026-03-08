@@ -8,6 +8,8 @@ Subcommand groups:
     novel gate ...    — architecture gate (check, status, certify)
     novel export ...  — export commands (regenerate chapter markdown files)
     novel name ...    — name registry commands (check, register, suggest)
+    novel session ... — session management (start, close)
+    novel query ...   — narrative query commands (pov-balance, arc-health, thread-gaps)
 """
 
 import typer
@@ -16,6 +18,8 @@ from novel.db import cli as db_cli  # noqa: F401 — registers db subcommands
 from novel.gate import cli as gate_cli  # noqa: F401 — registers gate subcommands
 from novel.export import cli as export_cli  # noqa: F401 — registers export subcommands
 from novel.name import cli as name_cli  # noqa: F401 — registers name subcommands
+from novel.session import cli as session_cli  # noqa: F401 — registers session subcommands
+from novel.query import cli as query_cli  # noqa: F401 — registers query subcommands
 
 app = typer.Typer(
     name="novel",
@@ -34,6 +38,12 @@ app.add_typer(export_cli.app, name="export")
 
 # Register the name subcommand group (Phase 10)
 app.add_typer(name_cli.app, name="name")
+
+# Register the session subcommand group (Phase 10)
+app.add_typer(session_cli.app, name="session")
+
+# Register the query subcommand group (Phase 10)
+app.add_typer(query_cli.app, name="query")
 
 
 if __name__ == "__main__":
