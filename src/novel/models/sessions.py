@@ -123,3 +123,15 @@ class DecisionsLogEntry(BaseModel):
     session_id: int | None = None
     chapter_id: int | None = None
     created_at: str | None = None
+
+
+class SessionStartResult(BaseModel):
+    """Returned by start_session. Carries the new session and any prior session briefing.
+
+    The briefing field contains the most recent closed session's data (summary +
+    carried_forward) so Claude can read it directly from the MCP tool response.
+    If no prior session exists, briefing is None.
+    """
+
+    session: SessionLog
+    briefing: SessionLog | None = None

@@ -1,0 +1,438 @@
+"""Session domain MCP tools.
+
+All 7 session tools are registered via the register(mcp) function pattern.
+This module is standalone — it does not modify server.py; wiring happens in
+the server module.
+
+IMPORTANT: Never use the print function in this module. All logging goes to
+stderr via the logging module — using print corrupts the stdio protocol.
+"""
+
+import json
+import logging
+
+from mcp.server.fastmcp import FastMCP
+
+from novel.mcp.db import get_connection
+from novel.mcp.gate import check_gate
+from novel.models.sessions import (
+    AgentRunLog,
+    OpenQuestion,  # noqa: F401 — imported for completeness, used indirectly
+    ProjectMetricsSnapshot,
+    PovBalanceSnapshot,
+    SessionLog,
+    SessionStartResult,
+)
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
+
+logger = logging.getLogger(__name__)
+
+
+def register(mcp: FastMCP) -> None:
+    """Register all 7 session domain tools with the given FastMCP instance.
+
+    Tools are defined as local async functions and decorated with @mcp.tool().
+    The FastMCP instance is always the one passed in — never imported globally.
+
+    All tools are prose-phase tools — each calls check_gate(conn) at the top
+    before any DB logic and returns GateViolation if the gate is not certified.
+
+    Args:
+        mcp: The FastMCP server instance to register tools against.
+    """
+
+    # ------------------------------------------------------------------
+    # start_session (SESS-01)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def start_session() -> SessionStartResult | GateViolation:
+        """Start a new writing session and return briefing from the prior session.
+
+        If an open session already exists, it is auto-closed before the new
+        session is created.
+
+        The briefing field in the response contains the most recent closed
+        session's data (summary + carried_forward) so Claude can read it
+        directly from the MCP tool response body — not via stderr.
+
+        Returns:
+            SessionStartResult with the new session and optional prior-session
+            briefing, or GateViolation if the architecture gate is not
+            certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            # 1. Auto-close any open session
+            open_rows = await conn.execute_fetchall(
+                "SELECT * FROM session_logs WHERE closed_at IS NULL "
+                "ORDER BY started_at DESC LIMIT 1",
+                [],
+            )
+            if open_rows:
+                open_id = open_rows[0]["id"]
+                await conn.execute(
+                    "UPDATE session_logs SET closed_at = datetime('now'), "
+                    "notes = 'auto-closed by new session start' WHERE id = ?",
+                    (open_id,),
+                )
+                await conn.commit()
+
+            # 2. Get briefing from the most recent closed session
+            prior_rows = await conn.execute_fetchall(
+                "SELECT * FROM session_logs WHERE closed_at IS NOT NULL "
+                "ORDER BY started_at DESC LIMIT 1",
+                [],
+            )
+            prior_session_row = prior_rows[0] if prior_rows else None
+
+            # 3. INSERT new session
+            cursor = await conn.execute(
+                "INSERT INTO session_logs DEFAULT VALUES",
+                [],
+            )
+            new_id = cursor.lastrowid
+            await conn.commit()
+
+            # 4. SELECT back new row
+            new_rows = await conn.execute_fetchall(
+                "SELECT * FROM session_logs WHERE id = ?",
+                (new_id,),
+            )
+            new_session = SessionLog(**dict(new_rows[0]))
+
+            # 5. Build briefing if prior session exists
+            briefing = SessionLog(**dict(prior_session_row)) if prior_session_row else None
+
+            # 6. Return wrapper — briefing travels in the tool response body
+            return SessionStartResult(session=new_session, briefing=briefing)
+
+    # ------------------------------------------------------------------
+    # close_session (SESS-02)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def close_session(
+        session_id: int,
+        summary: str | None = None,
+        word_count_delta: int = 0,
+        chapters_touched: list[int] | None = None,
+    ) -> SessionLog | NotFoundResponse | GateViolation:
+        """Close an open session and record its summary and metadata.
+
+        Automatically populates carried_forward from all unanswered open
+        questions at the time of closing.
+
+        Args:
+            session_id: Primary key of the open session to close.
+            summary: Optional summary of work done this session.
+            word_count_delta: Net word count change this session (default: 0).
+            chapters_touched: List of chapter IDs worked on this session.
+
+        Returns:
+            Updated SessionLog row, NotFoundResponse if the session is not
+            found or already closed, or GateViolation if gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            # 1. Verify session exists and is open
+            session_rows = await conn.execute_fetchall(
+                "SELECT * FROM session_logs WHERE id = ? AND closed_at IS NULL",
+                (session_id,),
+            )
+            if not session_rows:
+                return NotFoundResponse(
+                    not_found_message=f"Open session {session_id} not found"
+                )
+
+            # 2. Auto-populate carried_forward from unanswered open questions
+            question_rows = await conn.execute_fetchall(
+                "SELECT question FROM open_questions WHERE answered_at IS NULL "
+                "ORDER BY created_at ASC",
+                [],
+            )
+            carried = [r["question"] for r in question_rows]
+
+            # 3. UPDATE session
+            await conn.execute(
+                "UPDATE session_logs SET "
+                "closed_at = datetime('now'), "
+                "summary = COALESCE(?, summary), "
+                "word_count_delta = ?, "
+                "chapters_touched = ?, "
+                "carried_forward = ? "
+                "WHERE id = ?",
+                (
+                    summary,
+                    word_count_delta,
+                    json.dumps(chapters_touched) if chapters_touched is not None else None,
+                    json.dumps(carried),
+                    session_id,
+                ),
+            )
+            await conn.commit()
+
+            # 4. SELECT back updated row
+            updated = await conn.execute_fetchall(
+                "SELECT * FROM session_logs WHERE id = ?",
+                (session_id,),
+            )
+            return SessionLog(**dict(updated[0]))
+
+    # ------------------------------------------------------------------
+    # get_last_session (SESS-03)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_last_session() -> SessionLog | NotFoundResponse | GateViolation:
+        """Retrieve the most recent session log entry.
+
+        Returns:
+            The most recently started SessionLog, NotFoundResponse if no
+            sessions exist, or GateViolation if gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM session_logs ORDER BY started_at DESC LIMIT 1",
+                [],
+            )
+            if not rows:
+                return NotFoundResponse(not_found_message="No session logs found")
+            return SessionLog(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # log_agent_run (SESS-04)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_agent_run(
+        agent_name: str,
+        tool_name: str,
+        input_summary: str | None = None,
+        output_summary: str | None = None,
+        duration_ms: int | None = None,
+        success: bool = True,
+        session_id: int | None = None,
+        error_message: str | None = None,
+    ) -> AgentRunLog | GateViolation:
+        """Append an agent run entry to the audit trail.
+
+        Append-only INSERT — no ON CONFLICT since agent_run_log is a pure
+        audit trail. Multiple entries per session are expected and valid.
+
+        Args:
+            agent_name: Name of the agent that ran (required).
+            tool_name: Name of the tool the agent called (required).
+            input_summary: Brief description of the tool input (optional).
+            output_summary: Brief description of the tool output (optional).
+            duration_ms: Duration of the run in milliseconds (optional).
+            success: Whether the run succeeded (default: True).
+            session_id: FK to session_logs — which session this run belongs
+                        to (optional).
+            error_message: Error description if success is False (optional).
+
+        Returns:
+            The newly created AgentRunLog row, or GateViolation if gate is
+            not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            cursor = await conn.execute(
+                "INSERT INTO agent_run_log "
+                "(session_id, agent_name, tool_name, input_summary, output_summary, "
+                "duration_ms, success, error_message) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    session_id,
+                    agent_name,
+                    tool_name,
+                    input_summary,
+                    output_summary,
+                    duration_ms,
+                    success,
+                    error_message,
+                ),
+            )
+            new_id = cursor.lastrowid
+            await conn.commit()
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM agent_run_log WHERE id = ?",
+                (new_id,),
+            )
+            return AgentRunLog(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # get_project_metrics (SESS-05)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_project_metrics() -> ProjectMetricsSnapshot | GateViolation:
+        """Retrieve live-computed project metrics (not stored snapshots).
+
+        Aggregates current counts directly from the database tables:
+        word_count from chapters, plus counts of chapters, scenes,
+        characters, and session_logs.
+
+        Returns:
+            ProjectMetricsSnapshot with live aggregate values (id and
+            snapshot_at will be None for live results), or GateViolation
+            if gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            wc_rows = await conn.execute_fetchall(
+                "SELECT COALESCE(SUM(word_count), 0) AS word_count FROM chapters",
+                [],
+            )
+            ch_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM chapters",
+                [],
+            )
+            sc_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM scenes",
+                [],
+            )
+            char_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM characters",
+                [],
+            )
+            sess_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM session_logs",
+                [],
+            )
+
+            return ProjectMetricsSnapshot(
+                word_count=wc_rows[0]["word_count"],
+                chapter_count=ch_rows[0]["cnt"],
+                scene_count=sc_rows[0]["cnt"],
+                character_count=char_rows[0]["cnt"],
+                session_count=sess_rows[0]["cnt"],
+            )
+
+    # ------------------------------------------------------------------
+    # log_project_snapshot (SESS-06)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_project_snapshot(
+        notes: str | None = None,
+    ) -> ProjectMetricsSnapshot | GateViolation:
+        """Persist a project metrics snapshot to the database.
+
+        Runs the same live aggregate queries as get_project_metrics, then
+        inserts a permanent snapshot row for historical tracking.
+
+        Args:
+            notes: Optional notes to store with the snapshot.
+
+        Returns:
+            The newly created ProjectMetricsSnapshot row (with id and
+            snapshot_at populated), or GateViolation if gate is not
+            certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            # Run same live aggregates as get_project_metrics
+            wc_rows = await conn.execute_fetchall(
+                "SELECT COALESCE(SUM(word_count), 0) AS word_count FROM chapters",
+                [],
+            )
+            ch_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM chapters",
+                [],
+            )
+            sc_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM scenes",
+                [],
+            )
+            char_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM characters",
+                [],
+            )
+            sess_rows = await conn.execute_fetchall(
+                "SELECT COUNT(*) AS cnt FROM session_logs",
+                [],
+            )
+
+            word_count = wc_rows[0]["word_count"]
+            chapter_count = ch_rows[0]["cnt"]
+            scene_count = sc_rows[0]["cnt"]
+            character_count = char_rows[0]["cnt"]
+            session_count = sess_rows[0]["cnt"]
+
+            cursor = await conn.execute(
+                "INSERT INTO project_metrics_snapshots "
+                "(word_count, chapter_count, scene_count, character_count, "
+                "session_count, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (word_count, chapter_count, scene_count, character_count, session_count, notes),
+            )
+            new_id = cursor.lastrowid
+            await conn.commit()
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM project_metrics_snapshots WHERE id = ?",
+                (new_id,),
+            )
+            return ProjectMetricsSnapshot(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # get_pov_balance (SESS-07)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_pov_balance() -> list[PovBalanceSnapshot] | GateViolation:
+        """Retrieve live-computed POV balance across all chapters.
+
+        Groups chapters by pov_character_id and aggregates chapter count
+        and total word count for each POV character. Only chapters with a
+        non-NULL pov_character_id are included.
+
+        Returns:
+            List of PovBalanceSnapshot records ordered by chapter_count
+            DESC (may be empty if no chapters have POV characters assigned),
+            or GateViolation if gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                """SELECT pov_character_id AS character_id,
+                          COUNT(*) AS chapter_count,
+                          COALESCE(SUM(word_count), 0) AS word_count
+                   FROM chapters
+                   WHERE pov_character_id IS NOT NULL
+                   GROUP BY pov_character_id
+                   ORDER BY chapter_count DESC""",
+                [],
+            )
+            return [
+                PovBalanceSnapshot(
+                    character_id=r["character_id"],
+                    chapter_count=r["chapter_count"],
+                    word_count=r["word_count"],
+                )
+                for r in rows
+            ]
