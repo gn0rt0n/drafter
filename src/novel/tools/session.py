@@ -1,6 +1,6 @@
 """Session domain MCP tools.
 
-All 7 session tools are registered via the register(mcp) function pattern.
+All 10 session tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -17,6 +17,7 @@ from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.sessions import (
     AgentRunLog,
+    OpenQuestion,
     ProjectMetricsSnapshot,
     PovBalanceSnapshot,
     SessionLog,
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 7 session domain tools with the given FastMCP instance.
+    """Register all 10 session domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -435,3 +436,133 @@ def register(mcp: FastMCP) -> None:
                 )
                 for r in rows
             ]
+
+    # ------------------------------------------------------------------
+    # get_open_questions (SESS-08)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_open_questions(
+        domain: str | None = None,
+    ) -> list[OpenQuestion] | GateViolation:
+        """Retrieve all unanswered open questions, optionally filtered by domain.
+
+        Only returns questions where answered_at IS NULL (unanswered).
+        Results are ordered by created_at ASC (oldest first).
+
+        Args:
+            domain: Optional domain filter (e.g. 'plot', 'character', 'world').
+                    If None, all unanswered questions across all domains are
+                    returned.
+
+        Returns:
+            List of OpenQuestion records (may be empty), or GateViolation if
+            gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            sql = "SELECT * FROM open_questions WHERE answered_at IS NULL"
+            params: list = []
+            if domain is not None:
+                sql += " AND domain = ?"
+                params.append(domain)
+            sql += " ORDER BY created_at ASC"
+
+            rows = await conn.execute_fetchall(sql, params)
+            return [OpenQuestion(**dict(r)) for r in rows]
+
+    # ------------------------------------------------------------------
+    # log_open_question (SESS-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_open_question(
+        question: str,
+        domain: str | None = None,
+        session_id: int | None = None,
+        priority: str | None = None,
+        notes: str | None = None,
+    ) -> OpenQuestion | GateViolation:
+        """Append a new open question to the log (append-only, no upsert).
+
+        Open questions are always appended — duplicate questions are allowed
+        since context and priority may differ between occurrences.
+
+        Args:
+            question: The question text (required).
+            domain: Optional domain classification (e.g. 'plot', 'character').
+            session_id: FK to session_logs — which session raised this question.
+            priority: Optional priority level (e.g. 'high', 'normal', 'low').
+            notes: Optional freeform notes about the question.
+
+        Returns:
+            The newly created OpenQuestion row, or GateViolation if gate is
+            not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            cursor = await conn.execute(
+                "INSERT INTO open_questions "
+                "(question, domain, session_id, priority, notes) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (question, domain, session_id, priority, notes),
+            )
+            new_id = cursor.lastrowid
+            await conn.commit()
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM open_questions WHERE id = ?",
+                (new_id,),
+            )
+            return OpenQuestion(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # answer_open_question (SESS-10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def answer_open_question(
+        question_id: int,
+        answer: str,
+    ) -> OpenQuestion | NotFoundResponse | GateViolation:
+        """Mark an open question as answered with a recorded answer and timestamp.
+
+        Updates the answer and sets answered_at to the current UTC time.
+        If the question does not exist, returns NotFoundResponse.
+
+        Args:
+            question_id: Primary key of the open_questions row to answer.
+            answer: The answer text to record (required).
+
+        Returns:
+            The updated OpenQuestion row with answered_at populated,
+            NotFoundResponse if the question_id does not exist, or
+            GateViolation if gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            await conn.execute(
+                "UPDATE open_questions SET answer = ?, answered_at = datetime('now') "
+                "WHERE id = ?",
+                (answer, question_id),
+            )
+            await conn.commit()
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM open_questions WHERE id = ?",
+                (question_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Open question {question_id} not found"
+                )
+            return OpenQuestion(**dict(rows[0]))
