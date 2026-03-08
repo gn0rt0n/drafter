@@ -165,12 +165,12 @@ Plans:
   1. Claude can check name conflicts, register names with cultural context, retrieve the full registry, and get culturally consistent name suggestions for a faction/region
   2. Claude can retrieve and create/update voice profiles, retrieve supernatural voice guidelines, and log/retrieve voice drift instances
   3. Claude can retrieve and create/update publishing assets, retrieve submission tracker entries, log new submissions, and update submission status
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
-- [ ] 09-03: TBD
+- [ ] 09-01-PLAN.md — Names domain: 4 gate-free tools in tools/names.py (check_name, register_name, get_name_registry, generate_name_suggestions) (Wave 1)
+- [ ] 09-02-PLAN.md — Voice domain: 5 gated tools in tools/voice.py (get_voice_profile, upsert_voice_profile, get_supernatural_voice_guidelines, log_voice_drift, get_voice_drift_log) (Wave 1, parallel)
+- [ ] 09-03-PLAN.md — Publishing domain: 5 gated tools in tools/publishing.py + server.py wiring + MCP tests for all 14 tools (Wave 2)
 
 ### Phase 10: CLI Completion & Integration Testing
 **Goal**: All remaining CLI subcommands work, and tool selection accuracy is validated at full 80-tool scale
@@ -204,7 +204,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 6. Gate System | 3/3 | Complete    | 2026-03-07 |
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
 | 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
-| 9. Names, Voice & Publishing | 0/0 | Not started | - |
+| 9. Names, Voice & Publishing | 0/3 | Not started | - |
 | 10. CLI Completion & Integration Testing | 0/0 | Not started | - |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
