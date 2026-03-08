@@ -134,12 +134,12 @@ Plans:
   2. Claude can log agent runs, retrieve and log project metrics snapshots, retrieve POV balance, and manage open questions (log, retrieve, answer)
   3. Claude can retrieve POV positions at a chapter, list timeline events by chapter/time range, and create/update events and POV positions
   4. Claude can retrieve travel segments and validate whether travel between locations is realistic given elapsed in-story time
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md — Core session tools: 7 tools in tools/session.py (start_session, close_session, get_last_session, log_agent_run, get_project_metrics, log_project_snapshot, get_pov_balance) (Wave 1)
+- [ ] 07-02-PLAN.md — Open questions + timeline reads: 3 question tools added to session.py + 5 tools in tools/timeline.py (Wave 2)
+- [ ] 07-03-PLAN.md — Timeline writes + validation + server.py wiring + MCP tests for all 18 tools (Wave 3)
 
 ### Phase 8: Canon, Knowledge & Foreshadowing
 **Goal**: Claude can track canon facts, story decisions, continuity issues, reader information state, dramatic irony, foreshadowing, prophecies, motifs, and thematic structures
@@ -202,7 +202,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Chapters, Scenes & World | 5/5 | Complete   | 2026-03-07 |
 | 5. Plot & Arcs | 2/3 | Complete    | 2026-03-07 |
 | 6. Gate System | 3/3 | Complete    | 2026-03-07 |
-| 7. Session & Timeline | 0/0 | Not started | - |
+| 7. Session & Timeline | 0/3 | Not started | - |
 | 8. Canon, Knowledge & Foreshadowing | 0/0 | Not started | - |
 | 9. Names, Voice & Publishing | 0/0 | Not started | - |
 | 10. CLI Completion & Integration Testing | 0/0 | Not started | - |
