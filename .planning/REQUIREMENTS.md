@@ -152,11 +152,11 @@
 
 ### MCP — Voice & Style Domain
 
-- [ ] **VOIC-01**: Claude can retrieve a character's voice profile (`get_voice_profile`)
-- [ ] **VOIC-02**: Claude can retrieve supernatural voice guidelines for writing supernatural elements (`get_supernatural_voice_guidelines`)
-- [ ] **VOIC-03**: Claude can log a voice drift instance for a character (`log_voice_drift`)
-- [ ] **VOIC-04**: Claude can retrieve the voice drift log for a character (`get_voice_drift_log`)
-- [ ] **VOIC-05**: Claude can create or update a voice profile (`upsert_voice_profile`)
+- [x] **VOIC-01**: Claude can retrieve a character's voice profile (`get_voice_profile`)
+- [x] **VOIC-02**: Claude can retrieve supernatural voice guidelines for writing supernatural elements (`get_supernatural_voice_guidelines`)
+- [x] **VOIC-03**: Claude can log a voice drift instance for a character (`log_voice_drift`)
+- [x] **VOIC-04**: Claude can retrieve the voice drift log for a character (`get_voice_drift_log`)
+- [x] **VOIC-05**: Claude can create or update a voice profile (`upsert_voice_profile`)
 
 ### MCP — Publishing Domain
 
@@ -347,11 +347,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NAME-02 | Phase 9: Names, Voice & Publishing | Pending |
 | NAME-03 | Phase 9: Names, Voice & Publishing | Pending |
 | NAME-04 | Phase 9: Names, Voice & Publishing | Pending |
-| VOIC-01 | Phase 9: Names, Voice & Publishing | Pending |
-| VOIC-02 | Phase 9: Names, Voice & Publishing | Pending |
-| VOIC-03 | Phase 9: Names, Voice & Publishing | Pending |
-| VOIC-04 | Phase 9: Names, Voice & Publishing | Pending |
-| VOIC-05 | Phase 9: Names, Voice & Publishing | Pending |
+| VOIC-01 | Phase 9: Names, Voice & Publishing | Complete |
+| VOIC-02 | Phase 9: Names, Voice & Publishing | Complete |
+| VOIC-03 | Phase 9: Names, Voice & Publishing | Complete |
+| VOIC-04 | Phase 9: Names, Voice & Publishing | Complete |
+| VOIC-05 | Phase 9: Names, Voice & Publishing | Complete |
 | PUBL-01 | Phase 9: Names, Voice & Publishing | Pending |
 | PUBL-02 | Phase 9: Names, Voice & Publishing | Pending |
 | PUBL-03 | Phase 9: Names, Voice & Publishing | Pending |

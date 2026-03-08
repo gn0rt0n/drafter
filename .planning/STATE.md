@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 9 context gathered
-last_updated: "2026-03-08T02:26:57.305Z"
+stopped_at: Completed 09-02-PLAN.md (voice domain)
+last_updated: "2026-03-08T02:42:19.255Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
   completed_phases: 8
-  total_plans: 27
-  completed_plans: 27
+  total_plans: 30
+  completed_plans: 28
   percent: 100
 ---
 
@@ -77,6 +77,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 08-canon-knowledge-foreshadowing P01 | 4 | 2 tasks | 2 files |
 | Phase 08-canon-knowledge-foreshadowing P02 | 2 | 1 tasks | 1 files |
 | Phase 08-canon-knowledge-foreshadowing P03 | 5 | 2 tasks | 5 files |
+| Phase 09-names-voice-publishing P02 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,9 @@ Recent decisions affecting current work:
 - [Phase 08-03]: log_foreshadowing is upsert (two-branch): allows payoff to be filled in later without creating a duplicate plant entry
 - [Phase 08-03]: log_motif_occurrence is append-only: each motif appearance is a discrete historical event
 - [Phase 08-03]: Test FK compliance: use seed chapter IDs (1-3) not arbitrary chapter numbers
+- [Phase 09-02]: upsert_voice_profile ON CONFLICT targets character_id (UNIQUE column) not id — one profile per character, character_id is the business key
+- [Phase 09-02]: log_voice_drift is append-only (no ON CONFLICT) — each drift event is a discrete immutable audit log entry
+- [Phase 09-02]: get_voice_drift_log returns empty list not NotFoundResponse — no drift is valid state for a character
 
 ### Roadmap Evolution
 
@@ -170,6 +174,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T02:26:57.303Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-names-voice-publishing/09-CONTEXT.md
+Last session: 2026-03-08T02:42:19.253Z
+Stopped at: Completed 09-02-PLAN.md (voice domain)
+Resume file: None
