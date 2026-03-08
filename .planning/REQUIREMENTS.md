@@ -160,11 +160,11 @@
 
 ### MCP — Publishing Domain
 
-- [ ] **PUBL-01**: Claude can retrieve publishing assets (query letters, synopses, pitches) (`get_publishing_assets`)
-- [ ] **PUBL-02**: Claude can create or update a publishing asset (`upsert_publishing_asset`)
-- [ ] **PUBL-03**: Claude can retrieve submission tracker entries (`get_submissions`)
-- [ ] **PUBL-04**: Claude can log a new submission (`log_submission`)
-- [ ] **PUBL-05**: Claude can update a submission's status (`update_submission`)
+- [x] **PUBL-01**: Claude can retrieve publishing assets (query letters, synopses, pitches) (`get_publishing_assets`)
+- [x] **PUBL-02**: Claude can create or update a publishing asset (`upsert_publishing_asset`)
+- [x] **PUBL-03**: Claude can retrieve submission tracker entries (`get_submissions`)
+- [x] **PUBL-04**: Claude can log a new submission (`log_submission`)
+- [x] **PUBL-05**: Claude can update a submission's status (`update_submission`)
 
 ### CLI — Database Commands
 
@@ -352,11 +352,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VOIC-03 | Phase 9: Names, Voice & Publishing | Complete |
 | VOIC-04 | Phase 9: Names, Voice & Publishing | Complete |
 | VOIC-05 | Phase 9: Names, Voice & Publishing | Complete |
-| PUBL-01 | Phase 9: Names, Voice & Publishing | Pending |
-| PUBL-02 | Phase 9: Names, Voice & Publishing | Pending |
-| PUBL-03 | Phase 9: Names, Voice & Publishing | Pending |
-| PUBL-04 | Phase 9: Names, Voice & Publishing | Pending |
-| PUBL-05 | Phase 9: Names, Voice & Publishing | Pending |
+| PUBL-01 | Phase 9: Names, Voice & Publishing | Complete |
+| PUBL-02 | Phase 9: Names, Voice & Publishing | Complete |
+| PUBL-03 | Phase 9: Names, Voice & Publishing | Complete |
+| PUBL-04 | Phase 9: Names, Voice & Publishing | Complete |
+| PUBL-05 | Phase 9: Names, Voice & Publishing | Complete |
 | CLSG-01 | Phase 10: CLI Completion & Integration Testing | Pending |
 | CLSG-02 | Phase 10: CLI Completion & Integration Testing | Pending |
 | CLSG-06 | Phase 10: CLI Completion & Integration Testing | Pending |

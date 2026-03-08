@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 09-names-voice-publishing-01-PLAN.md
-last_updated: "2026-03-08T02:44:03.338Z"
+stopped_at: Completed 09-names-voice-publishing-03-PLAN.md
+last_updated: "2026-03-08T02:51:45.662Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 30
-  completed_plans: 29
+  completed_plans: 30
   percent: 100
 ---
 
@@ -79,6 +79,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 08-canon-knowledge-foreshadowing P03 | 5 | 2 tasks | 5 files |
 | Phase 09-names-voice-publishing P02 | 1 | 1 tasks | 1 files |
 | Phase 09-names-voice-publishing P01 | 3 | 1 tasks | 3 files |
+| Phase 09-names-voice-publishing P03 | 6 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,9 @@ Recent decisions affecting current work:
 - [Phase 09-names-voice-publishing]: NameSuggestionsResult defined inline in names.py (not in models/) — result type is tool-local, no cross-domain use
 - [Phase 09-names-voice-publishing]: No check_gate() in names.py — gate-free by locked design decision (name tools must work during worldbuilding phase)
 - [Phase 09-names-voice-publishing]: register_name wraps INSERT in try/except aiosqlite.IntegrityError — avoids TOCTOU race vs pre-flight SELECT
+- [Phase 09-03]: upsert_publishing_asset ON CONFLICT targets id (PK) not a named UNIQUE — publishing_assets has no UNIQUE beyond PK
+- [Phase 09-03]: update_submission SELECT-back after UPDATE required — SQLite does not error on UPDATE of missing row (matches resolve_continuity_issue pattern from Phase 08-01)
+- [Phase 09-03]: gate_ready seed has voice_profiles for all 5 characters — test fixture inserts 6th character (Tessan Vel) to test None-id CREATE branch of upsert_voice_profile
 
 ### Roadmap Evolution
 
@@ -178,6 +182,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T02:44:03.336Z
-Stopped at: Completed 09-names-voice-publishing-01-PLAN.md
+Last session: 2026-03-08T02:51:45.660Z
+Stopped at: Completed 09-names-voice-publishing-03-PLAN.md
 Resume file: None
