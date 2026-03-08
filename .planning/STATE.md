@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 09-02-PLAN.md (voice domain)
-last_updated: "2026-03-08T02:42:19.255Z"
+stopped_at: Completed 09-names-voice-publishing-01-PLAN.md
+last_updated: "2026-03-08T02:44:03.338Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 30
-  completed_plans: 28
+  completed_plans: 29
   percent: 100
 ---
 
@@ -78,6 +78,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 08-canon-knowledge-foreshadowing P02 | 2 | 1 tasks | 1 files |
 | Phase 08-canon-knowledge-foreshadowing P03 | 5 | 2 tasks | 5 files |
 | Phase 09-names-voice-publishing P02 | 1 | 1 tasks | 1 files |
+| Phase 09-names-voice-publishing P01 | 3 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,9 @@ Recent decisions affecting current work:
 - [Phase 09-02]: upsert_voice_profile ON CONFLICT targets character_id (UNIQUE column) not id — one profile per character, character_id is the business key
 - [Phase 09-02]: log_voice_drift is append-only (no ON CONFLICT) — each drift event is a discrete immutable audit log entry
 - [Phase 09-02]: get_voice_drift_log returns empty list not NotFoundResponse — no drift is valid state for a character
+- [Phase 09-names-voice-publishing]: NameSuggestionsResult defined inline in names.py (not in models/) — result type is tool-local, no cross-domain use
+- [Phase 09-names-voice-publishing]: No check_gate() in names.py — gate-free by locked design decision (name tools must work during worldbuilding phase)
+- [Phase 09-names-voice-publishing]: register_name wraps INSERT in try/except aiosqlite.IntegrityError — avoids TOCTOU race vs pre-flight SELECT
 
 ### Roadmap Evolution
 
@@ -174,6 +178,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T02:42:19.253Z
-Stopped at: Completed 09-02-PLAN.md (voice domain)
+Last session: 2026-03-08T02:44:03.336Z
+Stopped at: Completed 09-names-voice-publishing-01-PLAN.md
 Resume file: None

@@ -145,10 +145,10 @@
 
 ### MCP — Names Domain
 
-- [ ] **NAME-01**: Claude can check whether a proposed name conflicts with existing names in the registry (`check_name`)
-- [ ] **NAME-02**: Claude can register a name in the registry with its cultural/linguistic context (`register_name`)
-- [ ] **NAME-03**: Claude can retrieve the full name registry (`get_name_registry`)
-- [ ] **NAME-04**: Claude can get name suggestions following the cultural and linguistic rules of a given faction or region (`generate_name_suggestions`)
+- [x] **NAME-01**: Claude can check whether a proposed name conflicts with existing names in the registry (`check_name`)
+- [x] **NAME-02**: Claude can register a name in the registry with its cultural/linguistic context (`register_name`)
+- [x] **NAME-03**: Claude can retrieve the full name registry (`get_name_registry`)
+- [x] **NAME-04**: Claude can get name suggestions following the cultural and linguistic rules of a given faction or region (`generate_name_suggestions`)
 
 ### MCP — Voice & Style Domain
 
@@ -343,10 +343,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FORE-06 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | FORE-07 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
 | FORE-08 | Phase 8: Canon, Knowledge & Foreshadowing | Complete |
-| NAME-01 | Phase 9: Names, Voice & Publishing | Pending |
-| NAME-02 | Phase 9: Names, Voice & Publishing | Pending |
-| NAME-03 | Phase 9: Names, Voice & Publishing | Pending |
-| NAME-04 | Phase 9: Names, Voice & Publishing | Pending |
+| NAME-01 | Phase 9: Names, Voice & Publishing | Complete |
+| NAME-02 | Phase 9: Names, Voice & Publishing | Complete |
+| NAME-03 | Phase 9: Names, Voice & Publishing | Complete |
+| NAME-04 | Phase 9: Names, Voice & Publishing | Complete |
 | VOIC-01 | Phase 9: Names, Voice & Publishing | Complete |
 | VOIC-02 | Phase 9: Names, Voice & Publishing | Complete |
 | VOIC-03 | Phase 9: Names, Voice & Publishing | Complete |
