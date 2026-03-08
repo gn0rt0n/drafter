@@ -17,13 +17,12 @@ from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.sessions import (
     AgentRunLog,
-    OpenQuestion,  # noqa: F401 — imported for completeness, used indirectly
     ProjectMetricsSnapshot,
     PovBalanceSnapshot,
     SessionLog,
     SessionStartResult,
 )
-from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
+from novel.models.shared import GateViolation, NotFoundResponse
 
 logger = logging.getLogger(__name__)
 

@@ -92,13 +92,13 @@
 
 ### MCP — Session & Project Domain
 
-- [ ] **SESS-01**: Claude can start a new writing session with a briefing from the last session's log (`start_session`)
-- [ ] **SESS-02**: Claude can close the current session, logging a summary and carrying open items forward (`close_session`)
-- [ ] **SESS-03**: Claude can retrieve the most recent session log (`get_last_session`)
-- [ ] **SESS-04**: Claude can log an agent run record (`log_agent_run`)
-- [ ] **SESS-05**: Claude can retrieve project-level metrics (word count, chapter count, session count) (`get_project_metrics`)
-- [ ] **SESS-06**: Claude can log a project metrics snapshot (`log_project_snapshot`)
-- [ ] **SESS-07**: Claude can retrieve POV balance across chapters (chapter count and word count per POV character) (`get_pov_balance`)
+- [x] **SESS-01**: Claude can start a new writing session with a briefing from the last session's log (`start_session`)
+- [x] **SESS-02**: Claude can close the current session, logging a summary and carrying open items forward (`close_session`)
+- [x] **SESS-03**: Claude can retrieve the most recent session log (`get_last_session`)
+- [x] **SESS-04**: Claude can log an agent run record (`log_agent_run`)
+- [x] **SESS-05**: Claude can retrieve project-level metrics (word count, chapter count, session count) (`get_project_metrics`)
+- [x] **SESS-06**: Claude can log a project metrics snapshot (`log_project_snapshot`)
+- [x] **SESS-07**: Claude can retrieve POV balance across chapters (chapter count and word count per POV character) (`get_pov_balance`)
 - [ ] **SESS-08**: Claude can retrieve open questions (`get_open_questions`)
 - [ ] **SESS-09**: Claude can log a new open question (`log_open_question`)
 - [ ] **SESS-10**: Claude can mark an open question as answered (`answer_open_question`)
@@ -305,13 +305,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLSG-03 | Phase 6: Gate System | Complete |
 | CLSG-04 | Phase 6: Gate System | Complete |
 | CLSG-05 | Phase 6: Gate System | Complete |
-| SESS-01 | Phase 7: Session & Timeline | Pending |
-| SESS-02 | Phase 7: Session & Timeline | Pending |
-| SESS-03 | Phase 7: Session & Timeline | Pending |
-| SESS-04 | Phase 7: Session & Timeline | Pending |
-| SESS-05 | Phase 7: Session & Timeline | Pending |
-| SESS-06 | Phase 7: Session & Timeline | Pending |
-| SESS-07 | Phase 7: Session & Timeline | Pending |
+| SESS-01 | Phase 7: Session & Timeline | Complete |
+| SESS-02 | Phase 7: Session & Timeline | Complete |
+| SESS-03 | Phase 7: Session & Timeline | Complete |
+| SESS-04 | Phase 7: Session & Timeline | Complete |
+| SESS-05 | Phase 7: Session & Timeline | Complete |
+| SESS-06 | Phase 7: Session & Timeline | Complete |
+| SESS-07 | Phase 7: Session & Timeline | Complete |
 | SESS-08 | Phase 7: Session & Timeline | Pending |
 | SESS-09 | Phase 7: Session & Timeline | Pending |
 | SESS-10 | Phase 7: Session & Timeline | Pending |
