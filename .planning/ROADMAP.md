@@ -150,12 +150,12 @@ Plans:
   2. Claude can retrieve reader information state at a chapter, the dramatic irony inventory, and planned/actual reader reveals, and can update reader state and log dramatic irony entries
   3. Claude can retrieve foreshadowing entries with plant/payoff chapters, prophecy registry entries, and motif registry with occurrences
   4. Claude can retrieve thematic mirrors, opposition pairs, and log foreshadowing entries and motif occurrences
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
-- [ ] 08-03: TBD
+- [ ] 08-01-PLAN.md — StoryDecision model + 7 canon tools (get_canon_facts, log_canon_fact, log_decision, get_decisions, log_continuity_issue, get_continuity_issues, resolve_continuity_issue) (Wave 1)
+- [ ] 08-02-PLAN.md — 5 knowledge tools (get_reader_state, get_dramatic_irony_inventory, get_reader_reveals, upsert_reader_state, log_dramatic_irony) (Wave 1, parallel)
+- [ ] 08-03-PLAN.md — 8 foreshadowing tools + server.py wiring for all 3 modules + in-memory FastMCP tests for all 20 tools (Wave 2)
 
 ### Phase 9: Names, Voice & Publishing
 **Goal**: Claude can manage the name registry with conflict detection and cultural suggestions, voice profiles with drift tracking, and publishing assets with submission tracking
@@ -203,6 +203,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Plot & Arcs | 2/3 | Complete    | 2026-03-07 |
 | 6. Gate System | 3/3 | Complete    | 2026-03-07 |
 | 7. Session & Timeline | 3/3 | Complete    | 2026-03-08 |
-| 8. Canon, Knowledge & Foreshadowing | 0/0 | Not started | - |
+| 8. Canon, Knowledge & Foreshadowing | 0/3 | Not started | - |
 | 9. Names, Voice & Publishing | 0/0 | Not started | - |
 | 10. CLI Completion & Integration Testing | 0/0 | Not started | - |
