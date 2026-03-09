@@ -78,6 +78,7 @@ from novel.models.magic import (
     SupernaturalElement,
 )
 from novel.models.pacing import PacingBeat, TensionMeasurement
+from novel.models.structure import StoryStructure, ArcSevenPointBeat
 
 __all__ = [
     # shared error contract
@@ -167,4 +168,7 @@ __all__ = [
     # pacing domain
     "PacingBeat",
     "TensionMeasurement",
+    # structure domain
+    "StoryStructure",
+    "ArcSevenPointBeat",
 ]
