@@ -64,7 +64,8 @@ async def _call_tool(db_path: str, tool_name: str, args: dict):
 
 async def test_get_pacing_beats_empty(test_db_path):
     """get_pacing_beats returns empty list when no beats exist for chapter."""
-    result = await _call_tool(test_db_path, "get_pacing_beats", {"chapter_id": 1})
+    # Use a chapter_id that has no seed data (999 does not exist but tool returns empty not error)
+    result = await _call_tool(test_db_path, "get_pacing_beats", {"chapter_id": 9999})
     assert not result.isError
     # Empty list means no content blocks
     assert len(result.content) == 0
@@ -209,8 +210,9 @@ async def test_delete_pacing_beat_success(test_db_path):
 
 async def test_get_tension_measurements_empty(test_db_path):
     """get_tension_measurements returns empty list when none exist for chapter."""
+    # Use a chapter_id with no seed data (9999 doesn't exist, tool returns empty not error)
     result = await _call_tool(
-        test_db_path, "get_tension_measurements", {"chapter_id": 1}
+        test_db_path, "get_tension_measurements", {"chapter_id": 9999}
     )
     assert not result.isError
     assert len(result.content) == 0

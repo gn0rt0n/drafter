@@ -1,6 +1,6 @@
 """Scene domain MCP tools.
 
-All 6 scene tools are registered via the register(mcp) function pattern.
+All 12 scene tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -14,6 +14,7 @@ import logging
 from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
+from novel.models.pacing import PacingBeat, TensionMeasurement
 from novel.models.scenes import Scene, SceneCharacterGoal
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
@@ -21,10 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 6 scene domain tools with the given FastMCP instance.
+    """Register all 12 scene domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
+
+    Scene core (6): get_scene, get_scene_character_goals, upsert_scene,
+        upsert_scene_goal, delete_scene, delete_scene_goal.
+    Pacing/tension (6): get_pacing_beats, log_pacing_beat, delete_pacing_beat,
+        get_tension_measurements, log_tension_measurement, delete_tension_measurement.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -380,3 +386,232 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": scene_goal_id}
+
+    # ------------------------------------------------------------------
+    # get_pacing_beats
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_pacing_beats(chapter_id: int) -> list[PacingBeat]:
+        """Return all pacing beats for a chapter, ordered by sequence_order then id.
+
+        pacing_beats tracks narrative rhythm per chapter — logging each story beat
+        type and its description allows tracking of pacing across the chapter arc.
+
+        Args:
+            chapter_id: FK to chapters table — return all beats for this chapter.
+
+        Returns:
+            List of PacingBeat records ordered by sequence_order, id.
+            Empty list if no beats have been logged for this chapter.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM pacing_beats WHERE chapter_id = ? ORDER BY sequence_order, id",
+                (chapter_id,),
+            )
+            return [PacingBeat(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # log_pacing_beat
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_pacing_beat(
+        chapter_id: int,
+        beat_type: str,
+        description: str,
+        sequence_order: int = 0,
+        scene_id: int | None = None,
+        notes: str | None = None,
+    ) -> PacingBeat | NotFoundResponse | ValidationFailure:
+        """Log a pacing beat for a chapter.
+
+        Uses the log_* pattern: pre-checks the chapter FK, inserts a new row,
+        selects back by lastrowid, and returns the full PacingBeat model.
+        Optional scene_id links the beat to a specific scene within the chapter.
+
+        Args:
+            chapter_id: FK to chapters table (required). Returns NotFoundResponse
+                if the chapter does not exist.
+            beat_type: Beat category — e.g. "action", "dialogue", "reflection",
+                "transition" (required).
+            description: Description of the story beat (required).
+            sequence_order: Position of this beat within the chapter arc (default 0).
+            scene_id: Optional FK to scenes table linking beat to a specific scene.
+            notes: Free-form notes (optional).
+
+        Returns:
+            PacingBeat with all fields populated on success.
+            NotFoundResponse if chapter_id does not exist.
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            ch = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO pacing_beats
+                        (chapter_id, scene_id, beat_type, description, sequence_order, notes)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (chapter_id, scene_id, beat_type, description, sequence_order, notes),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM pacing_beats WHERE id = ?", (new_id,)
+                )
+                return PacingBeat(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_pacing_beat failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_pacing_beat
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_pacing_beat(pacing_beat_id: int) -> NotFoundResponse | dict:
+        """Delete a pacing beat by ID.
+
+        pacing_beats is a leaf table with no FK children — uses the simpler
+        log-delete pattern (no ValidationFailure return needed).
+        Idempotent (returns NotFoundResponse if absent).
+
+        Args:
+            pacing_beat_id: Primary key of the pacing_beats row to delete.
+
+        Returns:
+            {"deleted": True, "id": pacing_beat_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM pacing_beats WHERE id = ?", (pacing_beat_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Pacing beat {pacing_beat_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM pacing_beats WHERE id = ?", (pacing_beat_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": pacing_beat_id}
+
+    # ------------------------------------------------------------------
+    # get_tension_measurements
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_tension_measurements(chapter_id: int) -> list[TensionMeasurement]:
+        """Return all tension measurements for a chapter, ordered by id.
+
+        tension_measurements tracks narrative tension per chapter — logging
+        multiple measurements over time allows tracking tension arcs.
+
+        Args:
+            chapter_id: FK to chapters table — return all measurements for this chapter.
+
+        Returns:
+            List of TensionMeasurement records ordered by id.
+            Empty list if no measurements have been logged for this chapter.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM tension_measurements WHERE chapter_id = ? ORDER BY id",
+                (chapter_id,),
+            )
+            return [TensionMeasurement(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # log_tension_measurement
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_tension_measurement(
+        chapter_id: int,
+        tension_level: int = 5,
+        measurement_type: str = "overall",
+        notes: str | None = None,
+    ) -> TensionMeasurement | NotFoundResponse | ValidationFailure:
+        """Log a tension measurement for a chapter.
+
+        Uses the log_* pattern: pre-checks the chapter FK, inserts a new row,
+        selects back by lastrowid, and returns the full TensionMeasurement model.
+
+        Args:
+            chapter_id: FK to chapters table (required). Returns NotFoundResponse
+                if the chapter does not exist.
+            tension_level: Tension intensity on a 1-10 scale (default 5).
+            measurement_type: Category of tension — e.g. "overall", "emotional",
+                "physical", "dramatic" (default "overall").
+            notes: Free-form notes about this tension reading (optional).
+
+        Returns:
+            TensionMeasurement with all fields populated on success.
+            NotFoundResponse if chapter_id does not exist.
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            ch = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO tension_measurements
+                        (chapter_id, tension_level, measurement_type, notes)
+                       VALUES (?, ?, ?, ?)""",
+                    (chapter_id, tension_level, measurement_type, notes),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM tension_measurements WHERE id = ?", (new_id,)
+                )
+                return TensionMeasurement(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_tension_measurement failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_tension_measurement
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_tension_measurement(tension_id: int) -> NotFoundResponse | dict:
+        """Delete a tension measurement by ID.
+
+        tension_measurements is a leaf table with no FK children — uses the
+        simpler log-delete pattern (no ValidationFailure return needed).
+        Idempotent (returns NotFoundResponse if absent).
+
+        Args:
+            tension_id: Primary key of the tension_measurements row to delete.
+
+        Returns:
+            {"deleted": True, "id": tension_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM tension_measurements WHERE id = ?", (tension_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Tension measurement {tension_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM tension_measurements WHERE id = ?", (tension_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": tension_id}
