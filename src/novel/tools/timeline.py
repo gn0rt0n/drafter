@@ -1,12 +1,13 @@
 """Timeline domain MCP tools.
 
-All 8 timeline tools are registered via the register(mcp) function
+All 11 timeline tools are registered via the register(mcp) function
 pattern.  This module is standalone — it does not modify server.py; wiring
 happens in the server module.
 
 Tools: 5 reads (get_pov_positions, get_pov_position, get_event, list_events,
 get_travel_segments) + 3 write/validation tools (validate_travel_realism,
-upsert_event, upsert_pov_position).
+upsert_event, upsert_pov_position) + 3 delete tools (delete_event,
+delete_pov_position, delete_travel_segment).
 
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
@@ -18,20 +19,21 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
-from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 from novel.models.timeline import Event, PovChronologicalPosition, TravelSegment, TravelValidationResult
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 8 timeline tools with the given FastMCP instance.
+    """Register all 11 timeline tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
 
-    All tools are prose-phase tools — each calls check_gate(conn) at the top
-    before any DB logic and returns GateViolation if the gate is not certified.
+    Read and write/validation tools call check_gate(conn) and return
+    GateViolation if the gate is not certified. Delete tools do not call
+    check_gate — they follow the same no-gate pattern as other delete tools.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -485,3 +487,131 @@ def register(mcp: FastMCP) -> None:
                 (character_id, chapter_id),
             )
             return PovChronologicalPosition(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_event
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_event(
+        event_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a timeline event by ID if it is not referenced by any FK children.
+
+        events is referenced by event_participants and event_artifacts. If either
+        table holds a row referencing this event, the DELETE will be blocked by
+        the FOREIGN KEY constraint and a ValidationFailure is returned instead.
+
+        Does not call check_gate — delete tools follow no-gate pattern.
+
+        Args:
+            event_id: Primary key of the event to delete.
+
+        Returns:
+            {"deleted": True, "id": event_id} on success,
+            NotFoundResponse if the event does not exist,
+            ValidationFailure if a FK constraint prevents deletion.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM events WHERE id = ?", (event_id,)
+            )
+            if not rows:
+                logger.debug("delete_event: %d not found", event_id)
+                return NotFoundResponse(
+                    not_found_message=f"Event {event_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM events WHERE id = ?", (event_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": event_id}
+            except Exception as exc:
+                logger.error("delete_event failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_pov_position
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_pov_position(
+        pov_position_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a POV chronological position row by its primary key.
+
+        Uses FK-safe try/except pattern for safety. Looks up the row by the
+        integer primary key (id column) of the pov_chronological_position table.
+
+        Does not call check_gate — delete tools follow no-gate pattern.
+
+        Args:
+            pov_position_id: Primary key (id) of the pov_chronological_position
+                row to delete.
+
+        Returns:
+            {"deleted": True, "id": pov_position_id} on success,
+            NotFoundResponse if the row does not exist,
+            ValidationFailure if a FK constraint prevents deletion.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM pov_chronological_position WHERE id = ?",
+                (pov_position_id,),
+            )
+            if not rows:
+                logger.debug("delete_pov_position: %d not found", pov_position_id)
+                return NotFoundResponse(
+                    not_found_message=f"POV position {pov_position_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM pov_chronological_position WHERE id = ?",
+                    (pov_position_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": pov_position_id}
+            except Exception as exc:
+                logger.error("delete_pov_position failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_travel_segment
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_travel_segment(
+        travel_segment_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a travel segment by ID.
+
+        travel_segments is a log-style table with no FK children. Uses the
+        simpler pre-existence check only (no try/except needed).
+
+        Does not call check_gate — delete tools follow no-gate pattern.
+
+        Args:
+            travel_segment_id: Primary key of the travel segment to delete.
+
+        Returns:
+            {"deleted": True, "id": travel_segment_id} on success,
+            NotFoundResponse if the travel segment does not exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM travel_segments WHERE id = ?",
+                (travel_segment_id,),
+            )
+            if not rows:
+                logger.debug(
+                    "delete_travel_segment: %d not found", travel_segment_id
+                )
+                return NotFoundResponse(
+                    not_found_message=f"Travel segment {travel_segment_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM travel_segments WHERE id = ?", (travel_segment_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": travel_segment_id}
