@@ -224,3 +224,185 @@ async def test_get_character_location_returns_list(test_db_path):
     assert not result.isError
     locations = [json.loads(c.text) for c in result.content]
     assert isinstance(locations, list)
+
+
+# ---------------------------------------------------------------------------
+# log_character_belief
+# ---------------------------------------------------------------------------
+
+
+async def test_log_character_belief_success(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_character_belief",
+        {
+            "character_id": 1,
+            "belief_type": "worldview",
+            "content": "The old empire was corrupt and deserved to fall.",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["character_id"] == 1
+    assert data["content"] == "The old empire was corrupt and deserved to fall."
+    assert data["belief_type"] == "worldview"
+
+
+async def test_log_character_belief_character_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_character_belief",
+        {"character_id": 9999, "belief_type": "worldview", "content": "Test belief"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# delete_character_belief
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_character_belief_success(test_db_path):
+    # First create a belief to delete
+    log_result = await _call_tool(
+        test_db_path,
+        "log_character_belief",
+        {"character_id": 1, "belief_type": "personal", "content": "Belief to delete"},
+    )
+    assert not log_result.isError
+    created = json.loads(log_result.content[0].text)
+    belief_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_character_belief", {"belief_id": belief_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == belief_id
+
+
+async def test_delete_character_belief_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path, "delete_character_belief", {"belief_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# log_character_location
+# ---------------------------------------------------------------------------
+
+
+async def test_log_character_location_success(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_character_location",
+        {
+            "character_id": 1,
+            "chapter_id": 1,
+            "location_note": "Arrived at the northern watchtower.",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["character_id"] == 1
+    assert data["chapter_id"] == 1
+    assert data["location_note"] == "Arrived at the northern watchtower."
+
+
+async def test_log_character_location_character_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_character_location",
+        {"character_id": 9999, "chapter_id": 1, "location_note": "Somewhere"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_log_character_location_chapter_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_character_location",
+        {"character_id": 1, "chapter_id": 99999, "location_note": "Somewhere"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# get_current_character_location
+# ---------------------------------------------------------------------------
+
+
+async def test_get_current_character_location_success(test_db_path):
+    # Log a location first so we have something to retrieve
+    await _call_tool(
+        test_db_path,
+        "log_character_location",
+        {
+            "character_id": 1,
+            "chapter_id": 1,
+            "location_note": "Base camp.",
+        },
+    )
+    result = await _call_tool(
+        test_db_path, "get_current_character_location", {"character_id": 1}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["character_id"] == 1
+
+
+async def test_get_current_character_location_not_found(test_db_path):
+    # Use a character with no locations (character 9999 doesn't exist, expect not_found)
+    result = await _call_tool(
+        test_db_path, "get_current_character_location", {"character_id": 9999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# delete_character_location
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_character_location_success(test_db_path):
+    # Create a location record to delete
+    log_result = await _call_tool(
+        test_db_path,
+        "log_character_location",
+        {"character_id": 1, "chapter_id": 1, "location_note": "Location to delete"},
+    )
+    assert not log_result.isError
+    created = json.loads(log_result.content[0].text)
+    location_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_character_location", {"location_id": location_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == location_id
+
+
+async def test_delete_character_location_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path, "delete_character_location", {"location_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
