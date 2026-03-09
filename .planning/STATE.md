@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-04-PLAN.md
-last_updated: "2026-03-09T19:24:18.777Z"
+stopped_at: Completed 14-05-PLAN.md
+last_updated: "2026-03-09T19:27:55.334Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P02 | 259 | 3 tasks | 6 files |
 | Phase 14 P03 | 8 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P04 | 2 | 3 tasks | 3 files |
+| Phase 14 P05 | 2 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,7 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: delete_magic_use_log uses simpler log-delete pattern (no try/except) since magic_use_log is an append-only log with no FK children
 - [Phase 14-mcp-api-completeness]: delete_name_registry_entry uses integer primary key (id) not name string for unambiguous deletion
 - [Phase 14-mcp-api-completeness]: No gate checks added to delete tools in world, magic, names modules — consistent with phase 14 no-gate pattern for deletes
+- [Phase 14]: ValidationFailure added to canon.py and knowledge.py imports for FK-safe delete pattern; log-delete (no try/except) used for leaf tables without FK children
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:24:18.775Z
-Stopped at: Completed 14-04-PLAN.md
+Last session: 2026-03-09T19:27:55.332Z
+Stopped at: Completed 14-05-PLAN.md
 Resume file: None
