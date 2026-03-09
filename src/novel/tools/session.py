@@ -1,6 +1,6 @@
 """Session domain MCP tools.
 
-All 10 session tools are registered via the register(mcp) function pattern.
+All 16 session tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 14 session domain tools with the given FastMCP instance.
+    """Register all 16 session domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -744,6 +744,116 @@ def register(mcp: FastMCP) -> None:
 
             await conn.execute(
                 "DELETE FROM project_metrics_snapshots WHERE id = ?", (snapshot_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": snapshot_id}
+
+    # ------------------------------------------------------------------
+    # log_pov_balance_snapshot (SESS-15)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_pov_balance_snapshot(
+        chapter_id: int | None = None,
+        character_id: int | None = None,
+        chapter_count: int = 0,
+        word_count: int = 0,
+    ) -> PovBalanceSnapshot | GateViolation | NotFoundResponse | ValidationFailure:
+        """Append a POV balance snapshot entry to the log.
+
+        Gate-gated: POV tracking is a prose-phase operation.
+
+        Append-only INSERT — pov_balance_snapshots has no UNIQUE constraint
+        beyond the primary key, so each call always inserts a new row.
+        The snapshot_at timestamp is automatically set to the current time.
+
+        Pre-checks that chapter_id exists in chapters if provided.
+
+        Args:
+            chapter_id: FK to chapters — the chapter context for this
+                        snapshot (optional).
+            character_id: FK to characters — the character whose POV balance
+                          is being recorded (optional).
+            chapter_count: Number of chapters from the character's POV
+                           (default: 0).
+            word_count: Total word count for this POV character (default: 0).
+
+        Returns:
+            The newly created PovBalanceSnapshot row.
+            GateViolation if gate is not certified.
+            NotFoundResponse if chapter_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            if chapter_id is not None:
+                chapter = await conn.execute_fetchall(
+                    "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+                )
+                if not chapter:
+                    return NotFoundResponse(
+                        not_found_message=f"Chapter {chapter_id} not found"
+                    )
+
+            try:
+                cursor = await conn.execute(
+                    "INSERT INTO pov_balance_snapshots "
+                    "(chapter_id, character_id, chapter_count, word_count) "
+                    "VALUES (?, ?, ?, ?)",
+                    (chapter_id, character_id, chapter_count, word_count),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM pov_balance_snapshots WHERE id = ?", (new_id,)
+                )
+                return PovBalanceSnapshot(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_pov_balance_snapshot failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_pov_balance_snapshot (SESS-16)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_pov_balance_snapshot(
+        snapshot_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a POV balance snapshot entry by ID.
+
+        Gate-gated: removing POV balance records is a prose-phase operation
+        that requires gate certification. pov_balance_snapshots is a log-style
+        table with no FK children — deletion uses the log-style pattern
+        (no try/except needed for FK safety).
+
+        Args:
+            snapshot_id: Primary key of the pov_balance_snapshots row to
+                         delete.
+
+        Returns:
+            {"deleted": True, "id": snapshot_id} on success.
+            GateViolation if gate is not certified.
+            NotFoundResponse if the snapshot does not exist.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM pov_balance_snapshots WHERE id = ?", (snapshot_id,)
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"POV balance snapshot {snapshot_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM pov_balance_snapshots WHERE id = ?", (snapshot_id,)
             )
             await conn.commit()
             return {"deleted": True, "id": snapshot_id}

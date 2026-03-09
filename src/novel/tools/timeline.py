@@ -1,13 +1,13 @@
 """Timeline domain MCP tools.
 
-All 11 timeline tools are registered via the register(mcp) function
+All 12 timeline tools are registered via the register(mcp) function
 pattern.  This module is standalone — it does not modify server.py; wiring
 happens in the server module.
 
 Tools: 5 reads (get_pov_positions, get_pov_position, get_event, list_events,
-get_travel_segments) + 3 write/validation tools (validate_travel_realism,
-upsert_event, upsert_pov_position) + 3 delete tools (delete_event,
-delete_pov_position, delete_travel_segment).
+get_travel_segments) + 4 write/validation tools (validate_travel_realism,
+upsert_event, upsert_pov_position, log_travel_segment) + 3 delete tools
+(delete_event, delete_pov_position, delete_travel_segment).
 
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
@@ -26,14 +26,14 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 11 timeline tools with the given FastMCP instance.
+    """Register all 12 timeline tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
 
-    Read and write/validation tools call check_gate(conn) and return
-    GateViolation if the gate is not certified. Delete tools do not call
-    check_gate — they follow the same no-gate pattern as other delete tools.
+    Most read and write/validation tools call check_gate(conn) and return
+    GateViolation if the gate is not certified. Delete tools and
+    log_travel_segment do not call check_gate.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -487,6 +487,101 @@ def register(mcp: FastMCP) -> None:
                 (character_id, chapter_id),
             )
             return PovChronologicalPosition(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # log_travel_segment (TIME-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_travel_segment(
+        character_id: int,
+        from_location_id: int | None = None,
+        to_location_id: int | None = None,
+        start_chapter_id: int | None = None,
+        end_chapter_id: int | None = None,
+        start_event_id: int | None = None,
+        elapsed_days: int | None = None,
+        travel_method: str | None = None,
+        notes: str | None = None,
+    ) -> TravelSegment | NotFoundResponse | ValidationFailure:
+        """Append a travel segment record for a character.
+
+        Append-only INSERT — travel_segments has no UNIQUE constraint beyond
+        the primary key, so each call always inserts a new row. Multiple travel
+        segments per character are expected and valid.
+
+        Pre-checks that character_id exists in characters. If start_chapter_id
+        is provided, also verifies it exists in chapters.
+
+        Not gate-gated — travel segment logging does not require prose-phase
+        certification.
+
+        Args:
+            character_id: FK to characters — the travelling character (required).
+            from_location_id: FK to locations — starting location (optional).
+            to_location_id: FK to locations — destination location (optional).
+            start_chapter_id: FK to chapters — chapter where travel begins
+                              (optional).
+            end_chapter_id: FK to chapters — chapter where travel ends
+                            (optional).
+            start_event_id: FK to events — event that triggers this travel
+                            (optional).
+            elapsed_days: Number of in-story days the journey takes (optional).
+            travel_method: Mode of travel — e.g. "walking", "horse", "ship"
+                           (optional).
+            notes: Free-form notes about the journey (optional).
+
+        Returns:
+            The newly created TravelSegment row.
+            NotFoundResponse if character_id or start_chapter_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            char = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char:
+                return NotFoundResponse(
+                    not_found_message=f"Character {character_id} not found"
+                )
+
+            if start_chapter_id is not None:
+                chapter = await conn.execute_fetchall(
+                    "SELECT id FROM chapters WHERE id = ?", (start_chapter_id,)
+                )
+                if not chapter:
+                    return NotFoundResponse(
+                        not_found_message=f"Chapter {start_chapter_id} not found"
+                    )
+
+            try:
+                cursor = await conn.execute(
+                    "INSERT INTO travel_segments "
+                    "(character_id, from_location_id, to_location_id, "
+                    "start_chapter_id, end_chapter_id, start_event_id, "
+                    "elapsed_days, travel_method, notes) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        character_id,
+                        from_location_id,
+                        to_location_id,
+                        start_chapter_id,
+                        end_chapter_id,
+                        start_event_id,
+                        elapsed_days,
+                        travel_method,
+                        notes,
+                    ),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM travel_segments WHERE id = ?", (new_id,)
+                )
+                return TravelSegment(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_travel_segment failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
 
     # ------------------------------------------------------------------
     # delete_event

@@ -1,6 +1,6 @@
 """Chapter domain MCP tools.
 
-All 6 chapter tools are registered via the register(mcp) function pattern.
+All 8 chapter tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 6 chapter domain tools with the given FastMCP instance.
+    """Register all 8 chapter domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -319,3 +319,137 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_chapter failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # upsert_chapter_obligation
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_chapter_obligation(
+        chapter_id: int,
+        obligation_type: str,
+        description: str,
+        obligation_id: int | None = None,
+        is_met: bool = False,
+        notes: str | None = None,
+    ) -> ChapterStructuralObligation | NotFoundResponse | ValidationFailure:
+        """Create or update a structural obligation for a chapter.
+
+        Two-branch upsert:
+        - obligation_id=None: INSERT a new row; chapter_id existence is
+          verified first.
+        - obligation_id provided: INSERT ... ON CONFLICT(id) DO UPDATE;
+          chapter_id existence is verified first.
+
+        Not gate-gated — chapter structural work does not require prose-phase
+        certification.
+
+        Args:
+            chapter_id: FK to chapters table (required).
+            obligation_type: Type of obligation — e.g. "setup", "payoff",
+                             "foreshadow" (required).
+            description: Description of what must happen in this chapter
+                         (required).
+            obligation_id: Existing obligation ID to update, or None to
+                           create a new record.
+            is_met: Whether the obligation has been fulfilled (default:
+                    False).
+            notes: Free-form notes (optional).
+
+        Returns:
+            The created or updated ChapterStructuralObligation record.
+            NotFoundResponse if chapter_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            chapter = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not chapter:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                if obligation_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO chapter_structural_obligations
+                               (chapter_id, obligation_type, description,
+                                is_met, notes, updated_at)
+                           VALUES (?, ?, ?, ?, ?, datetime('now'))""",
+                        (chapter_id, obligation_type, description, is_met, notes),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM chapter_structural_obligations WHERE id = ?",
+                        (new_id,),
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO chapter_structural_obligations
+                               (id, chapter_id, obligation_type, description,
+                                is_met, notes, updated_at)
+                           VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                           ON CONFLICT(id) DO UPDATE SET
+                               chapter_id=excluded.chapter_id,
+                               obligation_type=excluded.obligation_type,
+                               description=excluded.description,
+                               is_met=excluded.is_met,
+                               notes=excluded.notes,
+                               updated_at=datetime('now')""",
+                        (
+                            obligation_id,
+                            chapter_id,
+                            obligation_type,
+                            description,
+                            is_met,
+                            notes,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM chapter_structural_obligations WHERE id = ?",
+                        (obligation_id,),
+                    )
+                return ChapterStructuralObligation(**dict(row[0]))
+            except Exception as exc:
+                logger.error("upsert_chapter_obligation failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_chapter_obligation
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_chapter_obligation(
+        obligation_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a chapter structural obligation by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        chapter_structural_obligations is a log-style table with no FK
+        children — deletion uses the log-style pattern (no try/except needed).
+
+        Args:
+            obligation_id: Primary key of the chapter_structural_obligations
+                           row to delete.
+
+        Returns:
+            {"deleted": True, "id": obligation_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM chapter_structural_obligations WHERE id = ?",
+                (obligation_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter obligation {obligation_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM chapter_structural_obligations WHERE id = ?",
+                (obligation_id,),
+            )
+            await conn.commit()
+            return {"deleted": True, "id": obligation_id}
