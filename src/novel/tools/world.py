@@ -1,6 +1,6 @@
 """World domain MCP tools.
 
-All 8 world tools are registered via the register(mcp) function pattern.
+All 26 world tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -15,7 +15,10 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.models.world import (
+    Act,
+    Book,
     Culture,
+    Era,
     Faction,
     FactionPoliticalState,
     Location,
@@ -26,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 14 world domain tools with the given FastMCP instance.
+    """Register all 26 world domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -34,6 +37,318 @@ def register(mcp: FastMCP) -> None:
     Args:
         mcp: The FastMCP server instance to register tools against.
     """
+
+    # ------------------------------------------------------------------
+    # get_book
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_book(book_id: int) -> Book | NotFoundResponse:
+        """Look up a single book by ID, returning all fields.
+
+        Args:
+            book_id: Primary key of the book to retrieve.
+
+        Returns:
+            Book with all fields populated, or NotFoundResponse if the
+            book does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT * FROM books WHERE id = ?", (book_id,)
+            )
+            if not row:
+                logger.debug("Book %d not found", book_id)
+                return NotFoundResponse(not_found_message=f"Book {book_id} not found")
+            return Book(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # list_books
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_books() -> list[Book]:
+        """Return all books ordered by series_order then id.
+
+        Returns:
+            List of Book objects ordered by series_order (nulls last), then id.
+            Returns an empty list if no books exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM books ORDER BY series_order, id"
+            )
+            return [Book(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_book
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_book(
+        book_id: int | None,
+        title: str,
+        series_order: int | None = None,
+        word_count_target: int | None = None,
+        actual_word_count: int = 0,
+        status: str = "planning",
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> Book | ValidationFailure:
+        """Create or update a book.
+
+        When book_id is None, a new book is inserted and the AUTOINCREMENT
+        primary key is assigned. When book_id is provided, the existing row
+        is updated via ON CONFLICT(id) DO UPDATE.
+
+        Args:
+            book_id: Existing book ID to update, or None to create.
+            title: Book title (required).
+            series_order: Position in the series (optional).
+            word_count_target: Target word count for the book (optional).
+            actual_word_count: Actual word count written so far (default: 0).
+            status: Drafting status — e.g. "planning", "drafting", "complete" (default: "planning").
+            notes: Free-form notes (optional).
+            canon_status: Canon status — e.g. "draft", "canon" (default: "draft").
+
+        Returns:
+            The created or updated Book, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if book_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO books (
+                            title, series_order, word_count_target, actual_word_count,
+                            status, notes, canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                        (title, series_order, word_count_target, actual_word_count,
+                         status, notes, canon_status),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM books WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO books (
+                            id, title, series_order, word_count_target, actual_word_count,
+                            status, notes, canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            title=excluded.title,
+                            series_order=excluded.series_order,
+                            word_count_target=excluded.word_count_target,
+                            actual_word_count=excluded.actual_word_count,
+                            status=excluded.status,
+                            notes=excluded.notes,
+                            canon_status=excluded.canon_status,
+                            updated_at=datetime('now')""",
+                        (book_id, title, series_order, word_count_target, actual_word_count,
+                         status, notes, canon_status),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM books WHERE id = ?", (book_id,)
+                    )
+            except Exception as exc:
+                logger.error("upsert_book failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+            return Book(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_book
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_book(book_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a book by ID, refusing if referenced records exist.
+
+        FK-safe: books are referenced by acts (book_id NOT NULL), chapters
+        (book_id NOT NULL), and story_structure / seven_point_structure
+        (book_id NOT NULL). If any FK constraint is violated, returns
+        ValidationFailure with the error rather than raising.
+
+        Args:
+            book_id: Primary key of the book to delete.
+
+        Returns:
+            {"deleted": True, "id": book_id} on success, NotFoundResponse
+            if the book does not exist, or ValidationFailure if FK constraints
+            prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM books WHERE id = ?", (book_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Book {book_id} not found")
+            try:
+                await conn.execute("DELETE FROM books WHERE id = ?", (book_id,))
+                await conn.commit()
+                return {"deleted": True, "id": book_id}
+            except Exception as exc:
+                logger.error("delete_book failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_era
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_era(era_id: int) -> Era | NotFoundResponse:
+        """Look up a single era by ID, returning all fields.
+
+        Args:
+            era_id: Primary key of the era to retrieve.
+
+        Returns:
+            Era with all fields populated, or NotFoundResponse if the era
+            does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT * FROM eras WHERE id = ?", (era_id,)
+            )
+            if not row:
+                logger.debug("Era %d not found", era_id)
+                return NotFoundResponse(not_found_message=f"Era {era_id} not found")
+            return Era(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # list_eras
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_eras() -> list[Era]:
+        """Return all eras ordered by sequence_order then name.
+
+        Returns:
+            List of Era objects ordered by sequence_order (nulls last), then name.
+            Returns an empty list if no eras exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM eras ORDER BY sequence_order, name"
+            )
+            return [Era(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_era
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_era(
+        era_id: int | None,
+        name: str,
+        sequence_order: int | None = None,
+        date_start: str | None = None,
+        date_end: str | None = None,
+        summary: str | None = None,
+        certainty_level: str = "established",
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> Era | ValidationFailure:
+        """Create or update an era.
+
+        When era_id is None, a new era is inserted and the AUTOINCREMENT
+        primary key is assigned. When era_id is provided, the existing row
+        is updated via ON CONFLICT(id) DO UPDATE.
+
+        Args:
+            era_id: Existing era ID to update, or None to create.
+            name: Era name (required).
+            sequence_order: Chronological order position (optional).
+            date_start: Start date as text string (optional).
+            date_end: End date as text string (optional).
+            summary: Brief summary of the era (optional).
+            certainty_level: How established this era is — e.g. "established", "speculative" (default: "established").
+            notes: Free-form notes (optional).
+            canon_status: Canon status — e.g. "draft", "canon" (default: "draft").
+
+        Returns:
+            The created or updated Era, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if era_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO eras (
+                            name, sequence_order, date_start, date_end,
+                            summary, certainty_level, notes, canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                        (name, sequence_order, date_start, date_end,
+                         summary, certainty_level, notes, canon_status),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM eras WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO eras (
+                            id, name, sequence_order, date_start, date_end,
+                            summary, certainty_level, notes, canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            sequence_order=excluded.sequence_order,
+                            date_start=excluded.date_start,
+                            date_end=excluded.date_end,
+                            summary=excluded.summary,
+                            certainty_level=excluded.certainty_level,
+                            notes=excluded.notes,
+                            canon_status=excluded.canon_status,
+                            updated_at=datetime('now')""",
+                        (era_id, name, sequence_order, date_start, date_end,
+                         summary, certainty_level, notes, canon_status),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM eras WHERE id = ?", (era_id,)
+                    )
+            except Exception as exc:
+                logger.error("upsert_era failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+            return Era(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_era
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_era(era_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete an era by ID, refusing if referenced records exist.
+
+        FK-safe: eras are referenced by artifacts (origin_era_id FK) and
+        by characters (home_era_id FK). If any FK constraint is violated,
+        returns ValidationFailure with the error rather than raising.
+
+        Args:
+            era_id: Primary key of the era to delete.
+
+        Returns:
+            {"deleted": True, "id": era_id} on success, NotFoundResponse
+            if the era does not exist, or ValidationFailure if FK constraints
+            prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM eras WHERE id = ?", (era_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Era {era_id} not found")
+            try:
+                await conn.execute("DELETE FROM eras WHERE id = ?", (era_id,))
+                await conn.commit()
+                return {"deleted": True, "id": era_id}
+            except Exception as exc:
+                logger.error("delete_era failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
 
     # ------------------------------------------------------------------
     # get_location
@@ -794,3 +1109,182 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": political_state_id}
+
+    # ------------------------------------------------------------------
+    # get_act
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_act(act_id: int) -> Act | NotFoundResponse:
+        """Look up a single act by ID, returning all fields.
+
+        Args:
+            act_id: Primary key of the act to retrieve.
+
+        Returns:
+            Act with all fields populated, or NotFoundResponse if the act
+            does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT * FROM acts WHERE id = ?", (act_id,)
+            )
+            if not row:
+                logger.debug("Act %d not found", act_id)
+                return NotFoundResponse(not_found_message=f"Act {act_id} not found")
+            return Act(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # list_acts
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_acts(book_id: int) -> list[Act]:
+        """Return all acts for a given book, ordered by act_number.
+
+        Args:
+            book_id: ID of the book whose acts to list.
+
+        Returns:
+            List of Act objects ordered by act_number. Returns an empty list
+            if the book has no acts (or the book does not exist).
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM acts WHERE book_id = ? ORDER BY act_number",
+                (book_id,),
+            )
+            return [Act(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_act
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_act(
+        act_id: int | None,
+        book_id: int,
+        act_number: int,
+        name: str | None = None,
+        purpose: str | None = None,
+        word_count_target: int | None = None,
+        start_chapter_id: int | None = None,
+        end_chapter_id: int | None = None,
+        structural_notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> Act | NotFoundResponse | ValidationFailure:
+        """Create or update an act.
+
+        Pre-checks that book_id exists before writing. The start_chapter_id
+        and end_chapter_id are nullable FKs to chapters — pass None freely;
+        they are NOT pre-checked (intentional design to allow acts to be
+        created before chapters exist).
+
+        The acts table has a UNIQUE(book_id, act_number) constraint. Upserting
+        with an existing (book_id, act_number) pair will update the existing row.
+
+        When act_id is None, a new act is inserted via AUTOINCREMENT. When
+        act_id is provided, the existing row is updated via ON CONFLICT(id) DO UPDATE.
+
+        Args:
+            act_id: Existing act ID to update, or None to create.
+            book_id: ID of the book this act belongs to (required).
+            act_number: Act number within the book (required). UNIQUE per book.
+            name: Act name or title (optional).
+            purpose: Narrative purpose of the act (optional).
+            word_count_target: Target word count for this act (optional).
+            start_chapter_id: FK to chapters — first chapter of the act (optional).
+            end_chapter_id: FK to chapters — last chapter of the act (optional).
+            structural_notes: Notes on act structure (optional).
+            canon_status: Canon status — e.g. "draft", "canon" (default: "draft").
+
+        Returns:
+            The created or updated Act, NotFoundResponse if book_id does not
+            exist, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            book_row = await conn.execute_fetchall(
+                "SELECT id FROM books WHERE id = ?", (book_id,)
+            )
+            if not book_row:
+                return NotFoundResponse(not_found_message=f"Book {book_id} not found")
+            try:
+                if act_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO acts (
+                            book_id, act_number, name, purpose, word_count_target,
+                            start_chapter_id, end_chapter_id, structural_notes,
+                            canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                        (book_id, act_number, name, purpose, word_count_target,
+                         start_chapter_id, end_chapter_id, structural_notes, canon_status),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM acts WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO acts (
+                            id, book_id, act_number, name, purpose, word_count_target,
+                            start_chapter_id, end_chapter_id, structural_notes,
+                            canon_status, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            book_id=excluded.book_id,
+                            act_number=excluded.act_number,
+                            name=excluded.name,
+                            purpose=excluded.purpose,
+                            word_count_target=excluded.word_count_target,
+                            start_chapter_id=excluded.start_chapter_id,
+                            end_chapter_id=excluded.end_chapter_id,
+                            structural_notes=excluded.structural_notes,
+                            canon_status=excluded.canon_status,
+                            updated_at=datetime('now')""",
+                        (act_id, book_id, act_number, name, purpose, word_count_target,
+                         start_chapter_id, end_chapter_id, structural_notes, canon_status),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM acts WHERE id = ?", (act_id,)
+                    )
+            except Exception as exc:
+                logger.error("upsert_act failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+            return Act(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_act
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_act(act_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete an act by ID.
+
+        FK-safe pattern used for consistency, even though acts have no known
+        FK children. If any FK constraint is violated, returns ValidationFailure
+        with the error rather than raising.
+
+        Args:
+            act_id: Primary key of the act to delete.
+
+        Returns:
+            {"deleted": True, "id": act_id} on success, NotFoundResponse
+            if the act does not exist, or ValidationFailure if FK constraints
+            prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM acts WHERE id = ?", (act_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Act {act_id} not found")
+            try:
+                await conn.execute("DELETE FROM acts WHERE id = ?", (act_id,))
+                await conn.commit()
+                return {"deleted": True, "id": act_id}
+            except Exception as exc:
+                logger.error("delete_act failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
