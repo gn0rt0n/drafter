@@ -60,7 +60,27 @@ Plans:
   1. A full audit of all 71 schema tables against existing MCP tools produces a documented list: tables with write tools, and tables explicitly marked read-only with justification
   2. Every table that was writable-but-unimplemented now has at least one working MCP write tool callable from Claude Code
   3. Every new write tool returns the established error contract: `null` for not-found, `is_valid: false` for validation failures, `requires_action` for gate violations
-**Plans**: TBD
+**Plans**: 19 plans
+Plans:
+- [ ] 14-01-PLAN.md — Delete tools for characters.py, relationships.py, arcs.py (Wave 1)
+- [ ] 14-02-PLAN.md — Delete tools for chapters.py, scenes.py, structure.py (Wave 1)
+- [ ] 14-03-PLAN.md — Delete tools for plot.py, timeline.py (Wave 1)
+- [ ] 14-04-PLAN.md — Delete tools for world.py, magic.py, names.py (Wave 1)
+- [ ] 14-05-PLAN.md — Gate-gated delete tools for canon.py, knowledge.py, foreshadowing.py (Wave 1)
+- [ ] 14-06-PLAN.md — Delete tools for voice.py, publishing.py, session.py, gate.py (Wave 1)
+- [ ] 14-07-PLAN.md — Character state log tools: log_character_belief, log_character_location, log_injury_state, log_title_state + get_current_character_location (Wave 2)
+- [ ] 14-08-PLAN.md — Write tools: upsert_arc, log_subplot_touchpoint, upsert_chapter_obligation, log_pov_balance_snapshot, log_travel_segment (Wave 2)
+- [ ] 14-09-PLAN.md — Cultures and faction_political_states write tools in world.py (Wave 2)
+- [ ] 14-10-PLAN.md — Write tools for magic_system_elements, practitioner_abilities, supernatural_voice_guidelines, name_registry (Wave 2)
+- [ ] 14-11-PLAN.md — Gate-gated upsert/delete for motif_registry, prophecy_registry, thematic_mirrors, opposition_pairs (Wave 2)
+- [ ] 14-12-PLAN.md — Gate-gated write tools for reader_reveals and reader_experience_notes (Wave 2)
+- [ ] 14-13-PLAN.md — Full CRUD for books, acts, eras in world.py (Wave 3)
+- [ ] 14-14-PLAN.md — Full CRUD for artifacts, object_states in world.py (Wave 3)
+- [ ] 14-15-PLAN.md — Full CRUD for supernatural_elements in magic.py (Wave 3)
+- [ ] 14-16-PLAN.md — Full CRUD for pacing_beats, tension_measurements in scenes.py (Wave 3)
+- [ ] 14-17-PLAN.md — Full CRUD for documentation_tasks, research_notes in publishing.py (Wave 3)
+- [ ] 14-18-PLAN.md — Junction tools: chapter_plot_threads, chapter_character_arcs (Wave 4)
+- [ ] 14-19-PLAN.md — Junction tools: event_participants, event_artifacts + delete_gate_checklist_item (Wave 4)
 
 ### Phase 15: Documentation Restructure
 **Goal**: The monolithic mcp-tools.md and schema.md are split into per-domain files that reflect the current implementation (including new tools from Phase 14), with a master index linking all domain files
@@ -89,5 +109,5 @@ Plans:
 | 11. 7-Point Structure Extension | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 13. Tech Debt Clearance | 2/2 | Complete    | 2026-03-09 | - |
-| 14. MCP API Completeness | v1.1 | 0/TBD | Not started | - |
+| 14. MCP API Completeness | v1.1 | 0/19 | Not started | - |
 | 15. Documentation Restructure | v1.1 | 0/TBD | Not started | - |
