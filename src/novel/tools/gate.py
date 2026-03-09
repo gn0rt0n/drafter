@@ -414,7 +414,7 @@ _GATE_ITEM_COUNT = len(GATE_QUERIES)  # 36 items — store once for tool use
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 gate tools with the given FastMCP instance.
+    """Register all 6 gate tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -706,3 +706,52 @@ def register(mcp: FastMCP) -> None:
 
         logger.info("certify_gate: gate certified by '%s'", certifier)
         return ArchitectureGate(**dict(gate_rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_gate_checklist_item
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_gate_checklist_item(
+        checklist_item_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a gate checklist item by ID (admin cleanup).
+
+        NOT gate-gated: this tool is part of gate management itself, analogous
+        to update_checklist_item. It allows removal of stale or erroneous
+        checklist items without requiring gate certification.
+
+        gate_checklist_items has a gate_id FK into architecture_gate; FK
+        violations are caught and returned as ValidationFailure (FK-safe pattern).
+
+        Args:
+            checklist_item_id: Primary key of the gate_checklist_items row to
+                               delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            checklist item does not exist. ValidationFailure if a FK constraint
+            prevents deletion.
+        """
+        async with get_connection() as conn:
+            existing = await conn.execute_fetchall(
+                "SELECT id FROM gate_checklist_items WHERE id = ?",
+                (checklist_item_id,),
+            )
+            if not existing:
+                logger.warning(
+                    "delete_gate_checklist_item: id %d not found", checklist_item_id
+                )
+                return NotFoundResponse(
+                    not_found_message=f"Gate checklist item {checklist_item_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM gate_checklist_items WHERE id = ?", (checklist_item_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": checklist_item_id}
+            except Exception as exc:
+                logger.error("delete_gate_checklist_item failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
