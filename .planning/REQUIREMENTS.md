@@ -15,7 +15,7 @@
 ### Seed Data
 
 - [x] **SEED-01**: Minimal seed profile provides enough data to exercise every MCP domain (1 book, 2-3 characters, 1 chapter, 2 scenes, 1 session, representative entries in each domain)
-- [x] **SEED-02**: Gate-ready seed profile satisfies all 33 architecture gate checklist items so gate certification can be tested with seed data
+- [x] **SEED-02**: Gate-ready seed profile satisfies all 36 architecture gate checklist items so gate certification can be tested with seed data
 - [x] **SEED-03**: `novel db seed [profile]` CLI command loads a named seed profile into the database
 
 ### Error Contract (Cross-Cutting)
@@ -165,6 +165,16 @@
 - [x] **PUBL-03**: Claude can retrieve submission tracker entries (`get_submissions`)
 - [x] **PUBL-04**: Claude can log a new submission (`log_submission`)
 - [x] **PUBL-05**: Claude can update a submission's status (`update_submission`)
+
+### MCP — Structure Domain
+
+- [x] **STRUCT-01**: Migration 022 creates `story_structure` table (one row per book, `UNIQUE(book_id)`) and `arc_seven_point_beats` table (`UNIQUE(arc_id, beat_type)`) with all 7-point beat FK columns
+- [x] **STRUCT-02**: `StoryStructure` and `ArcSevenPointBeat` Pydantic models exist in `src/novel/models/structure.py` and are exported from `novel.models`
+- [x] **STRUCT-03**: Gate extended with `struct_story_beats` check (category: structure) — SQL confirms all books have a `story_structure` row with all 7 beat chapter FKs populated
+- [x] **STRUCT-04**: Gate extended with `arcs_seven_point_beats` check (category: plot) — SQL confirms all POV character arcs have all 7 `arc_seven_point_beats` rows defined
+- [x] **STRUCT-05**: Claude can retrieve the story-level 7-point structure for a book (`get_story_structure`) and retrieve all beat records for a character arc (`get_arc_beats`)
+- [x] **STRUCT-06**: Claude can create or update the story-level 7-point structure for a book, including 3-act alignment chapter FKs (`upsert_story_structure`)
+- [x] **STRUCT-07**: Claude can create or update a single arc beat record with `beat_type` validation against the 7 canonical values (`upsert_arc_beat`)
 
 ### CLI — Database Commands
 
@@ -369,12 +379,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLNM-03 | Phase 10: CLI Completion & Integration Testing | Complete |
 | TEST-03 | Phase 10: CLI Completion & Integration Testing | Complete |
 | TEST-04 | Phase 10: CLI Completion & Integration Testing | Complete |
+| STRUCT-01 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-02 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-03 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-04 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-05 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-06 | Phase 11: 7-Point Structure & Gate Extension | Complete |
+| STRUCT-07 | Phase 11: 7-Point Structure & Gate Extension | Complete |
 
 **Coverage:**
-- v1 requirements: 131 total
-- Mapped to phases: 131
+- v1 requirements: 138 total
+- Mapped to phases: 138
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Last updated: 2026-03-09 after Phase 11 gap closure (added STRUCT-01 through STRUCT-07)*
