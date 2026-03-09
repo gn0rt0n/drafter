@@ -4,7 +4,7 @@ Uses sync sqlite3 via novel.db.connection.get_connection() — same as db CLI.
 Never uses novel.mcp.db (that is async, for MCP tools only).
 
 Commands:
-    novel gate check    — run full 34-item audit and display gap report (CLSG-03)
+    novel gate check    — run full 36-item audit and display gap report (CLSG-03)
     novel gate status   — display current gate status and blocking count (CLSG-04)
     novel gate certify  — certify gate when all items pass (CLSG-05)
 """
@@ -17,7 +17,7 @@ app = typer.Typer(help="Architecture gate commands")
 
 @app.command()
 def check() -> None:
-    """Run full 34-item gate audit and display gap report."""
+    """Run full 36-item gate audit and display gap report."""
     try:
         with get_connection() as conn:
             from datetime import datetime, timezone
@@ -107,7 +107,7 @@ def status() -> None:
 def certify(
     certified_by: str = typer.Option("cli-user", "--by", help="Who is certifying the gate"),
 ) -> None:
-    """Certify the architecture gate if all 34 checklist items pass."""
+    """Certify the architecture gate if all 36 checklist items pass."""
     try:
         with get_connection() as conn:
             failing = conn.execute(
