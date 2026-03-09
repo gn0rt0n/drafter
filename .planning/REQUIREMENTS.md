@@ -40,25 +40,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEBT-01 | TBD | Pending |
-| DEBT-02 | TBD | Pending |
-| DEBT-03 | TBD | Pending |
-| DEBT-04 | TBD | Pending |
-| DEBT-05 | TBD | Pending |
-| DEBT-06 | TBD | Pending |
-| DEBT-07 | TBD | Pending |
-| DEBT-08 | TBD | Pending |
-| MCP-01 | TBD | Pending |
-| MCP-02 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| DOCS-03 | TBD | Pending |
+| DEBT-01 | Phase 13 | Pending |
+| DEBT-02 | Phase 13 | Pending |
+| DEBT-03 | Phase 13 | Pending |
+| DEBT-04 | Phase 13 | Pending |
+| DEBT-05 | Phase 13 | Pending |
+| DEBT-06 | Phase 13 | Pending |
+| DEBT-07 | Phase 13 | Pending |
+| DEBT-08 | Phase 13 | Pending |
+| MCP-01 | Phase 14 | Pending |
+| MCP-02 | Phase 14 | Pending |
+| DOCS-01 | Phase 15 | Pending |
+| DOCS-02 | Phase 15 | Pending |
+| DOCS-03 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 — traceability mapped to Phases 13–15*
