@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-09T16:01:36.139Z"
+stopped_at: Completed 12-03-PLAN.md
+last_updated: "2026-03-09T16:07:24.368Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 12
   completed_phases: 11
   total_plans: 40
-  completed_plans: 38
+  completed_plans: 39
   percent: 100
 ---
 
@@ -88,6 +88,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 11 P03 | 5 | 2 tasks | 7 files |
 | Phase 11 P04 | 5 | 1 tasks | 1 files |
 | Phase 12-schema-and-mcp-system-documentation P01 | 2 | 2 tasks | 2 files |
+| Phase 12-schema-and-mcp-system-documentation P03 | 8 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -191,6 +192,7 @@ Recent decisions affecting current work:
 - [Phase Phase 11-04]: SEED-02 count corrected from 33 to 36: Phase 06-01 had 34 items, Phase 11-02 added 2 more bringing total gate items to 36
 - [Phase 12-01]: Tool count documented as 121 (grep count from @mcp.tool() decorators) not plan-prose estimates of ~80/103
 - [Phase 12-01]: Migration count documented as 22 (actual glob count); Phase 11 added migration 022 for seven-point structure
+- [Phase 12-schema-and-mcp-system-documentation]: Python source files used as single source of truth for tool names — REQUIREMENTS.md excluded due to confirmed drift from implementation
 
 ### Roadmap Evolution
 
@@ -207,6 +209,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T16:01:36.133Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-03-09T16:07:24.366Z
+Stopped at: Completed 12-03-PLAN.md
 Resume file: None
