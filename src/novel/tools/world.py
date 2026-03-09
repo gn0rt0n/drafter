@@ -1,6 +1,6 @@
 """World domain MCP tools.
 
-All 26 world tools are registered via the register(mcp) function pattern.
+All 33 world tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -16,12 +16,14 @@ from mcp.server.fastmcp import FastMCP
 from novel.mcp.db import get_connection
 from novel.models.world import (
     Act,
+    Artifact,
     Book,
     Culture,
     Era,
     Faction,
     FactionPoliticalState,
     Location,
+    ObjectState,
 )
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 26 world domain tools with the given FastMCP instance.
+    """Register all 33 world domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -1288,3 +1290,300 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_act failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_artifact
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_artifact(artifact_id: int) -> Artifact | NotFoundResponse:
+        """Look up a single artifact by ID, returning all fields.
+
+        Args:
+            artifact_id: Primary key of the artifact to retrieve.
+
+        Returns:
+            Artifact with all fields populated, or NotFoundResponse if the
+            artifact does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT * FROM artifacts WHERE id = ?", (artifact_id,)
+            )
+            if not row:
+                logger.debug("Artifact %d not found", artifact_id)
+                return NotFoundResponse(not_found_message=f"Artifact {artifact_id} not found")
+            return Artifact(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # list_artifacts
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_artifacts() -> list[Artifact]:
+        """Return all artifacts ordered by name.
+
+        Returns:
+            List of Artifact objects ordered alphabetically by name.
+            Returns an empty list if no artifacts exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM artifacts ORDER BY name"
+            )
+            return [Artifact(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_artifact
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_artifact(
+        artifact_id: int | None,
+        name: str,
+        artifact_type: str | None = None,
+        current_owner_id: int | None = None,
+        current_location_id: int | None = None,
+        origin_era_id: int | None = None,
+        description: str | None = None,
+        significance: str | None = None,
+        magical_properties: str | None = None,
+        history: str | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+        source_file: str | None = None,
+    ) -> Artifact | ValidationFailure:
+        """Create or update an artifact.
+
+        When artifact_id is None, a new artifact is inserted and the
+        AUTOINCREMENT primary key is assigned. When artifact_id is provided,
+        the existing row is updated via ON CONFLICT(id) DO UPDATE.
+
+        Args:
+            artifact_id: Existing artifact ID to update, or None to create.
+            name: Artifact name (required).
+            artifact_type: Category — e.g. "weapon", "relic", "document" (optional).
+            current_owner_id: FK to characters — current owner (optional).
+            current_location_id: FK to locations — current location (optional).
+            origin_era_id: FK to eras — era of origin (optional).
+            description: Narrative description of the artifact (optional).
+            significance: Story significance of the artifact (optional).
+            magical_properties: Magical or special properties (optional).
+            history: Historical background of the artifact (optional).
+            notes: Free-form notes (optional).
+            canon_status: Canon status — e.g. "draft", "canon" (default: "draft").
+            source_file: Source seed file if applicable (optional).
+
+        Returns:
+            The created or updated Artifact, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if artifact_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO artifacts (
+                            name, artifact_type, current_owner_id, current_location_id,
+                            origin_era_id, description, significance, magical_properties,
+                            history, notes, canon_status, source_file, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                        (
+                            name, artifact_type, current_owner_id, current_location_id,
+                            origin_era_id, description, significance, magical_properties,
+                            history, notes, canon_status, source_file,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM artifacts WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO artifacts (
+                            id, name, artifact_type, current_owner_id, current_location_id,
+                            origin_era_id, description, significance, magical_properties,
+                            history, notes, canon_status, source_file, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            artifact_type=excluded.artifact_type,
+                            current_owner_id=excluded.current_owner_id,
+                            current_location_id=excluded.current_location_id,
+                            origin_era_id=excluded.origin_era_id,
+                            description=excluded.description,
+                            significance=excluded.significance,
+                            magical_properties=excluded.magical_properties,
+                            history=excluded.history,
+                            notes=excluded.notes,
+                            canon_status=excluded.canon_status,
+                            source_file=excluded.source_file,
+                            updated_at=datetime('now')""",
+                        (
+                            artifact_id,
+                            name, artifact_type, current_owner_id, current_location_id,
+                            origin_era_id, description, significance, magical_properties,
+                            history, notes, canon_status, source_file,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM artifacts WHERE id = ?", (artifact_id,)
+                    )
+            except Exception as exc:
+                logger.error("upsert_artifact failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+            return Artifact(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_artifact
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_artifact(artifact_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete an artifact by ID, refusing if referenced records exist.
+
+        FK-safe: artifacts are referenced by object_states (artifact_id NOT
+        NULL FK) and by event_artifacts (artifact_id FK — junction table for
+        events). If any FK constraint is violated, returns ValidationFailure
+        with the error rather than raising.
+
+        Args:
+            artifact_id: Primary key of the artifact to delete.
+
+        Returns:
+            {"deleted": True, "id": artifact_id} on success, NotFoundResponse
+            if the artifact does not exist, or ValidationFailure if FK
+            constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM artifacts WHERE id = ?", (artifact_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Artifact {artifact_id} not found")
+            try:
+                await conn.execute("DELETE FROM artifacts WHERE id = ?", (artifact_id,))
+                await conn.commit()
+                return {"deleted": True, "id": artifact_id}
+            except Exception as exc:
+                logger.error("delete_artifact failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_object_states
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_object_states(artifact_id: int) -> list[ObjectState]:
+        """Return all state records for an artifact, ordered by chapter_id.
+
+        Args:
+            artifact_id: ID of the artifact whose state history to retrieve.
+
+        Returns:
+            List of ObjectState objects ordered by chapter_id. Returns an
+            empty list if no states have been recorded for the artifact.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM object_states WHERE artifact_id = ? ORDER BY chapter_id",
+                (artifact_id,),
+            )
+            return [ObjectState(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # log_object_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_object_state(
+        artifact_id: int,
+        chapter_id: int,
+        condition: str = "intact",
+        owner_id: int | None = None,
+        location_id: int | None = None,
+        notes: str | None = None,
+    ) -> ObjectState | NotFoundResponse | ValidationFailure:
+        """Record the state of an artifact at a specific chapter.
+
+        Follows the log_* pattern: pre-checks artifact_id and chapter_id FKs
+        before inserting. The object_states table has a UNIQUE(artifact_id,
+        chapter_id) constraint — only one state record per artifact per chapter.
+
+        Args:
+            artifact_id: ID of the artifact whose state to record (required).
+            chapter_id: Chapter at which this state is recorded (required).
+            condition: State of the artifact — e.g. "intact", "damaged", "destroyed"
+                       (default: "intact").
+            owner_id: FK to characters — current owner at this chapter (optional).
+            location_id: FK to locations — current location at this chapter (optional).
+            notes: Free-form notes about the object state (optional).
+
+        Returns:
+            The newly created ObjectState, NotFoundResponse if artifact_id or
+            chapter_id do not exist, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            artifact_row = await conn.execute_fetchall(
+                "SELECT id FROM artifacts WHERE id = ?", (artifact_id,)
+            )
+            if not artifact_row:
+                return NotFoundResponse(
+                    not_found_message=f"Artifact {artifact_id} not found"
+                )
+            chapter_row = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not chapter_row:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO object_states (
+                        artifact_id, chapter_id, owner_id, location_id, condition, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?)""",
+                    (artifact_id, chapter_id, owner_id, location_id, condition, notes),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM object_states WHERE id = ?", (new_id,)
+                )
+                return ObjectState(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_object_state failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_object_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_object_state(object_state_id: int) -> NotFoundResponse | dict:
+        """Delete an object state entry by ID.
+
+        Log-style delete: object_states is a leaf table with no FK children,
+        so no try/except for FK violations is needed.
+
+        Args:
+            object_state_id: Primary key of the object state entry to delete.
+
+        Returns:
+            {"deleted": True, "id": object_state_id} on success, or
+            NotFoundResponse if the entry does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM object_states WHERE id = ?", (object_state_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Object state {object_state_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM object_states WHERE id = ?", (object_state_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": object_state_id}
