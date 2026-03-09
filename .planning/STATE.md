@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-14-PLAN.md
-last_updated: "2026-03-09T20:31:19.492Z"
+stopped_at: Completed 14-18-PLAN.md
+last_updated: "2026-03-09T20:37:54.752Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
   percent: 0
 ---
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P16 | 3 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P17 | 4 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P14 | 2 | 2 tasks | 1 files |
+| Phase 14-mcp-api-completeness P18 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: Artifact model uses real schema columns from migration 010 (current_owner_id, significance, magical_properties, history); ObjectState uses owner_id/location_id/condition — not simplified plan interface names
 - [Phase 14-mcp-api-completeness]: delete_artifact FK-safe (object_states + event_artifacts reference it); delete_object_state log-style (leaf table)
 - [Phase 14-mcp-api-completeness]: log_object_state pre-checks both artifact_id and chapter_id FKs before INSERT; object_states has UNIQUE(artifact_id, chapter_id)
+- [Phase 14-mcp-api-completeness]: arc_progression is the real schema column in chapter_character_arcs (not arc_role) — confirmed from migration 017
+- [Phase 14-mcp-api-completeness]: ChapterCharacterArc is in novel.models.plot (not novel.models.arcs) — imported cross-module in arcs.py
+- [Phase 14-mcp-api-completeness]: chapter_plot_threads and chapter_character_arcs both have surrogate AUTOINCREMENT id + UNIQUE(chapter_id, FK_id) — ON CONFLICT targets composite unique constraint
 
 ### Pending Todos
 
@@ -133,6 +137,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:31:19.491Z
-Stopped at: Completed 14-14-PLAN.md
+Last session: 2026-03-09T20:37:54.750Z
+Stopped at: Completed 14-18-PLAN.md
 Resume file: None
