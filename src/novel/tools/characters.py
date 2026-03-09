@@ -19,6 +19,7 @@ from novel.models.characters import (
     CharacterKnowledge,
     CharacterLocation,
     InjuryState,
+    TitleState,
 )
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
@@ -26,10 +27,17 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 10 character domain tools with the given FastMCP instance.
+    """Register all 19 character domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
+
+    Includes 9 new write tools added in Plans 01 and 07:
+    delete_character, delete_character_knowledge (Plan 01),
+    log_character_belief, delete_character_belief, log_character_location,
+    get_current_character_location, delete_character_location,
+    log_injury_state, delete_injury_state, log_title_state,
+    delete_title_state (Plan 07).
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -502,3 +510,228 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": character_knowledge_id}
+
+    # ------------------------------------------------------------------
+    # log_character_belief
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_character_belief(
+        character_id: int,
+        content: str,
+        belief_type: str = "worldview",
+        strength: int = 5,
+        formed_chapter_id: int | None = None,
+        challenged_chapter_id: int | None = None,
+        notes: str | None = None,
+    ) -> CharacterBelief | NotFoundResponse | ValidationFailure:
+        """Log a new belief held by a character.
+
+        Beliefs are append-only records tracking a character's worldview,
+        personal convictions, or moral stances as they evolve through the story.
+
+        Args:
+            character_id: ID of the character whose belief to log.
+            content: The belief statement (required).
+            belief_type: Category of belief — "worldview", "personal", "moral", etc.
+            strength: Conviction strength 1-10 (default 5).
+            formed_chapter_id: Chapter at which this belief was formed (optional).
+            challenged_chapter_id: Chapter at which this belief was challenged (optional).
+            notes: Free-form notes (optional).
+
+        Returns:
+            The newly created CharacterBelief with its assigned id, or
+            NotFoundResponse if the character does not exist, or
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            exists = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not exists:
+                return NotFoundResponse(not_found_message=f"Character {character_id} not found")
+
+            if formed_chapter_id is not None:
+                ch_row = await conn.execute_fetchall(
+                    "SELECT id FROM chapters WHERE id = ?", (formed_chapter_id,)
+                )
+                if not ch_row:
+                    return NotFoundResponse(
+                        not_found_message=f"Chapter {formed_chapter_id} not found"
+                    )
+
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO character_beliefs
+                        (character_id, belief_type, content, strength,
+                         formed_chapter_id, challenged_chapter_id, notes,
+                         created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))""",
+                    (character_id, belief_type, content, strength,
+                     formed_chapter_id, challenged_chapter_id, notes),
+                )
+                await conn.commit()
+                new_id = cursor.lastrowid
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM character_beliefs WHERE id = ?", (new_id,)
+                )
+                return CharacterBelief(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_character_belief failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_character_belief
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_character_belief(belief_id: int) -> NotFoundResponse | dict:
+        """Delete a character belief record by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        character_beliefs is a log table with no FK children, so no FK
+        constraint check is needed.
+
+        Args:
+            belief_id: Primary key of the character_beliefs record.
+
+        Returns:
+            {"deleted": True, "id": belief_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM character_beliefs WHERE id = ?", (belief_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Character belief {belief_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM character_beliefs WHERE id = ?", (belief_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": belief_id}
+
+    # ------------------------------------------------------------------
+    # log_character_location
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_character_location(
+        character_id: int,
+        chapter_id: int,
+        location_id: int | None = None,
+        location_note: str | None = None,
+    ) -> CharacterLocation | NotFoundResponse | ValidationFailure:
+        """Log a character's location at a specific chapter.
+
+        Location records are append-only and chapter-scoped, tracking where
+        a character is as the story progresses.
+
+        Args:
+            character_id: ID of the character whose location to log.
+            chapter_id: Chapter at which this location applies.
+            location_id: FK to locations table (optional — use if a named location exists).
+            location_note: Free-text location description (optional).
+
+        Returns:
+            The newly created CharacterLocation with its assigned id, or
+            NotFoundResponse if the character or chapter does not exist, or
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            char_row = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char_row:
+                return NotFoundResponse(not_found_message=f"Character {character_id} not found")
+
+            ch_row = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch_row:
+                return NotFoundResponse(not_found_message=f"Chapter {chapter_id} not found")
+
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO character_locations
+                        (character_id, chapter_id, location_id, location_note, created_at)
+                       VALUES (?, ?, ?, ?, datetime('now'))""",
+                    (character_id, chapter_id, location_id, location_note),
+                )
+                await conn.commit()
+                new_id = cursor.lastrowid
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM character_locations WHERE id = ?", (new_id,)
+                )
+                return CharacterLocation(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_character_location failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_current_character_location
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_current_character_location(
+        character_id: int,
+    ) -> CharacterLocation | NotFoundResponse:
+        """Return the most recent location record for a character.
+
+        Selects the location with the highest chapter_id to represent the
+        character's current known position.
+
+        Args:
+            character_id: ID of the character whose current location to retrieve.
+
+        Returns:
+            The most recent CharacterLocation, or NotFoundResponse if no
+            location records exist for this character.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM character_locations "
+                "WHERE character_id = ? "
+                "ORDER BY chapter_id DESC LIMIT 1",
+                (character_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"No location found for character {character_id}"
+                )
+            return CharacterLocation(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_character_location
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_character_location(location_id: int) -> NotFoundResponse | dict:
+        """Delete a character location record by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        character_locations is a log table with no FK children, so no FK
+        constraint check is needed.
+
+        Args:
+            location_id: Primary key of the character_locations record.
+
+        Returns:
+            {"deleted": True, "id": location_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM character_locations WHERE id = ?", (location_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Character location {location_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM character_locations WHERE id = ?", (location_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": location_id}
