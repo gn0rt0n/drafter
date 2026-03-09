@@ -37,8 +37,8 @@ Human operator
 ### Layer 1: SQLite Database
 
 The persistence layer. A single SQLite file managed through 22 sequential migration scripts
-in `src/novel/migrations/`. All migrations run at startup via `novel db migrate` or are
-applied automatically on `uv run novel-mcp`.
+in `src/novel/migrations/`. All migrations must be applied explicitly via `novel db migrate`
+before starting the MCP server; the server requires a pre-initialized database.
 
 Key characteristics:
 - WAL mode enabled — required for async MCP + aiosqlite concurrent access
@@ -70,7 +70,7 @@ isolated from MCP tool code — the two layers share only the database file.
 Subcommand groups:
 - `novel db` — database management: `migrate`, `seed`, `reset`, `status`
 - `novel gate` — architecture gate: `check`, `status`, `certify`
-- `novel export` — chapter markdown export: `regenerate`
+- `novel export` — chapter markdown export: `chapter`, `all`
 - `novel name` — name registry: `check`, `register`, `suggest`
 - `novel session` — session management: `start`, `close`
 - `novel query` — narrative queries: `pov-balance`, `arc-health`, `thread-gaps`
@@ -119,7 +119,7 @@ Gate certification flow:
 
 The gate enforces a minimum viable narrative foundation: named characters with goals,
 defined world-building, chapter structure, arc assignments, plot threads, and story beats.
-Once certified, the gate state is stored in `gate_certifications` and `gate_checklist_log`.
+Once certified, the gate state is stored in `architecture_gate` and `gate_checklist_items`.
 The `check_gate()` helper in `src/novel/mcp/gate.py` is called by gated tools at the
 top of their execution.
 
@@ -134,7 +134,7 @@ Every MCP tool returns one of four outcomes. No tool ever raises an unhandled ex
 | Success | Normal execution | Domain-specific return type (Pydantic model or primitive) |
 | Not found | Requested record does not exist | `null` with a `not_found_message` string field |
 | Validation failure | Input fails business-logic checks | `is_valid: false` with an `errors: list[str]` field |
-| Gate violation | Gated tool called before gate certification | `requires_action: true` with a `message` field |
+| Gate violation | Gated tool called before gate certification | `requires_action: str` — the string describes the required action |
 
 The `not_found_message` shape means callers can distinguish "tool succeeded, record absent"
 from "tool failed" without exception handling. Validation failures are returned as structured
