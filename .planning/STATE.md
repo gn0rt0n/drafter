@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-13-PLAN.md
-last_updated: "2026-03-09T20:11:41.779Z"
+stopped_at: Completed 14-15-PLAN.md
+last_updated: "2026-03-09T20:15:36.990Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 15
+  completed_plans: 16
   percent: 0
 ---
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P11 | 10 | 2 tasks | 2 files |
 | Phase 14 P12 | 2 | 2 tasks | 1 files |
 | Phase 14-mcp-api-completeness P13 | 12 | 2 tasks | 1 files |
+| Phase 14-mcp-api-completeness P15 | 8 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: Act model uses name/purpose/structural_notes — not title/description/notes as in plan interface (real schema from migration 003)
 - [Phase 14-mcp-api-completeness]: delete_book FK-safe (books referenced by acts, chapters, seven_point_structure); delete_era FK-safe (eras referenced by artifacts.origin_era_id and characters.home_era_id)
 - [Phase 14-mcp-api-completeness]: upsert_act pre-checks book_id FK; start/end chapter_id are NOT pre-checked (nullable by design — acts can be created before chapters exist)
+- [Phase 14-mcp-api-completeness]: get_supernatural_element added to magic.py — plan assumed it existed but tool was absent; SupernaturalElement import also added
+- [Phase 14-mcp-api-completeness]: supernatural_elements delete uses FK-safe try/except even though table has no FK children — follows plan spec and is safe pattern
 
 ### Pending Todos
 
@@ -119,6 +122,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:11:41.777Z
-Stopped at: Completed 14-13-PLAN.md
+Last session: 2026-03-09T20:15:36.989Z
+Stopped at: Completed 14-15-PLAN.md
 Resume file: None
