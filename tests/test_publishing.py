@@ -571,3 +571,165 @@ async def test_delete_documentation_task_not_found(test_db_path):
     assert not result.isError
     data = json.loads(result.content[0].text)
     assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: get_research_notes
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_get_research_notes_all(test_db_path):
+    """get_research_notes returns all research notes when no filter is given.
+
+    Uses upsert to insert 2 notes then retrieves all.
+    Verify list has >= 2 items.
+    """
+    await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {"topic": "Magic System Research", "content": "Notes on magic systems"},
+    )
+    await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {"topic": "Historical Research", "content": "Medieval history notes"},
+    )
+    result = await _call_tool(test_db_path, "get_research_notes", {})
+    assert not result.isError
+    items = [json.loads(c.text) for c in result.content]
+    assert isinstance(items, list)
+    assert len(items) >= 2
+
+
+@pytest.mark.anyio
+async def test_get_research_notes_filtered(test_db_path):
+    """get_research_notes with relevance filter returns only matching notes.
+
+    Filter relevance='worldbuilding'. All returned items must have
+    relevance containing 'worldbuilding'.
+    """
+    await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {
+            "topic": "Worldbuilding Ref",
+            "content": "Notes on world structure",
+            "relevance": "worldbuilding",
+        },
+    )
+    result = await _call_tool(
+        test_db_path, "get_research_notes", {"relevance": "worldbuilding"}
+    )
+    assert not result.isError
+    items = [json.loads(c.text) for c in result.content]
+    assert isinstance(items, list)
+    assert len(items) >= 1
+    for item in items:
+        assert "worldbuilding" in (item.get("relevance") or "")
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_research_note
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_research_note_create(test_db_path):
+    """upsert_research_note creates a new note when note_id is None.
+
+    note_id=None (default): plain INSERT creates new research note.
+    Verify returned object has id set and correct fields.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {
+            "topic": "Celtic Mythology",
+            "content": "Notes on Celtic myths for story inspiration",
+            "source": "Wikipedia",
+            "relevance": "character backstory",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["topic"] == "Celtic Mythology"
+    assert data["content"] == "Notes on Celtic myths for story inspiration"
+    assert data["source"] == "Wikipedia"
+    assert data["relevance"] == "character backstory"
+
+
+@pytest.mark.anyio
+async def test_upsert_research_note_update(test_db_path):
+    """upsert_research_note updates an existing note when note_id is provided.
+
+    Create a note first, then update its content.
+    Verify returned object has new content.
+    """
+    # Create first
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {"topic": "Note To Update", "content": "Original content"},
+    )
+    created = json.loads(create_result.content[0].text)
+    note_id = created["id"]
+
+    # Update
+    result = await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {
+            "note_id": note_id,
+            "topic": "Note To Update",
+            "content": "Updated content with more detail",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == note_id
+    assert data["content"] == "Updated content with more detail"
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_research_note
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_research_note_found(test_db_path):
+    """delete_research_note deletes an existing note and returns deleted=True.
+
+    Create a note, then delete it by id.
+    """
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_research_note",
+        {"topic": "Note To Delete", "content": "Temporary research note"},
+    )
+    created = json.loads(create_result.content[0].text)
+    note_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_research_note", {"note_id": note_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == note_id
+
+
+@pytest.mark.anyio
+async def test_delete_research_note_not_found(test_db_path):
+    """delete_research_note returns NotFoundResponse when note_id does not exist.
+
+    note_id=999999 does not exist. Verify response has 'not_found_message'.
+    """
+    result = await _call_tool(
+        test_db_path, "delete_research_note", {"note_id": 999999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
