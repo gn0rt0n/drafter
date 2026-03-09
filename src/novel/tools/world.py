@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 8 world domain tools with the given FastMCP instance.
+    """Register all 14 world domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -488,4 +488,178 @@ def register(mcp: FastMCP) -> None:
                 return {"deleted": True, "id": faction_id}
             except Exception as exc:
                 logger.error("delete_faction failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # upsert_culture
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_culture(
+        culture_id: int | None,
+        name: str,
+        region: str | None = None,
+        language_family: str | None = None,
+        naming_conventions: str | None = None,
+        social_structure: str | None = None,
+        values_beliefs: str | None = None,
+        taboos: str | None = None,
+        aesthetic_style: str | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+        source_file: str | None = None,
+    ) -> Culture | ValidationFailure:
+        """Create or update a culture.
+
+        When culture_id is None, uses ON CONFLICT(name) DO UPDATE so that
+        re-creating a culture by name merges rather than duplicates. When
+        culture_id is provided, uses ON CONFLICT(id) DO UPDATE.
+
+        Args:
+            culture_id: Existing culture ID to update, or None to create/merge by name.
+            name: Culture name — UNIQUE constraint in the database (required).
+            region: Geographic region of the culture (optional).
+            language_family: Language family or linguistic grouping (optional).
+            naming_conventions: Naming patterns and conventions (optional).
+            social_structure: Description of social hierarchy and structure (optional).
+            values_beliefs: Core values and belief systems (optional).
+            taboos: Cultural taboos and prohibitions (optional).
+            aesthetic_style: Artistic and aesthetic preferences (optional).
+            notes: Free-form notes (optional).
+            canon_status: Canon status — e.g. "draft", "approved" (default: "draft").
+            source_file: Source seed file if applicable (optional).
+
+        Returns:
+            The created or updated Culture, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if culture_id is None:
+                    # No id — conflict target is UNIQUE(name); always SELECT back by name
+                    await conn.execute(
+                        """INSERT INTO cultures (
+                            name, region, language_family, naming_conventions,
+                            social_structure, values_beliefs, taboos, aesthetic_style,
+                            notes, canon_status, source_file, updated_at
+                        ) VALUES (
+                            ?, ?, ?, ?,
+                            ?, ?, ?, ?,
+                            ?, ?, ?, datetime('now')
+                        )
+                        ON CONFLICT(name) DO UPDATE SET
+                            region=excluded.region,
+                            language_family=excluded.language_family,
+                            naming_conventions=excluded.naming_conventions,
+                            social_structure=excluded.social_structure,
+                            values_beliefs=excluded.values_beliefs,
+                            taboos=excluded.taboos,
+                            aesthetic_style=excluded.aesthetic_style,
+                            notes=excluded.notes,
+                            canon_status=excluded.canon_status,
+                            source_file=excluded.source_file,
+                            updated_at=datetime('now')
+                        """,
+                        (
+                            name, region, language_family, naming_conventions,
+                            social_structure, values_beliefs, taboos, aesthetic_style,
+                            notes, canon_status, source_file,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM cultures WHERE name = ?", (name,)
+                    )
+                else:
+                    # Provided id — conflict target is id
+                    await conn.execute(
+                        """INSERT INTO cultures (
+                            id, name, region, language_family, naming_conventions,
+                            social_structure, values_beliefs, taboos, aesthetic_style,
+                            notes, canon_status, source_file, updated_at
+                        ) VALUES (
+                            ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?,
+                            ?, ?, ?, datetime('now')
+                        )
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            region=excluded.region,
+                            language_family=excluded.language_family,
+                            naming_conventions=excluded.naming_conventions,
+                            social_structure=excluded.social_structure,
+                            values_beliefs=excluded.values_beliefs,
+                            taboos=excluded.taboos,
+                            aesthetic_style=excluded.aesthetic_style,
+                            notes=excluded.notes,
+                            canon_status=excluded.canon_status,
+                            source_file=excluded.source_file,
+                            updated_at=datetime('now')
+                        """,
+                        (
+                            culture_id,
+                            name, region, language_family, naming_conventions,
+                            social_structure, values_beliefs, taboos, aesthetic_style,
+                            notes, canon_status, source_file,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM cultures WHERE id = ?", (culture_id,)
+                    )
+            except Exception as exc:
+                logger.error("upsert_culture failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+            return Culture(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # list_cultures
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_cultures() -> list[Culture]:
+        """Return all cultures ordered by name.
+
+        Returns:
+            List of Culture objects ordered alphabetically by name.
+            Returns an empty list if no cultures exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM cultures ORDER BY name"
+            )
+            return [Culture(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # delete_culture
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_culture(culture_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a culture by ID, refusing if referenced records exist.
+
+        FK-safe: cultures are referenced by locations (culture_id FK) and by
+        the name_registry (culture_id FK). If any FK constraint is violated,
+        returns ValidationFailure with the error rather than raising.
+
+        Args:
+            culture_id: Primary key of the culture to delete.
+
+        Returns:
+            {"deleted": True, "id": culture_id} on success, NotFoundResponse
+            if the culture does not exist, or ValidationFailure if FK
+            constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM cultures WHERE id = ?", (culture_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Culture {culture_id} not found")
+            try:
+                await conn.execute("DELETE FROM cultures WHERE id = ?", (culture_id,))
+                await conn.commit()
+                return {"deleted": True, "id": culture_id}
+            except Exception as exc:
+                logger.error("delete_culture failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
