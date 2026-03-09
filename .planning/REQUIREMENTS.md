@@ -18,8 +18,8 @@
 
 ### MCP API
 
-- [ ] **MCP-01**: Every schema table either has an MCP write tool, or is documented as intentionally read-only with justification
-- [ ] **MCP-02**: New write tools implement the established error contract (null for not-found, is_valid: false for validation failures, requires_action for gate violations)
+- [x] **MCP-01**: Every schema table either has an MCP write tool, or is documented as intentionally read-only with justification
+- [x] **MCP-02**: New write tools implement the established error contract (null for not-found, is_valid: false for validation failures, requires_action for gate violations)
 
 ### Documentation
 
@@ -48,8 +48,8 @@
 | DEBT-06 | Phase 13 | Complete |
 | DEBT-07 | Phase 13 | Complete |
 | DEBT-08 | Phase 13 | Complete |
-| MCP-01 | Phase 14 | Pending |
-| MCP-02 | Phase 14 | Pending |
+| MCP-01 | Phase 14 | Complete |
+| MCP-02 | Phase 14 | Complete |
 | DOCS-01 | Phase 15 | Pending |
 | DOCS-02 | Phase 15 | Pending |
 | DOCS-03 | Phase 15 | Pending |
