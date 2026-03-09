@@ -1,6 +1,6 @@
 """Chapter domain MCP tools.
 
-All 5 chapter tools are registered via the register(mcp) function pattern.
+All 6 chapter tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 chapter domain tools with the given FastMCP instance.
+    """Register all 6 chapter domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -283,3 +283,39 @@ def register(mcp: FastMCP) -> None:
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
 
             return Chapter(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_chapter
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_chapter(chapter_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a chapter by ID.
+
+        Refuses if scenes, acts, character state tables, pacing_beats, junction
+        tables, or other records reference this chapter. Idempotent (returns
+        NotFoundResponse if absent).
+
+        Args:
+            chapter_id: Primary key of the chapter to delete.
+
+        Returns:
+            {"deleted": True, "id": chapter_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                await conn.execute("DELETE FROM chapters WHERE id = ?", (chapter_id,))
+                await conn.commit()
+                return {"deleted": True, "id": chapter_id}
+            except Exception as exc:
+                logger.error("delete_chapter failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])

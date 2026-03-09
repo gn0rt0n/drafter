@@ -168,3 +168,47 @@ async def test_upsert_chapter_update(test_db_path):
     data = json.loads(result.content[0].text)
     assert data["id"] == 1
     assert data["title"] == "Updated Title"
+
+
+# ---------------------------------------------------------------------------
+# delete_chapter
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_chapter_not_found(test_db_path):
+    """delete_chapter returns NotFoundResponse for a non-existent chapter ID."""
+    result = await _call_tool(test_db_path, "delete_chapter", {"chapter_id": 99999})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_delete_chapter_success(test_db_path):
+    """delete_chapter removes a chapter with no FK dependents and returns deleted=True."""
+    # Create a fresh chapter with no dependents
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_chapter",
+        {
+            "chapter_id": None,
+            "book_id": 1,
+            "chapter_number": 888,
+            "title": "Temp Chapter To Delete",
+        },
+    )
+    assert not create_result.isError
+    created = json.loads(create_result.content[0].text)
+    new_id = created["id"]
+
+    # Now delete it
+    del_result = await _call_tool(test_db_path, "delete_chapter", {"chapter_id": new_id})
+    assert not del_result.isError
+    data = json.loads(del_result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == new_id
+
+    # Confirm it's gone
+    get_result = await _call_tool(test_db_path, "get_chapter", {"chapter_id": new_id})
+    assert not get_result.isError
+    gone = json.loads(get_result.content[0].text)
+    assert "not_found_message" in gone
