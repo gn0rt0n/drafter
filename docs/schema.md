@@ -462,9 +462,38 @@ erDiagram
     locations }o--o| factions : "controlling_faction_id"
     faction_political_states }o--|| factions : "faction_id"
     object_states }o--|| artifacts : "artifact_id"
+    magic_use_log {
+        INTEGER id PK
+        INTEGER chapter_id FK
+        INTEGER scene_id FK
+        INTEGER character_id FK
+        INTEGER magic_element_id FK
+        TEXT action_description
+        TEXT cost_paid
+        TEXT compliance_status
+        TEXT notes
+        TEXT created_at
+    }
+    practitioner_abilities {
+        INTEGER id PK
+        INTEGER character_id FK
+        INTEGER magic_element_id FK
+        INTEGER proficiency_level
+        INTEGER acquired_chapter_id FK
+        TEXT notes
+        TEXT created_at
+        TEXT updated_at
+    }
+    magic_use_log }o--|| chapters : "chapter_id"
+    magic_use_log }o--o| scenes : "scene_id"
+    magic_use_log }o--|| characters : "character_id"
+    magic_use_log }o--o| magic_system_elements : "magic_element_id"
+    practitioner_abilities }o--|| characters : "character_id"
+    practitioner_abilities }o--|| magic_system_elements : "magic_element_id"
+    practitioner_abilities }o--o| chapters : "acquired_chapter_id"
 ```
 
-> **Cross-domain FKs:** `factions.leader_character_id → characters.id` (Characters — nullable). `artifacts.current_owner_id → characters.id` (Characters). `artifacts.current_location_id → locations.id` (World — internal). `artifacts.origin_era_id → eras.id` (Foundation). `magic_system_elements.introduced_chapter_id → chapters.id` (Chapters). `supernatural_elements.introduced_chapter_id → chapters.id` (Chapters). `cultures.id` is referenced by `characters.culture_id` (Characters). `faction_political_states.chapter_id → chapters.id` (Chapters). `faction_political_states.noted_by_character_id → characters.id` (Characters). `object_states.chapter_id → chapters.id` (Chapters). `object_states.owner_id → characters.id` (Characters). `object_states.location_id → locations.id` (World — internal).
+> **Cross-domain FKs:** `factions.leader_character_id → characters.id` (Characters — nullable). `artifacts.current_owner_id → characters.id` (Characters). `artifacts.current_location_id → locations.id` (World — internal). `artifacts.origin_era_id → eras.id` (Foundation). `magic_system_elements.introduced_chapter_id → chapters.id` (Chapters). `supernatural_elements.introduced_chapter_id → chapters.id` (Chapters). `cultures.id` is referenced by `characters.culture_id` (Characters). `faction_political_states.chapter_id → chapters.id` (Chapters). `faction_political_states.noted_by_character_id → characters.id` (Characters). `object_states.chapter_id → chapters.id` (Chapters). `object_states.owner_id → characters.id` (Characters). `object_states.location_id → locations.id` (World — internal). `magic_use_log.chapter_id → chapters.id` (Chapters). `magic_use_log.character_id → characters.id` (Characters). `practitioner_abilities.character_id → characters.id` (Characters). `practitioner_abilities.acquired_chapter_id → chapters.id` (Chapters).
 
 ### `cultures`
 
@@ -661,6 +690,48 @@ Time-stamped log of an artifact's state at a specific chapter. Tracks ownership 
 **Constraints:** `UNIQUE(artifact_id, chapter_id)` — one object state record per artifact per chapter.
 
 **Populated by:** Not writable via MCP — direct DB insert only.
+
+---
+
+### `magic_use_log`
+
+Append-only audit trail of every magic use event during the story. Records who used magic, which element, what it cost, and whether it was compliant with the magic system rules. Each row is an immutable event — no upsert semantics.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | INTEGER PK | Primary key |
+| `chapter_id` | INTEGER FK | References `chapters.id` — chapter in which the magic was used |
+| `scene_id` | INTEGER FK | References `scenes.id` — scene context (nullable) |
+| `character_id` | INTEGER FK | References `characters.id` — character who used magic |
+| `magic_element_id` | INTEGER FK | References `magic_system_elements.id` — element invoked (nullable) |
+| `action_description` | TEXT | Description of the magic action performed |
+| `cost_paid` | TEXT | Cost paid by the character (nullable — may not apply to all elements) |
+| `compliance_status` | TEXT | Whether use was compliant with magic rules (default: `compliant`) |
+| `notes` | TEXT | Standard annotation field |
+| `created_at` | TEXT | Standard audit timestamp |
+
+**Populated by:** `log_magic_use` (world domain). Append-only — each row is a permanent record.
+
+---
+
+### `practitioner_abilities`
+
+Tracks which magic system elements a character has the ability to use, and at what proficiency level. One row per character-element pair; the unique constraint prevents duplicate capability records.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | INTEGER PK | Primary key |
+| `character_id` | INTEGER FK | References `characters.id` — the practitioner |
+| `magic_element_id` | INTEGER FK | References `magic_system_elements.id` — the element the character can use |
+| `proficiency_level` | INTEGER | Skill level (default: 1; higher = more proficient) |
+| `acquired_chapter_id` | INTEGER FK | References `chapters.id` — chapter when ability was acquired (nullable) |
+| `notes` | TEXT | Standard annotation field |
+| `created_at` | TEXT | Standard audit timestamp |
+| `updated_at` | TEXT | Standard audit timestamp |
+
+**Constraints:** `UNIQUE(character_id, magic_element_id)` — one ability record per character per magic element.
+
+**Populated by:** `get_practitioner_abilities` reads; direct DB insert or seed for writes (no dedicated MCP write tool).
 
 ---
 
