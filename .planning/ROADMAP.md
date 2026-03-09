@@ -192,7 +192,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -206,13 +206,16 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
 | 10. CLI Completion & Integration Testing | 3/3 | Complete    | 2026-03-08 |
+| 11. 7-Point Structure & Gate Extension | 0/3 | Ready to execute |  |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Add 7-point structure tracking at story level and per-POV-character arc, extend the gate to enforce complete beat coverage, and update all related planning docs
+**Requirements**: STRUCT-01, STRUCT-02, STRUCT-03, STRUCT-04, STRUCT-05, STRUCT-06, STRUCT-07
 **Depends on:** Phase 10
-**Plans:** 3/3 plans complete
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Migration 022 + Pydantic models (StoryStructure, ArcSevenPointBeat) + models/__init__.py (Wave 1)
+- [ ] 11-02-PLAN.md — Gate extension (36 items) + gate_ready seed rows for new tables (Wave 1, parallel)
+- [ ] 11-03-PLAN.md — tools/structure.py (4 tools) + server.py wiring + test updates + database-schema.md (Wave 2)
