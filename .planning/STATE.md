@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-17-PLAN.md
-last_updated: "2026-03-09T20:26:47.642Z"
+stopped_at: Completed 14-14-PLAN.md
+last_updated: "2026-03-09T20:31:19.492Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 18
+  completed_plans: 19
   percent: 0
 ---
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P15 | 8 | 1 tasks | 1 files |
 | Phase 14-mcp-api-completeness P16 | 3 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P17 | 4 | 2 tasks | 2 files |
+| Phase 14-mcp-api-completeness P14 | 2 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: pacing_beats and tension_measurements are leaf tables — log-delete pattern (no ValidationFailure) used for both delete tools
 - [Phase 14]: ResearchNote uses topic (not title) and relevance (not tags) — real schema from migration 021 used; plan interface was simplified
 - [Phase 14]: documentation_tasks and research_notes tools are not gate-gated (dev-internal tables) — publishing_assets and submission_tracker remain gate-gated
+- [Phase 14-mcp-api-completeness]: Artifact model uses real schema columns from migration 010 (current_owner_id, significance, magical_properties, history); ObjectState uses owner_id/location_id/condition — not simplified plan interface names
+- [Phase 14-mcp-api-completeness]: delete_artifact FK-safe (object_states + event_artifacts reference it); delete_object_state log-style (leaf table)
+- [Phase 14-mcp-api-completeness]: log_object_state pre-checks both artifact_id and chapter_id FKs before INSERT; object_states has UNIQUE(artifact_id, chapter_id)
 
 ### Pending Todos
 
@@ -129,6 +133,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:26:47.640Z
-Stopped at: Completed 14-17-PLAN.md
+Last session: 2026-03-09T20:31:19.491Z
+Stopped at: Completed 14-14-PLAN.md
 Resume file: None
