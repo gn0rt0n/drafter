@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-08-PLAN.md
-last_updated: "2026-03-09T19:46:44.589Z"
+stopped_at: Completed 14-09-PLAN.md
+last_updated: "2026-03-09T19:51:58.112Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P06 | 3 | 3 tasks | 4 files |
 | Phase 14 P07 | 5 | 2 tasks | 2 files |
 | Phase 14 P08 | 242 | 2 tasks | 4 files |
+| Phase 14 P09 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase 14]: log-style delete (no try/except) used for character_beliefs, character_locations, injury_states, title_states — all append-only logs with no FK children
 - [Phase 14]: log_travel_segment is NOT gate-gated per plan spec (no GateViolation return type)
 - [Phase 14]: pov_balance_snapshots uses chapter_count + word_count fields (not pov_percentage) — real schema from migration 020 used
+- [Phase 14]: cultures UNIQUE(name) confirmed in migration 004 — upsert uses ON CONFLICT(name) pattern like upsert_faction
+- [Phase 14]: faction_political_states.chapter_id is NOT NULL — log_faction_political_state makes chapter_id required (not optional)
+- [Phase 14]: delete_culture is FK-safe (locations and name_registry reference cultures); delete_faction_political_state is log-style (no FK children)
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:46:44.587Z
-Stopped at: Completed 14-08-PLAN.md
+Last session: 2026-03-09T19:51:58.110Z
+Stopped at: Completed 14-09-PLAN.md
 Resume file: None
