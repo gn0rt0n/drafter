@@ -1,6 +1,6 @@
 """Names domain MCP tools.
 
-All 4 name tools are registered via the register(mcp) function pattern.
+All 5 name tools are registered via the register(mcp) function pattern.
 This module is gate-free: name tools must work during worldbuilding (before
 gate certification). Do NOT add check_gate() to this module.
 
@@ -30,7 +30,7 @@ class NameSuggestionsResult(BaseModel):
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 4 name domain tools with the given FastMCP instance.
+    """Register all 5 name domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -238,3 +238,47 @@ def register(mcp: FastMCP) -> None:
                 linguistic_context=linguistic_context,
                 culture_id=culture_id,
             )
+
+    # ------------------------------------------------------------------
+    # delete_name_registry_entry
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_name_registry_entry(
+        name_registry_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a name registry entry by its integer primary key.
+
+        FK-safe: name_registry entries may be referenced by other tables
+        (e.g. characters via introduced_chapter_id FK path). If any FK
+        constraint is violated, returns ValidationFailure with the error
+        rather than raising.
+
+        Note: The parameter uses the integer primary key (id), not the name
+        string, to allow unambiguous deletion.
+
+        Args:
+            name_registry_id: Primary key (id) of the name registry entry to delete.
+
+        Returns:
+            {"deleted": True, "id": name_registry_id} on success, NotFoundResponse
+            if the entry does not exist, or ValidationFailure if FK constraints
+            prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM name_registry WHERE id = ?", (name_registry_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Name registry entry {name_registry_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM name_registry WHERE id = ?", (name_registry_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": name_registry_id}
+            except Exception as exc:
+                logger.error("delete_name_registry_entry failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
