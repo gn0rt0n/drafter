@@ -32,7 +32,7 @@ See archive: `.planning/milestones/v1.0-ROADMAP.md`
 **Milestone Goal:** Clear all v1.0 tech debt, fill MCP write-tool gaps, and restructure monolithic docs into per-domain files.
 
 - [x] **Phase 13: Tech Debt Clearance** - Fix stale gate count strings, CLI help text bug, README doc bugs, and missing pydantic dependency (completed 2026-03-09)
-- [ ] **Phase 14: MCP API Completeness** - Audit all schema tables, implement missing write tools, enforce error contract
+- [x] **Phase 14: MCP API Completeness** - Audit all schema tables, implement missing write tools, enforce error contract (completed 2026-03-09)
 - [ ] **Phase 15: Documentation Restructure** - Update and split mcp-tools.md and schema.md into per-domain files, create master index
 
 ## Phase Details
@@ -109,5 +109,5 @@ Plans:
 | 11. 7-Point Structure Extension | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 13. Tech Debt Clearance | 2/2 | Complete    | 2026-03-09 | - |
-| 14. MCP API Completeness | 18/19 | In Progress|  | - |
+| 14. MCP API Completeness | 19/19 | Complete   | 2026-03-09 | - |
 | 15. Documentation Restructure | v1.1 | 0/TBD | Not started | - |

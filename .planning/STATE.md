@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-18-PLAN.md
-last_updated: "2026-03-09T20:37:54.752Z"
+stopped_at: Completed 14-19-PLAN.md
+last_updated: "2026-03-09T20:43:47.863Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
   percent: 0
 ---
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P17 | 4 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P14 | 2 | 2 tasks | 1 files |
 | Phase 14-mcp-api-completeness P18 | 3 | 2 tasks | 4 files |
+| Phase 14-mcp-api-completeness P19 | 4 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,9 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: arc_progression is the real schema column in chapter_character_arcs (not arc_role) — confirmed from migration 017
 - [Phase 14-mcp-api-completeness]: ChapterCharacterArc is in novel.models.plot (not novel.models.arcs) — imported cross-module in arcs.py
 - [Phase 14-mcp-api-completeness]: chapter_plot_threads and chapter_character_arcs both have surrogate AUTOINCREMENT id + UNIQUE(chapter_id, FK_id) — ON CONFLICT targets composite unique constraint
+- [Phase 14-mcp-api-completeness]: event_participants.role column used (not participant_role as in plan interface) — real schema from migration 015
+- [Phase 14-mcp-api-completeness]: event_artifacts.involvement column used (not artifact_role) — EventArtifact has no notes column in real schema
+- [Phase 14-mcp-api-completeness]: delete_gate_checklist_item Task 2 was no-op — tool fully implemented in Plan 06 (commit 79aad80)
 
 ### Pending Todos
 
@@ -137,6 +141,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:37:54.750Z
-Stopped at: Completed 14-18-PLAN.md
+Last session: 2026-03-09T20:43:47.862Z
+Stopped at: Completed 14-19-PLAN.md
 Resume file: None
