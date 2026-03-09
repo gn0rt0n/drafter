@@ -1031,7 +1031,7 @@ def _load_gate_ready(conn: sqlite3.Connection) -> None:
             (name, entity_type),
         )
 
-    # --- All 34 gate_checklist_items with item_key, category, description ---
+    # --- All 36 gate_checklist_items with item_key, category, description ---
     # Use INSERT OR IGNORE — minimal already has 'min_characters' row (if any)
     # Import GATE_ITEM_META from tools.gate to avoid duplication
     from novel.tools.gate import GATE_ITEM_META
@@ -1041,5 +1041,30 @@ def _load_gate_ready(conn: sqlite3.Connection) -> None:
             "(gate_id, item_key, category, description) VALUES (1, ?, ?, ?)",
             (item_key, meta["category"], meta["description"]),
         )
+
+    # --- struct_story_beats: book_id=1 needs story_structure with all 7 beat chapter FKs ---
+    conn.execute(
+        """INSERT OR IGNORE INTO story_structure
+               (book_id, hook_chapter_id, plot_turn_1_chapter_id, pinch_1_chapter_id,
+                midpoint_chapter_id, pinch_2_chapter_id, plot_turn_2_chapter_id,
+                resolution_chapter_id, act_1_inciting_incident_chapter_id,
+                act_2_midpoint_chapter_id, act_3_climax_chapter_id, notes)
+           VALUES (1, 1, 1, 2, 2, 3, 3, 3, 1, 2, 3,
+                   'Gate-ready seed: beat chapters assigned for structural completeness.')"""
+    )
+
+    # --- arcs_seven_point_beats: POV arcs (arc_id=1 protagonist, arc_id=2 mentor) ---
+    # need 7 rows each with chapter_id IS NOT NULL to pass arcs_seven_point_beats gate query
+    _BEAT_TYPES = [
+        "hook", "plot_turn_1", "pinch_1",
+        "midpoint", "pinch_2", "plot_turn_2", "resolution",
+    ]
+    for arc_id in (1, 2):
+        for beat_type in _BEAT_TYPES:
+            conn.execute(
+                "INSERT OR IGNORE INTO arc_seven_point_beats "
+                "(arc_id, beat_type, chapter_id, notes) VALUES (?, ?, 1, 'gate-ready seed')",
+                (arc_id, beat_type),
+            )
 
     conn.commit()
