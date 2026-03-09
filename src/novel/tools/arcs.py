@@ -1,6 +1,6 @@
 """Arc domain MCP tools.
 
-All 12 arc tools are registered via the register(mcp) function pattern.
+All 15 arc tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -14,13 +14,14 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.models.arcs import ArcHealthLog, CharacterArc, ChekhovGun, SubplotTouchpoint
+from novel.models.plot import ChapterCharacterArc
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 12 arc domain tools with the given FastMCP instance.
+    """Register all 15 arc domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -725,3 +726,137 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": touchpoint_id}
+
+    # ------------------------------------------------------------------
+    # link_chapter_to_arc
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def link_chapter_to_arc(
+        chapter_id: int,
+        arc_id: int,
+        arc_progression: str = "advance",
+        notes: str | None = None,
+    ) -> ChapterCharacterArc | NotFoundResponse | ValidationFailure:
+        """Link a chapter to a character arc via the chapter_character_arcs junction table.
+
+        Idempotent: if the link already exists, updates arc_progression and notes.
+        Returns NotFoundResponse if either chapter or arc does not exist.
+        No gate check — arc tools are not gated.
+
+        Args:
+            chapter_id: FK to chapters table (required).
+            arc_id: FK to character_arcs table (required).
+            arc_progression: Progression state in this chapter — e.g. "advance",
+                             "climax", "setup", "stasis" (default: "advance").
+            notes: Free-form notes about this chapter-arc association (optional).
+
+        Returns:
+            The created or updated ChapterCharacterArc record.
+            NotFoundResponse if chapter_id or arc_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            ch = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            arc = await conn.execute_fetchall(
+                "SELECT id FROM character_arcs WHERE id = ?", (arc_id,)
+            )
+            if not arc:
+                return NotFoundResponse(
+                    not_found_message=f"Arc {arc_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "INSERT INTO chapter_character_arcs "
+                    "(chapter_id, arc_id, arc_progression, notes) "
+                    "VALUES (?, ?, ?, ?) "
+                    "ON CONFLICT(chapter_id, arc_id) DO UPDATE SET "
+                    "arc_progression=excluded.arc_progression, notes=excluded.notes",
+                    (chapter_id, arc_id, arc_progression, notes),
+                )
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM chapter_character_arcs "
+                    "WHERE chapter_id=? AND arc_id=?",
+                    (chapter_id, arc_id),
+                )
+                return ChapterCharacterArc(**dict(row[0]))
+            except Exception as exc:
+                logger.error("link_chapter_to_arc failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # unlink_chapter_from_arc
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def unlink_chapter_from_arc(
+        chapter_id: int,
+        arc_id: int,
+    ) -> NotFoundResponse | dict:
+        """Remove the link between a chapter and a character arc.
+
+        Idempotent: returns NotFoundResponse if the link does not exist.
+        No gate check — arc tools are not gated.
+
+        Args:
+            chapter_id: FK to chapters table (required).
+            arc_id: FK to character_arcs table (required).
+
+        Returns:
+            {"unlinked": True, "chapter_id": chapter_id, "arc_id": arc_id} on success.
+            NotFoundResponse if the link does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM chapter_character_arcs "
+                "WHERE chapter_id=? AND arc_id=?",
+                (chapter_id, arc_id),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=(
+                        f"No link between chapter {chapter_id} and arc {arc_id}"
+                    )
+                )
+            await conn.execute(
+                "DELETE FROM chapter_character_arcs "
+                "WHERE chapter_id=? AND arc_id=?",
+                (chapter_id, arc_id),
+            )
+            await conn.commit()
+            return {"unlinked": True, "chapter_id": chapter_id, "arc_id": arc_id}
+
+    # ------------------------------------------------------------------
+    # get_arcs_for_chapter
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_arcs_for_chapter(
+        chapter_id: int,
+    ) -> list[ChapterCharacterArc]:
+        """Get all character arc associations for a chapter.
+
+        Returns an empty list when the chapter has no associated arcs
+        (or when chapter_id does not exist).
+
+        Args:
+            chapter_id: Primary key of the chapter to query.
+
+        Returns:
+            List of ChapterCharacterArc records ordered by arc_id.
+            Returns an empty list if no associations exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM chapter_character_arcs "
+                "WHERE chapter_id=? ORDER BY arc_id",
+                (chapter_id,),
+            )
+            return [ChapterCharacterArc(**dict(r)) for r in rows]
