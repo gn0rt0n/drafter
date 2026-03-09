@@ -192,7 +192,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -207,6 +207,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
 | 10. CLI Completion & Integration Testing | 3/3 | Complete    | 2026-03-08 |
 | 11. 7-Point Structure & Gate Extension | 4/4 | Complete    | 2026-03-09 |
+| 12. Schema and MCP System Documentation | 0/3 | Planned    | |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
@@ -219,3 +220,15 @@ Plans:
 - [ ] 11-01-PLAN.md — Migration 022 + Pydantic models (StoryStructure, ArcSevenPointBeat) + models/__init__.py (Wave 1)
 - [ ] 11-02-PLAN.md — Gate extension (36 items) + gate_ready seed rows for new tables (Wave 1, parallel)
 - [ ] 11-03-PLAN.md — tools/structure.py (4 tools) + server.py wiring + test updates + database-schema.md (Wave 2)
+
+### Phase 12: Schema and MCP System Documentation
+
+**Goal:** Create implementation-accurate reference documentation for the complete system: docs/schema.md (71 tables, 16 domains, Mermaid ER diagrams), docs/mcp-tools.md (103 tools, 18 domains, full tool cards), and docs/README.md (architecture overview and navigation entry point)
+**Requirements**: TBD (documentation phase — no formal requirement IDs)
+**Depends on:** Phase 11
+**Plans:** 3 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — docs/README.md (architecture overview) + pointer note in project-research/database-schema.md (Wave 1)
+- [ ] 12-02-PLAN.md — docs/schema.md: 71 tables, 16 domains, Mermaid ER diagrams, derived from migration SQL (Wave 1, parallel)
+- [ ] 12-03-PLAN.md — docs/mcp-tools.md: 103 tools, 18 domains, full tool cards, derived from Python tool modules (Wave 1, parallel)
