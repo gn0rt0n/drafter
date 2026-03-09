@@ -136,3 +136,97 @@ async def test_upsert_plot_thread_update(test_db_path):
     data = json.loads(result.content[0].text)
     assert data["id"] == 1
     assert data["name"] == "Updated Hidden Vault"
+
+
+# ---------------------------------------------------------------------------
+# link_chapter_to_plot_thread / unlink_chapter_from_plot_thread / get_plot_threads_for_chapter
+# ---------------------------------------------------------------------------
+
+
+async def test_link_chapter_to_plot_thread(test_db_path):
+    """Linking a chapter to a plot thread returns ChapterPlotThread."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_plot_thread",
+        {"chapter_id": 1, "plot_thread_id": 1, "thread_role": "advance"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["chapter_id"] == 1
+    assert data["plot_thread_id"] == 1
+    assert data["thread_role"] == "advance"
+
+
+async def test_link_chapter_to_plot_thread_idempotent(test_db_path):
+    """Re-linking updates thread_role without error."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_plot_thread",
+        {"chapter_id": 1, "plot_thread_id": 1, "thread_role": "resolve"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["thread_role"] == "resolve"
+
+
+async def test_link_chapter_to_plot_thread_missing_chapter(test_db_path):
+    """Returns NotFoundResponse when chapter_id does not exist."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_plot_thread",
+        {"chapter_id": 9999, "plot_thread_id": 1},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_link_chapter_to_plot_thread_missing_plot_thread(test_db_path):
+    """Returns NotFoundResponse when plot_thread_id does not exist."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_plot_thread",
+        {"chapter_id": 1, "plot_thread_id": 9999},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_get_plot_threads_for_chapter(test_db_path):
+    """Returns list of ChapterPlotThread entries for a chapter."""
+    result = await _call_tool(
+        test_db_path,
+        "get_plot_threads_for_chapter",
+        {"chapter_id": 1},
+    )
+    assert not result.isError
+    links = [json.loads(c.text) for c in result.content]
+    assert len(links) >= 1
+    assert all(lnk["chapter_id"] == 1 for lnk in links)
+
+
+async def test_unlink_chapter_from_plot_thread(test_db_path):
+    """Unlink removes the association and returns unlinked=True."""
+    result = await _call_tool(
+        test_db_path,
+        "unlink_chapter_from_plot_thread",
+        {"chapter_id": 1, "plot_thread_id": 1},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["unlinked"] is True
+    assert data["chapter_id"] == 1
+    assert data["plot_thread_id"] == 1
+
+
+async def test_unlink_chapter_from_plot_thread_not_found(test_db_path):
+    """Unlinking a non-existent link returns NotFoundResponse."""
+    result = await _call_tool(
+        test_db_path,
+        "unlink_chapter_from_plot_thread",
+        {"chapter_id": 9999, "plot_thread_id": 9999},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
