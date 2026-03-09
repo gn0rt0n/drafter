@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-12-PLAN.md
-last_updated: "2026-03-09T20:06:46.181Z"
+stopped_at: Completed 14-13-PLAN.md
+last_updated: "2026-03-09T20:11:41.779Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 ---
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P10 | 15 | 2 tasks | 3 files |
 | Phase 14 P11 | 10 | 2 tasks | 2 files |
 | Phase 14 P12 | 2 | 2 tasks | 1 files |
+| Phase 14-mcp-api-completeness P13 | 12 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,10 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: upsert_supernatural_voice_guideline and delete_supernatural_voice_guideline are gate-gated; upsert_name_registry_entry is gate-free — consistent with existing module patterns
 - [Phase 14]: upsert_motif/prophecy/thematic_mirror/opposition_pair all use id-based ON CONFLICT(id) upsert to allow field edits after creation; ValidationFailure added to foreshadowing.py imports
 - [Phase 14]: reader_reveals upsert uses real schema columns (planned_reveal, actual_reveal, reader_impact) not simplified plan interface; log_reader_experience_note checks both chapter_id and scene_id FKs; delete_reader_reveal FK-safe vs delete_reader_experience_note log-delete (no FK children)
+- [Phase 14-mcp-api-completeness]: Era model uses sequence_order/date_start/date_end/summary/certainty_level — not start_year/end_year/description as in plan interface (real schema from migration 002)
+- [Phase 14-mcp-api-completeness]: Act model uses name/purpose/structural_notes — not title/description/notes as in plan interface (real schema from migration 003)
+- [Phase 14-mcp-api-completeness]: delete_book FK-safe (books referenced by acts, chapters, seven_point_structure); delete_era FK-safe (eras referenced by artifacts.origin_era_id and characters.home_era_id)
+- [Phase 14-mcp-api-completeness]: upsert_act pre-checks book_id FK; start/end chapter_id are NOT pre-checked (nullable by design — acts can be created before chapters exist)
 
 ### Pending Todos
 
@@ -114,6 +119,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:06:46.179Z
-Stopped at: Completed 14-12-PLAN.md
+Last session: 2026-03-09T20:11:41.777Z
+Stopped at: Completed 14-13-PLAN.md
 Resume file: None
