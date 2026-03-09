@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-16-PLAN.md
-last_updated: "2026-03-09T20:20:45.900Z"
+stopped_at: Completed 14-17-PLAN.md
+last_updated: "2026-03-09T20:26:47.642Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 17
+  completed_plans: 18
   percent: 0
 ---
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P13 | 12 | 2 tasks | 1 files |
 | Phase 14-mcp-api-completeness P15 | 8 | 1 tasks | 1 files |
 | Phase 14-mcp-api-completeness P16 | 3 | 2 tasks | 2 files |
+| Phase 14-mcp-api-completeness P17 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,8 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: PacingBeat real schema uses description + sequence_order + optional scene_id (not intensity as in plan interface) — confirmed from migration 018
 - [Phase 14-mcp-api-completeness]: TensionMeasurement has no scene_id column — chapter-scoped only with measurement_type field (not tension_type as in plan interface)
 - [Phase 14-mcp-api-completeness]: pacing_beats and tension_measurements are leaf tables — log-delete pattern (no ValidationFailure) used for both delete tools
+- [Phase 14]: ResearchNote uses topic (not title) and relevance (not tags) — real schema from migration 021 used; plan interface was simplified
+- [Phase 14]: documentation_tasks and research_notes tools are not gate-gated (dev-internal tables) — publishing_assets and submission_tracker remain gate-gated
 
 ### Pending Todos
 
@@ -126,6 +129,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:20:45.898Z
-Stopped at: Completed 14-16-PLAN.md
+Last session: 2026-03-09T20:26:47.640Z
+Stopped at: Completed 14-17-PLAN.md
 Resume file: None
