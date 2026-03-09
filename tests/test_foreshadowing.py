@@ -4,9 +4,13 @@ CRITICAL: Uses 'gate_ready' seed (NOT 'minimal') — all foreshadowing tools are
 prose-phase tools that call check_gate, which requires the gate to be certified.
 The gate_ready seed has the data required to pass all 34 gate SQL checks.
 
-Total foreshadowing tools: 8
+Total foreshadowing tools: 18 (10 original + 8 new)
   get_foreshadowing, get_prophecies, get_motifs, get_motif_occurrences,
-  get_thematic_mirrors, get_opposition_pairs, log_foreshadowing, log_motif_occurrence
+  get_thematic_mirrors, get_opposition_pairs, log_foreshadowing, log_motif_occurrence,
+  delete_foreshadowing, delete_motif_occurrence,
+  upsert_motif, delete_motif, upsert_prophecy, delete_prophecy,
+  upsert_thematic_mirror, delete_thematic_mirror,
+  upsert_opposition_pair, delete_opposition_pair
 
 Tests verify the full MCP protocol path: call_tool -> FastMCP -> tool handler -> SQLite -> response.
 MCP session is entered PER-TEST inside _call_tool — anyio cancel scope incompatible with fixtures.
@@ -378,6 +382,484 @@ async def test_get_foreshadowing_gate_violation(uncertified_db_path):
     which must return a GateViolation response (not raise an error).
     """
     result = await _call_tool(uncertified_db_path, "get_foreshadowing", {})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_motif (Task 1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_motif_create(test_db_path):
+    """upsert_motif creates a new motif when motif_id is None.
+
+    Uses required fields: name, description. Verifies returned object has an id
+    and matches the provided name.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_motif",
+        {
+            "name": "Dark Water",
+            "description": "Recurring imagery of still, dark water signifying death",
+            "motif_type": "symbol",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["name"] == "Dark Water"
+
+
+@pytest.mark.anyio
+async def test_upsert_motif_update(test_db_path):
+    """upsert_motif updates an existing motif when motif_id is provided.
+
+    First creates a motif, then updates its description. Verifies the
+    same id is returned with the updated description.
+    """
+    # Create first
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_motif",
+        {
+            "name": "Broken Mirror",
+            "description": "Original description",
+        },
+    )
+    assert not create_result.isError
+    create_data = json.loads(create_result.content[0].text)
+    motif_id = create_data["id"]
+
+    # Update with id
+    result = await _call_tool(
+        test_db_path,
+        "upsert_motif",
+        {
+            "motif_id": motif_id,
+            "name": "Broken Mirror",
+            "description": "Updated description about shattered identity",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == motif_id
+    assert data["description"] == "Updated description about shattered identity"
+
+
+@pytest.mark.anyio
+async def test_upsert_motif_gate_violation(uncertified_db_path):
+    """upsert_motif returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path,
+        "upsert_motif",
+        {"name": "Test", "description": "Test desc"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_motif (Task 1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_motif_success(test_db_path):
+    """delete_motif deletes an existing motif by id.
+
+    Creates a new motif (to avoid affecting seed data), then deletes it.
+    Verifies {"deleted": True, "id": N} is returned.
+    """
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_motif",
+        {"name": "Ephemeral Shadow", "description": "To be deleted"},
+    )
+    assert not create_result.isError
+    motif_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(test_db_path, "delete_motif", {"motif_id": motif_id})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == motif_id
+
+
+@pytest.mark.anyio
+async def test_delete_motif_not_found(test_db_path):
+    """delete_motif returns NotFoundResponse for a non-existent motif id."""
+    result = await _call_tool(test_db_path, "delete_motif", {"motif_id": 99999})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.anyio
+async def test_delete_motif_gate_violation(uncertified_db_path):
+    """delete_motif returns GateViolation on uncertified gate."""
+    result = await _call_tool(uncertified_db_path, "delete_motif", {"motif_id": 1})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_prophecy (Task 1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_prophecy_create(test_db_path):
+    """upsert_prophecy creates a new prophecy when prophecy_id is None.
+
+    Uses required fields: name, text. Verifies returned object has an id
+    and matches the provided name.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_prophecy",
+        {
+            "name": "The Fallen Star",
+            "text": "When the last star falls, darkness shall reign for an age",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["name"] == "The Fallen Star"
+
+
+@pytest.mark.anyio
+async def test_upsert_prophecy_update(test_db_path):
+    """upsert_prophecy updates an existing prophecy when prophecy_id is provided.
+
+    First creates a prophecy, then updates its status to 'fulfilled'.
+    Verifies the same id is returned with the updated status.
+    """
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_prophecy",
+        {"name": "The Turning Tide", "text": "The tide will turn at the new moon"},
+    )
+    assert not create_result.isError
+    create_data = json.loads(create_result.content[0].text)
+    prophecy_id = create_data["id"]
+
+    result = await _call_tool(
+        test_db_path,
+        "upsert_prophecy",
+        {
+            "prophecy_id": prophecy_id,
+            "name": "The Turning Tide",
+            "text": "The tide will turn at the new moon",
+            "status": "fulfilled",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == prophecy_id
+    assert data["status"] == "fulfilled"
+
+
+@pytest.mark.anyio
+async def test_upsert_prophecy_gate_violation(uncertified_db_path):
+    """upsert_prophecy returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path,
+        "upsert_prophecy",
+        {"name": "Test prophecy", "text": "test text"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_prophecy (Task 1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_prophecy_success(test_db_path):
+    """delete_prophecy deletes an existing prophecy by id.
+
+    Creates a new prophecy, then deletes it. Verifies {"deleted": True, "id": N}.
+    """
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_prophecy",
+        {"name": "To Be Deleted Prophecy", "text": "This will be deleted"},
+    )
+    assert not create_result.isError
+    prophecy_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_prophecy", {"prophecy_id": prophecy_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == prophecy_id
+
+
+@pytest.mark.anyio
+async def test_delete_prophecy_not_found(test_db_path):
+    """delete_prophecy returns NotFoundResponse for a non-existent prophecy id."""
+    result = await _call_tool(
+        test_db_path, "delete_prophecy", {"prophecy_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.anyio
+async def test_delete_prophecy_gate_violation(uncertified_db_path):
+    """delete_prophecy returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path, "delete_prophecy", {"prophecy_id": 1}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_thematic_mirror (Task 2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_thematic_mirror_create(test_db_path):
+    """upsert_thematic_mirror creates a new mirror when mirror_id is None.
+
+    Uses required fields: name, element_a_id, element_b_id. Verifies returned
+    object has an id and matches the provided name.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_thematic_mirror",
+        {
+            "name": "Hero-Shadow Mirror",
+            "element_a_id": 1,
+            "element_b_id": 2,
+            "mirror_type": "character",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["name"] == "Hero-Shadow Mirror"
+
+
+@pytest.mark.anyio
+async def test_upsert_thematic_mirror_update(test_db_path):
+    """upsert_thematic_mirror updates an existing mirror when mirror_id is provided."""
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_thematic_mirror",
+        {"name": "Original Mirror Name", "element_a_id": 1, "element_b_id": 2},
+    )
+    assert not create_result.isError
+    mirror_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(
+        test_db_path,
+        "upsert_thematic_mirror",
+        {
+            "mirror_id": mirror_id,
+            "name": "Updated Mirror Name",
+            "element_a_id": 1,
+            "element_b_id": 2,
+            "mirror_description": "Deeper analysis of contrast",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == mirror_id
+    assert data["name"] == "Updated Mirror Name"
+
+
+@pytest.mark.anyio
+async def test_upsert_thematic_mirror_gate_violation(uncertified_db_path):
+    """upsert_thematic_mirror returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path,
+        "upsert_thematic_mirror",
+        {"name": "Test Mirror", "element_a_id": 1, "element_b_id": 2},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_thematic_mirror (Task 2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_thematic_mirror_success(test_db_path):
+    """delete_thematic_mirror deletes an existing mirror by id."""
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_thematic_mirror",
+        {"name": "Mirror To Delete", "element_a_id": 1, "element_b_id": 2},
+    )
+    assert not create_result.isError
+    mirror_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_thematic_mirror", {"mirror_id": mirror_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == mirror_id
+
+
+@pytest.mark.anyio
+async def test_delete_thematic_mirror_not_found(test_db_path):
+    """delete_thematic_mirror returns NotFoundResponse for non-existent id."""
+    result = await _call_tool(
+        test_db_path, "delete_thematic_mirror", {"mirror_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.anyio
+async def test_delete_thematic_mirror_gate_violation(uncertified_db_path):
+    """delete_thematic_mirror returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path, "delete_thematic_mirror", {"mirror_id": 1}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_opposition_pair (Task 2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_opposition_pair_create(test_db_path):
+    """upsert_opposition_pair creates a new pair when pair_id is None.
+
+    Uses required fields: name, concept_a, concept_b. Verifies returned object
+    has an id and matches the provided name.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_opposition_pair",
+        {
+            "name": "Order vs Chaos",
+            "concept_a": "Order",
+            "concept_b": "Chaos",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["name"] == "Order vs Chaos"
+    assert data["concept_a"] == "Order"
+
+
+@pytest.mark.anyio
+async def test_upsert_opposition_pair_update(test_db_path):
+    """upsert_opposition_pair updates an existing pair when pair_id is provided."""
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_opposition_pair",
+        {"name": "Original Pair", "concept_a": "Light", "concept_b": "Dark"},
+    )
+    assert not create_result.isError
+    pair_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(
+        test_db_path,
+        "upsert_opposition_pair",
+        {
+            "pair_id": pair_id,
+            "name": "Original Pair",
+            "concept_a": "Light",
+            "concept_b": "Dark",
+            "manifested_in": "The duel in chapter 15",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == pair_id
+    assert data["manifested_in"] == "The duel in chapter 15"
+
+
+@pytest.mark.anyio
+async def test_upsert_opposition_pair_gate_violation(uncertified_db_path):
+    """upsert_opposition_pair returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path,
+        "upsert_opposition_pair",
+        {"name": "Test Pair", "concept_a": "A", "concept_b": "B"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_opposition_pair (Task 2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_opposition_pair_success(test_db_path):
+    """delete_opposition_pair deletes an existing pair by id."""
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_opposition_pair",
+        {"name": "Pair To Delete", "concept_a": "X", "concept_b": "Y"},
+    )
+    assert not create_result.isError
+    pair_id = json.loads(create_result.content[0].text)["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_opposition_pair", {"pair_id": pair_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == pair_id
+
+
+@pytest.mark.anyio
+async def test_delete_opposition_pair_not_found(test_db_path):
+    """delete_opposition_pair returns NotFoundResponse for non-existent id."""
+    result = await _call_tool(
+        test_db_path, "delete_opposition_pair", {"pair_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.anyio
+async def test_delete_opposition_pair_gate_violation(uncertified_db_path):
+    """delete_opposition_pair returns GateViolation on uncertified gate."""
+    result = await _call_tool(
+        uncertified_db_path, "delete_opposition_pair", {"pair_id": 1}
+    )
     assert not result.isError
     data = json.loads(result.content[0].text)
     assert "requires_action" in data
