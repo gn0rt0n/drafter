@@ -1,8 +1,9 @@
 """Publishing domain MCP tools.
 
-All 5 publishing tools are registered via the register(mcp) function pattern.
-All tools call check_gate(conn) before any database logic — publishing tools
-are prose-phase operations requiring gate certification.
+All 7 publishing tools are registered via the register(mcp) function pattern.
+Read/write tools call check_gate(conn) before any database logic. Delete tools
+do NOT require gate certification — publishing module deletes are administrative
+operations not gated by the architecture gate.
 
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
@@ -14,20 +15,20 @@ from mcp.server.fastmcp import FastMCP
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.publishing import PublishingAsset, SubmissionEntry
-from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 publishing domain tools with the given FastMCP instance.
+    """Register all 7 publishing domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
 
-    All tools call check_gate(conn) at the top before any DB logic and return
-    GateViolation if the gate is not certified. Publishing tools are prose-phase
-    operations that require gate certification.
+    Read/write tools call check_gate(conn) at the top before any DB logic and
+    return GateViolation if the gate is not certified. Delete tools do NOT use
+    check_gate — publishing deletes are administrative operations.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -309,3 +310,86 @@ def register(mcp: FastMCP) -> None:
                 )
 
             return SubmissionEntry(**dict(row))
+
+    # ------------------------------------------------------------------
+    # delete_publishing_asset (PUBL-06)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_publishing_asset(
+        asset_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a publishing asset by ID.
+
+        NOT gate-gated: publishing asset deletions are administrative operations
+        that do not require architecture gate certification. publishing_assets may
+        be referenced by submission_tracker (via asset_id FK); FK violations are
+        caught and returned as ValidationFailure.
+
+        Args:
+            asset_id: Primary key of the publishing_assets row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            asset does not exist. ValidationFailure if a FK constraint prevents
+            deletion (e.g. linked submission_tracker entries exist).
+        """
+        async with get_connection() as conn:
+            async with conn.execute(
+                "SELECT id FROM publishing_assets WHERE id = ?", (asset_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Publishing asset {asset_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM publishing_assets WHERE id = ?", (asset_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": asset_id}
+            except Exception as exc:
+                logger.error("delete_publishing_asset failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_submission (PUBL-07)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_submission(
+        submission_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a submission tracker entry by ID.
+
+        NOT gate-gated: submission deletions are administrative operations
+        that do not require architecture gate certification. submission_tracker
+        is an append-only log with no FK children — deletion uses the log-style
+        pattern (no try/except needed for FK safety).
+
+        Args:
+            submission_id: Primary key of the submission_tracker row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            submission does not exist.
+        """
+        async with get_connection() as conn:
+            async with conn.execute(
+                "SELECT id FROM submission_tracker WHERE id = ?", (submission_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Submission {submission_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM submission_tracker WHERE id = ?", (submission_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": submission_id}

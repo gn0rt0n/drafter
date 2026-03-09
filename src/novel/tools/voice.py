@@ -1,6 +1,6 @@
 """Voice domain MCP tools.
 
-All 5 voice tools are registered via the register(mcp) function pattern.
+All 7 voice tools are registered via the register(mcp) function pattern.
 All tools call check_gate(conn) before any database logic — voice tools
 are prose-phase operations requiring gate certification.
 
@@ -13,14 +13,14 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
-from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 from novel.models.voice import SupernaturalVoiceGuideline, VoiceDriftLog, VoiceProfile
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 voice domain tools with the given FastMCP instance.
+    """Register all 7 voice domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -307,3 +307,95 @@ def register(mcp: FastMCP) -> None:
                 rows = await cursor.fetchall()
 
             return [VoiceDriftLog(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # delete_voice_profile (VOIC-06)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_voice_profile(
+        voice_profile_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a voice profile by ID.
+
+        Gate-gated: deleting a voice profile is a prose-phase operation
+        that requires gate certification. voice_profiles may be referenced
+        by voice_drift_log entries (via character_id linkage); FK violations
+        are caught and returned as ValidationFailure.
+
+        Args:
+            voice_profile_id: Primary key of the voice_profiles row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            voice profile does not exist. GateViolation if the gate is not
+            certified. ValidationFailure if a FK constraint prevents deletion.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                "SELECT id FROM voice_profiles WHERE id = ?", (voice_profile_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Voice profile {voice_profile_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM voice_profiles WHERE id = ?", (voice_profile_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": voice_profile_id}
+            except Exception as exc:
+                logger.error("delete_voice_profile failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_voice_drift (VOIC-07)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_voice_drift(
+        voice_drift_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a voice drift log entry by ID.
+
+        Gate-gated: removing drift log entries is a prose-phase operation
+        that requires gate certification. voice_drift_log is an append-only
+        log with no FK children — deletion uses the log-style pattern
+        (no try/except needed for FK safety).
+
+        Args:
+            voice_drift_id: Primary key of the voice_drift_log row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            drift log entry does not exist. GateViolation if the gate is not
+            certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                "SELECT id FROM voice_drift_log WHERE id = ?", (voice_drift_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Voice drift log entry {voice_drift_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM voice_drift_log WHERE id = ?", (voice_drift_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": voice_drift_id}
