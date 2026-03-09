@@ -28,7 +28,16 @@ Claude Code can query and update all story data through typed MCP tool calls —
 
 ### Active
 
-(none — v1.0 complete; next milestone requirements to be defined with /gsd:new-milestone)
+<!-- v1.1: Tech debt clearance and API completeness -->
+
+- [ ] Fix stale gate count strings ("33"/"34") → 36 in gate.py, cli.py, REQUIREMENTS.md
+- [ ] Fix `novel db seed gate-ready` CLI help text (hyphen → underscore)
+- [ ] Fix 4 doc bugs in docs/README.md (migration claim, export command, GateViolation type, table names)
+- [ ] Add pydantic as direct dependency in pyproject.toml
+- [ ] Fix gate audit/certify count inconsistency (audit: 36, certify: 37)
+- [ ] Audit and add missing MCP write tools for read-only schema tables
+- [ ] Split docs/mcp-tools.md into per-domain files
+- [ ] Split docs/schema.md into per-domain files
 
 ### Out of Scope
 
@@ -98,5 +107,19 @@ Live docs in `docs/`:
 | Python source files as single source of truth for tool names | REQUIREMENTS.md confirmed to drift from implementation | ✓ Phase 12 — docs/mcp-tools.md accurate at 103 tools |
 | 7-point structure tracked at story level + per-POV arc | Required for 6-POV epic fantasy with distinct character journeys | ✓ Phase 11 — 4 MCP tools, 2 gate items, 2 migrations |
 
+## Current Milestone: v1.1 Tech Debt & API Completeness
+
+**Goal:** Clear all v1.0 tech debt, fill MCP write-tool gaps, and split monolithic docs into per-domain files.
+
+**Target features:**
+- Fix stale gate count strings in gate.py, cli.py, REQUIREMENTS.md
+- Fix CLI help text bug (seed gate-ready)
+- Fix 4 doc bugs in docs/README.md
+- Add pydantic as direct dependency
+- Fix gate audit/certify count inconsistency
+- Audit and add missing MCP write tools for read-only tables
+- Split docs/mcp-tools.md into per-domain files
+- Split docs/schema.md into per-domain files
+
 ---
-*Last updated: 2026-03-09 after v1.0 milestone*
+*Last updated: 2026-03-09 after v1.1 milestone started*
