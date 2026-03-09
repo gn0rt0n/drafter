@@ -1,6 +1,6 @@
 """Plot domain MCP tools.
 
-All 3 plot thread tools are registered via the register(mcp) function pattern.
+All 4 plot thread tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 3 plot thread tools with the given FastMCP instance.
+    """Register all 4 plot thread tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -210,3 +210,45 @@ def register(mcp: FastMCP) -> None:
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
 
             return PlotThread(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_plot_thread
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_plot_thread(
+        plot_thread_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a plot thread by ID if it is not referenced by any FK children.
+
+        plot_threads is referenced by chapter_plot_threads (plot_thread_id FK)
+        and subplot_touchpoint_log (plot_thread_id FK). If either table holds a
+        row referencing this plot thread, the DELETE will be blocked by the
+        FOREIGN KEY constraint and a ValidationFailure is returned instead.
+
+        Args:
+            plot_thread_id: Primary key of the plot thread to delete.
+
+        Returns:
+            {"deleted": True, "id": plot_thread_id} on success,
+            NotFoundResponse if the plot thread does not exist,
+            ValidationFailure if a FK constraint prevents deletion.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM plot_threads WHERE id = ?", (plot_thread_id,)
+            )
+            if not rows:
+                logger.debug("delete_plot_thread: %d not found", plot_thread_id)
+                return NotFoundResponse(
+                    not_found_message=f"Plot thread {plot_thread_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM plot_threads WHERE id = ?", (plot_thread_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": plot_thread_id}
+            except Exception as exc:
+                logger.error("delete_plot_thread failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
