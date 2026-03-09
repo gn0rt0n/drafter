@@ -49,12 +49,12 @@ def migrate() -> None:
 
 @app.command()
 def seed(
-    profile: str = typer.Argument("minimal", help="Seed profile name (e.g. minimal, gate-ready)"),
+    profile: str = typer.Argument("minimal", help="Seed profile name (e.g. minimal, gate_ready)"),
 ) -> None:
     """Load a named seed profile into the database.
 
     Phase 1 stub — no seed profiles are defined yet. Phase 2 implements
-    the 'minimal' and 'gate-ready' profiles.
+    the 'minimal' and 'gate_ready' profiles.
     """
     try:
         with get_connection() as conn:
