@@ -416,3 +416,158 @@ async def test_get_publishing_assets_gate_violation(uncertified_db_path):
     assert not result.isError
     data = json.loads(result.content[0].text)
     assert "requires_action" in data
+
+
+# ---------------------------------------------------------------------------
+# Tests: get_documentation_tasks
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_get_documentation_tasks_all(test_db_path):
+    """get_documentation_tasks returns all documentation tasks when no filter is given.
+
+    Uses upsert to insert 2 tasks (pending, done) then retrieves all.
+    Verify list has >= 2 items.
+    """
+    # Insert 2 tasks via upsert
+    await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"title": "Task Alpha", "status": "pending"},
+    )
+    await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"title": "Task Beta", "status": "done"},
+    )
+    result = await _call_tool(test_db_path, "get_documentation_tasks", {})
+    assert not result.isError
+    items = [json.loads(c.text) for c in result.content]
+    assert isinstance(items, list)
+    assert len(items) >= 2
+
+
+@pytest.mark.anyio
+async def test_get_documentation_tasks_filtered(test_db_path):
+    """get_documentation_tasks with status filter returns only matching tasks.
+
+    Filter status='pending'. All returned items must have status='pending'.
+    """
+    # Ensure at least one pending task exists
+    await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"title": "Pending Task Filter Test", "status": "pending"},
+    )
+    result = await _call_tool(
+        test_db_path, "get_documentation_tasks", {"status": "pending"}
+    )
+    assert not result.isError
+    items = [json.loads(c.text) for c in result.content]
+    assert isinstance(items, list)
+    assert len(items) >= 1
+    for item in items:
+        assert item["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Tests: upsert_documentation_task
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_upsert_documentation_task_create(test_db_path):
+    """upsert_documentation_task creates a new task when task_id is None.
+
+    task_id=None (default): plain INSERT creates new task.
+    Verify returned object has id set and correct fields.
+    """
+    result = await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {
+            "title": "Document the API",
+            "status": "pending",
+            "description": "Write MCP tool documentation",
+            "priority": "high",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["id"] is not None
+    assert data["title"] == "Document the API"
+    assert data["status"] == "pending"
+    assert data["description"] == "Write MCP tool documentation"
+    assert data["priority"] == "high"
+
+
+@pytest.mark.anyio
+async def test_upsert_documentation_task_update(test_db_path):
+    """upsert_documentation_task updates an existing task when task_id is provided.
+
+    Create a task first, then update its status to 'done'.
+    Verify returned object has new status.
+    """
+    # Create first
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"title": "Task To Update", "status": "pending"},
+    )
+    created = json.loads(create_result.content[0].text)
+    task_id = created["id"]
+
+    # Update
+    result = await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"task_id": task_id, "title": "Task To Update", "status": "done"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["id"] == task_id
+    assert data["status"] == "done"
+
+
+# ---------------------------------------------------------------------------
+# Tests: delete_documentation_task
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_delete_documentation_task_found(test_db_path):
+    """delete_documentation_task deletes an existing task and returns deleted=True.
+
+    Create a task, then delete it by id.
+    """
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_documentation_task",
+        {"title": "Task To Delete", "status": "pending"},
+    )
+    created = json.loads(create_result.content[0].text)
+    task_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_documentation_task", {"task_id": task_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == task_id
+
+
+@pytest.mark.anyio
+async def test_delete_documentation_task_not_found(test_db_path):
+    """delete_documentation_task returns NotFoundResponse when task_id does not exist.
+
+    task_id=999999 does not exist. Verify response has 'not_found_message'.
+    """
+    result = await _call_tool(
+        test_db_path, "delete_documentation_task", {"task_id": 999999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
