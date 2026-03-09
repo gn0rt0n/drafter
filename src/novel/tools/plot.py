@@ -1,6 +1,6 @@
 """Plot domain MCP tools.
 
-All 4 plot thread tools are registered via the register(mcp) function pattern.
+All 7 plot thread tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -13,14 +13,14 @@ import logging
 from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
-from novel.models.plot import PlotThread
+from novel.models.plot import ChapterPlotThread, PlotThread
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 4 plot thread tools with the given FastMCP instance.
+    """Register all 7 plot thread tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -252,3 +252,143 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_plot_thread failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # link_chapter_to_plot_thread
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def link_chapter_to_plot_thread(
+        chapter_id: int,
+        plot_thread_id: int,
+        thread_role: str = "advance",
+        notes: str | None = None,
+    ) -> ChapterPlotThread | NotFoundResponse | ValidationFailure:
+        """Link a chapter to a plot thread via the chapter_plot_threads junction table.
+
+        Idempotent: if the link already exists, updates thread_role and notes.
+        Returns NotFoundResponse if either chapter or plot_thread does not exist.
+        No gate check — plot tools are not gated.
+
+        Args:
+            chapter_id: FK to chapters table (required).
+            plot_thread_id: FK to plot_threads table (required).
+            thread_role: Role of this chapter in the thread — e.g. "advance",
+                         "introduce", "resolve" (default: "advance").
+            notes: Free-form notes about this chapter-thread association (optional).
+
+        Returns:
+            The created or updated ChapterPlotThread record.
+            NotFoundResponse if chapter_id or plot_thread_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            ch = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            pt = await conn.execute_fetchall(
+                "SELECT id FROM plot_threads WHERE id = ?", (plot_thread_id,)
+            )
+            if not pt:
+                return NotFoundResponse(
+                    not_found_message=f"Plot thread {plot_thread_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "INSERT INTO chapter_plot_threads "
+                    "(chapter_id, plot_thread_id, thread_role, notes) "
+                    "VALUES (?, ?, ?, ?) "
+                    "ON CONFLICT(chapter_id, plot_thread_id) DO UPDATE SET "
+                    "thread_role=excluded.thread_role, notes=excluded.notes",
+                    (chapter_id, plot_thread_id, thread_role, notes),
+                )
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM chapter_plot_threads "
+                    "WHERE chapter_id=? AND plot_thread_id=?",
+                    (chapter_id, plot_thread_id),
+                )
+                return ChapterPlotThread(**dict(row[0]))
+            except Exception as exc:
+                logger.error("link_chapter_to_plot_thread failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # unlink_chapter_from_plot_thread
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def unlink_chapter_from_plot_thread(
+        chapter_id: int,
+        plot_thread_id: int,
+    ) -> NotFoundResponse | dict:
+        """Remove the link between a chapter and a plot thread.
+
+        Idempotent: returns NotFoundResponse if the link does not exist.
+        No gate check — plot tools are not gated.
+
+        Args:
+            chapter_id: FK to chapters table (required).
+            plot_thread_id: FK to plot_threads table (required).
+
+        Returns:
+            {"unlinked": True, "chapter_id": chapter_id, "plot_thread_id": plot_thread_id}
+            on success.
+            NotFoundResponse if the link does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM chapter_plot_threads "
+                "WHERE chapter_id=? AND plot_thread_id=?",
+                (chapter_id, plot_thread_id),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=(
+                        f"No link between chapter {chapter_id} "
+                        f"and plot thread {plot_thread_id}"
+                    )
+                )
+            await conn.execute(
+                "DELETE FROM chapter_plot_threads "
+                "WHERE chapter_id=? AND plot_thread_id=?",
+                (chapter_id, plot_thread_id),
+            )
+            await conn.commit()
+            return {
+                "unlinked": True,
+                "chapter_id": chapter_id,
+                "plot_thread_id": plot_thread_id,
+            }
+
+    # ------------------------------------------------------------------
+    # get_plot_threads_for_chapter
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_plot_threads_for_chapter(
+        chapter_id: int,
+    ) -> list[ChapterPlotThread]:
+        """Get all plot thread associations for a chapter.
+
+        Returns an empty list when the chapter has no associated plot threads
+        (or when chapter_id does not exist).
+
+        Args:
+            chapter_id: Primary key of the chapter to query.
+
+        Returns:
+            List of ChapterPlotThread records ordered by plot_thread_id.
+            Returns an empty list if no associations exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM chapter_plot_threads "
+                "WHERE chapter_id=? ORDER BY plot_thread_id",
+                (chapter_id,),
+            )
+            return [ChapterPlotThread(**dict(r)) for r in rows]
