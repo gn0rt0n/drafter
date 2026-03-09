@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-10-PLAN.md
-last_updated: "2026-03-09T19:57:02.461Z"
+stopped_at: Completed 14-11-PLAN.md
+last_updated: "2026-03-09T20:02:53.098Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 12
+  completed_plans: 13
   percent: 0
 ---
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P08 | 242 | 2 tasks | 4 files |
 | Phase 14 P09 | 3 | 2 tasks | 2 files |
 | Phase 14-mcp-api-completeness P10 | 15 | 2 tasks | 3 files |
+| Phase 14 P11 | 10 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,7 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: magic_system_elements columns are rules/limitations/costs/exceptions (not description) — confirmed from migration 011; upsert uses correct column names
 - [Phase 14-mcp-api-completeness]: supernatural_voice_guidelines upsert uses ON CONFLICT(id) (not element_name) to allow element_name edits after creation
 - [Phase 14-mcp-api-completeness]: upsert_supernatural_voice_guideline and delete_supernatural_voice_guideline are gate-gated; upsert_name_registry_entry is gate-free — consistent with existing module patterns
+- [Phase 14]: upsert_motif/prophecy/thematic_mirror/opposition_pair all use id-based ON CONFLICT(id) upsert to allow field edits after creation; ValidationFailure added to foreshadowing.py imports
 
 ### Pending Todos
 
@@ -110,6 +112,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:57:02.459Z
-Stopped at: Completed 14-10-PLAN.md
+Last session: 2026-03-09T20:02:53.096Z
+Stopped at: Completed 14-11-PLAN.md
 Resume file: None
