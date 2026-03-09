@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-15-PLAN.md
-last_updated: "2026-03-09T20:15:36.990Z"
+stopped_at: Completed 14-16-PLAN.md
+last_updated: "2026-03-09T20:20:45.900Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 16
+  completed_plans: 17
   percent: 0
 ---
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P12 | 2 | 2 tasks | 1 files |
 | Phase 14-mcp-api-completeness P13 | 12 | 2 tasks | 1 files |
 | Phase 14-mcp-api-completeness P15 | 8 | 1 tasks | 1 files |
+| Phase 14-mcp-api-completeness P16 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -111,6 +112,9 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: upsert_act pre-checks book_id FK; start/end chapter_id are NOT pre-checked (nullable by design — acts can be created before chapters exist)
 - [Phase 14-mcp-api-completeness]: get_supernatural_element added to magic.py — plan assumed it existed but tool was absent; SupernaturalElement import also added
 - [Phase 14-mcp-api-completeness]: supernatural_elements delete uses FK-safe try/except even though table has no FK children — follows plan spec and is safe pattern
+- [Phase 14-mcp-api-completeness]: PacingBeat real schema uses description + sequence_order + optional scene_id (not intensity as in plan interface) — confirmed from migration 018
+- [Phase 14-mcp-api-completeness]: TensionMeasurement has no scene_id column — chapter-scoped only with measurement_type field (not tension_type as in plan interface)
+- [Phase 14-mcp-api-completeness]: pacing_beats and tension_measurements are leaf tables — log-delete pattern (no ValidationFailure) used for both delete tools
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:15:36.989Z
-Stopped at: Completed 14-15-PLAN.md
+Last session: 2026-03-09T20:20:45.898Z
+Stopped at: Completed 14-16-PLAN.md
 Resume file: None
