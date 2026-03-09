@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-03-09T19:10:17.381Z"
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-03-09T19:16:03.822Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 13 P02 | 2 | 2 tasks | 2 files |
 | Phase 13-tech-debt-clearance P01 | 2 | 3 tasks | 2 files |
 | Phase 14-mcp-api-completeness P01 | 2 | 3 tasks | 3 files |
+| Phase 14 P02 | 259 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 13-tech-debt-clearance]: REQUIREMENTS.md confirmed clean on execution — no stale 33/34 gate count references; Task 3 required zero edits
 - [Phase 14-mcp-api-completeness]: FK-safe pattern used for all parent tables (characters, character_arcs, character_relationships, perception_profiles, chekovs_gun_registry); log-table (simpler) pattern for append-only log tables with no FK children
 - [Phase 14-mcp-api-completeness]: No gate checks on delete tools in characters, relationships, arcs modules — these modules have no gate guards on any existing tools
+- [Phase 14]: FK-safe pattern (try/except ValidationFailure) for delete_chapter, delete_scene, delete_story_structure; log-delete for delete_scene_goal and delete_arc_beat (confirmed leaf tables)
 
 ### Pending Todos
 
@@ -80,6 +82,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:10:17.380Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-03-09T19:16:03.820Z
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None
