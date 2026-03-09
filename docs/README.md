@@ -18,7 +18,7 @@ Claude Code (AI agent)
     │  MCP protocol (stdio)
     ▼
 Layer 2: MCP Server  (novel-mcp)
-    │   121 tools across 19 modules
+    │   103 tools across 18 modules
     │   FastMCP on mcp>=1.26.0
     │
     │  aiosqlite (async)
@@ -49,8 +49,8 @@ Key characteristics:
 
 ### Layer 2: MCP Server
 
-The AI-callable API layer. Implemented as a FastMCP server with 121 tools organized into
-19 domain modules under `src/novel/tools/`. Each module exposes a `register(mcp: FastMCP)`
+The AI-callable API layer. Implemented as a FastMCP server with 103 tools organized into
+18 domain modules under `src/novel/tools/`. Each module exposes a `register(mcp: FastMCP)`
 function that decorates local async functions with `@mcp.tool()`.
 
 Key characteristics:
@@ -90,7 +90,7 @@ uv run novel-mcp
 
 Starts the MCP server on stdio transport. This is the process Claude Code connects to.
 Configure in `.claude/settings.json` or Claude Desktop's MCP config. The server runs
-continuously; all 121 tools are available immediately after startup.
+continuously; all 103 tools are available immediately after startup.
 
 ### CLI
 
@@ -148,7 +148,7 @@ the agent can report them to the user rather than treating them as errors.
 | Document | What it covers |
 |----------|---------------|
 | [`docs/schema.md`](schema.md) | Full schema reference: all 22 migrations, ~71 tables organized by domain, field annotations, FK relationships, lifecycle notes (which tools populate each table), gate flags, and Mermaid ER diagrams per domain |
-| [`docs/mcp-tools.md`](mcp-tools.md) | Full MCP tool reference: all 121 tools across 19 domains, with purpose, parameters, return types, invocation reason, gate status, and tables touched per tool |
+| [`docs/mcp-tools.md`](mcp-tools.md) | Full MCP tool reference: all 103 tools across 18 domains, with purpose, parameters, return types, invocation reason, gate status, and tables touched per tool |
 | [`project-research/database-schema.md`](../project-research/database-schema.md) | Historical pre-build design document — kept as design history. Field names may have drifted from actual implementation; see `docs/schema.md` for implementation-accurate field names |
 
 ---
