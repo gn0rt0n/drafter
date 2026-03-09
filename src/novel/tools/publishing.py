@@ -1,9 +1,11 @@
 """Publishing domain MCP tools.
 
-All 7 publishing tools are registered via the register(mcp) function pattern.
-Read/write tools call check_gate(conn) before any database logic. Delete tools
-do NOT require gate certification — publishing module deletes are administrative
-operations not gated by the architecture gate.
+All 13 publishing tools are registered via the register(mcp) function pattern.
+Read/write tools for publishing_assets and submission_tracker call check_gate(conn)
+before any database logic. Tools for documentation_tasks and research_notes do NOT
+call check_gate — these are dev-internal tables not gated by the architecture gate.
+Delete tools do NOT require gate certification — publishing module deletes are
+administrative operations not gated by the architecture gate.
 
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
@@ -14,21 +16,23 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
-from novel.models.publishing import PublishingAsset, SubmissionEntry
+from novel.models.publishing import DocumentationTask, PublishingAsset, SubmissionEntry
 from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 7 publishing domain tools with the given FastMCP instance.
+    """Register all 13 publishing domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
 
-    Read/write tools call check_gate(conn) at the top before any DB logic and
-    return GateViolation if the gate is not certified. Delete tools do NOT use
-    check_gate — publishing deletes are administrative operations.
+    Read/write tools for publishing_assets and submission_tracker call check_gate(conn)
+    at the top before any DB logic and return GateViolation if the gate is not
+    certified. Tools for documentation_tasks and research_notes do NOT call check_gate
+    — they are dev-internal tables. Delete tools do NOT use check_gate — publishing
+    deletes are administrative operations.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -393,3 +397,171 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": submission_id}
+
+    # ------------------------------------------------------------------
+    # get_documentation_tasks (PUBL-08)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_documentation_tasks(
+        status: str | None = None,
+    ) -> list[DocumentationTask]:
+        """Retrieve all documentation tasks, with optional status filter.
+
+        Returns a list of DocumentationTask records ordered by id ASC.
+        The status filter is optional.
+
+        NOT gate-gated: documentation_tasks is a dev-internal table and does
+        not require architecture gate certification.
+
+        Args:
+            status: Filter by task status (e.g. 'pending', 'in_progress', 'done').
+
+        Returns:
+            List of DocumentationTask records ordered by id ASC (may be empty).
+        """
+        async with get_connection() as conn:
+            if status is not None:
+                sql = "SELECT * FROM documentation_tasks WHERE status = ? ORDER BY id"
+                params: list[object] = [status]
+            else:
+                sql = "SELECT * FROM documentation_tasks ORDER BY id"
+                params = []
+
+            async with conn.execute(sql, params) as cursor:
+                rows = await cursor.fetchall()
+
+            return [DocumentationTask(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_documentation_task (PUBL-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_documentation_task(
+        title: str,
+        task_id: int | None = None,
+        status: str = "pending",
+        description: str | None = None,
+        priority: str = "normal",
+        due_chapter_id: int | None = None,
+        completed_at: str | None = None,
+        notes: str | None = None,
+    ) -> DocumentationTask | ValidationFailure:
+        """Create or update a documentation task.
+
+        Two-branch upsert on id (PK):
+        - None task_id: plain INSERT creates a new task row.
+        - Provided task_id: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing task row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        NOT gate-gated: documentation_tasks is a dev-internal table and does
+        not require architecture gate certification.
+
+        Args:
+            title: Title of the documentation task.
+            task_id: Existing task ID for update branch (optional).
+            status: Task status (default 'pending').
+            description: Detailed description of the task (optional).
+            priority: Task priority (default 'normal').
+            due_chapter_id: FK to chapters table — chapter when task is due (optional).
+            completed_at: ISO datetime when task was completed (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated DocumentationTask record.
+            ValidationFailure if the operation fails.
+        """
+        async with get_connection() as conn:
+            try:
+                if task_id is None:
+                    cursor = await conn.execute(
+                        """
+                        INSERT INTO documentation_tasks
+                            (title, status, description, priority,
+                             due_chapter_id, completed_at, notes, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        """,
+                        (title, status, description, priority,
+                         due_chapter_id, completed_at, notes),
+                    )
+                    new_id = cursor.lastrowid
+                else:
+                    await conn.execute(
+                        """
+                        INSERT INTO documentation_tasks
+                            (id, title, status, description, priority,
+                             due_chapter_id, completed_at, notes, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            title=excluded.title,
+                            status=excluded.status,
+                            description=excluded.description,
+                            priority=excluded.priority,
+                            due_chapter_id=excluded.due_chapter_id,
+                            completed_at=excluded.completed_at,
+                            notes=excluded.notes,
+                            updated_at=datetime('now')
+                        """,
+                        (task_id, title, status, description, priority,
+                         due_chapter_id, completed_at, notes),
+                    )
+                    new_id = task_id
+
+                await conn.commit()
+
+                async with conn.execute(
+                    "SELECT * FROM documentation_tasks WHERE id = ?", (new_id,)
+                ) as cur:
+                    row = await cur.fetchone()
+
+                return DocumentationTask(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_documentation_task failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_documentation_task (PUBL-10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_documentation_task(
+        task_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a documentation task by ID.
+
+        NOT gate-gated: documentation task deletions are administrative operations
+        that do not require architecture gate certification. Uses FK-safe pattern
+        (try/except) for consistency, even though documentation_tasks is unlikely
+        to have FK children.
+
+        Args:
+            task_id: Primary key of the documentation_tasks row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            task does not exist. ValidationFailure if a FK constraint prevents
+            deletion.
+        """
+        async with get_connection() as conn:
+            async with conn.execute(
+                "SELECT id FROM documentation_tasks WHERE id = ?", (task_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Documentation task {task_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM documentation_tasks WHERE id = ?", (task_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": task_id}
+            except Exception as exc:
+                logger.error("delete_documentation_task failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
