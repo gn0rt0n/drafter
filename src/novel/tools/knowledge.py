@@ -571,3 +571,152 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_reader_reveal failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_reader_experience_notes (KNOW-10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_reader_experience_notes(
+        chapter_id: int,
+    ) -> list[ReaderExperienceNote] | GateViolation:
+        """Retrieve reader experience notes for a given chapter.
+
+        Returns all reader_experience_notes rows for the specified chapter,
+        ordered by id ASC.
+
+        Args:
+            chapter_id: The chapter whose reader experience notes to retrieve.
+
+        Returns:
+            List of ReaderExperienceNote records (may be empty), or
+            GateViolation if gate is not certified.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM reader_experience_notes WHERE chapter_id = ? ORDER BY id",
+                (chapter_id,),
+            )
+            return [ReaderExperienceNote(**dict(r)) for r in rows]
+
+    # ------------------------------------------------------------------
+    # log_reader_experience_note (KNOW-11)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_reader_experience_note(
+        note_type: str,
+        content: str,
+        chapter_id: int | None = None,
+        scene_id: int | None = None,
+    ) -> ReaderExperienceNote | GateViolation | NotFoundResponse | ValidationFailure:
+        """Log a new reader experience note (append-only).
+
+        Appends a new entry to reader_experience_notes. If chapter_id is
+        provided, validates the chapter exists. If scene_id is provided,
+        validates the scene exists. Each call creates a distinct note record.
+
+        Args:
+            note_type: Category of reader experience note (e.g. 'pacing',
+                       'tension', 'confusion', 'satisfaction').
+            content: The note content describing the reader experience.
+            chapter_id: Optional FK to chapters. If provided, the chapter must
+                        exist.
+            scene_id: Optional FK to scenes. If provided, the scene must exist.
+
+        Returns:
+            The newly created ReaderExperienceNote row.
+            GateViolation if gate is not certified.
+            NotFoundResponse if chapter_id or scene_id does not exist.
+            ValidationFailure if the DB operation fails.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            if chapter_id is not None:
+                ch = await conn.execute_fetchall(
+                    "SELECT id FROM chapters WHERE id = ?",
+                    (chapter_id,),
+                )
+                if not ch:
+                    return NotFoundResponse(
+                        not_found_message=f"Chapter {chapter_id} not found"
+                    )
+
+            if scene_id is not None:
+                sc = await conn.execute_fetchall(
+                    "SELECT id FROM scenes WHERE id = ?",
+                    (scene_id,),
+                )
+                if not sc:
+                    return NotFoundResponse(
+                        not_found_message=f"Scene {scene_id} not found"
+                    )
+
+            try:
+                cursor = await conn.execute(
+                    "INSERT INTO reader_experience_notes "
+                    "(chapter_id, scene_id, note_type, content) "
+                    "VALUES (?, ?, ?, ?)",
+                    (chapter_id, scene_id, note_type, content),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+
+                rows = await conn.execute_fetchall(
+                    "SELECT * FROM reader_experience_notes WHERE id = ?",
+                    (new_id,),
+                )
+                return ReaderExperienceNote(**dict(rows[0]))
+            except Exception as exc:
+                logger.error("log_reader_experience_note failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_reader_experience_note (KNOW-12)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_reader_experience_note(
+        note_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a reader experience note by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. reader_experience_notes is a log table with no FK children —
+        no IntegrityError expected.
+
+        Args:
+            note_id: Primary key of the reader experience note to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the reader experience note does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM reader_experience_notes WHERE id = ?",
+                (note_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Reader experience note {note_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM reader_experience_notes WHERE id = ?",
+                (note_id,),
+            )
+            await conn.commit()
+            return {"deleted": True, "id": note_id}
