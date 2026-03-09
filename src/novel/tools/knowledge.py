@@ -15,13 +15,13 @@ from mcp.server.fastmcp import FastMCP
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.canon import DramaticIronyEntry, ReaderInformationState, ReaderReveal
-from novel.models.shared import GateViolation
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 knowledge domain tools with the given FastMCP instance.
+    """Register all 7 knowledge domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -305,3 +305,95 @@ def register(mcp: FastMCP) -> None:
                 (new_id,),
             )
             return DramaticIronyEntry(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_reader_state (KNOW-06)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_reader_state(
+        reader_state_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a reader information state entry by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. reader_information_states may have FK children (reader_reveals
+        references reader_information_state_id) — FK-safe try/except pattern
+        used to handle IntegrityError if children exist.
+
+        Args:
+            reader_state_id: Primary key of the reader state entry to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the reader state does not exist.
+            ValidationFailure if the delete violates a FK constraint.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM reader_information_states WHERE id = ?",
+                (reader_state_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Reader state {reader_state_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM reader_information_states WHERE id = ?",
+                    (reader_state_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": reader_state_id}
+            except Exception as exc:
+                logger.error("delete_reader_state failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_dramatic_irony (KNOW-07)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_dramatic_irony(
+        dramatic_irony_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a dramatic irony entry by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. dramatic_irony_inventory is a log table with no FK children —
+        no IntegrityError expected.
+
+        Args:
+            dramatic_irony_id: Primary key of the dramatic irony entry to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the dramatic irony entry does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM dramatic_irony_inventory WHERE id = ?",
+                (dramatic_irony_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Dramatic irony entry {dramatic_irony_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM dramatic_irony_inventory WHERE id = ?",
+                (dramatic_irony_id,),
+            )
+            await conn.commit()
+            return {"deleted": True, "id": dramatic_irony_id}
