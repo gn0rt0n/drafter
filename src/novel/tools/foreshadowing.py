@@ -22,13 +22,13 @@ from novel.models.canon import (
     ProphecyEntry,
     ThematicMirror,
 )
-from novel.models.shared import GateViolation
+from novel.models.shared import GateViolation, NotFoundResponse
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 8 foreshadowing domain tools with the given FastMCP instance.
+    """Register all 10 foreshadowing domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -384,3 +384,87 @@ def register(mcp: FastMCP) -> None:
                 row = await cur.fetchone()
 
             return MotifOccurrence(**dict(row))
+
+    # ------------------------------------------------------------------
+    # delete_foreshadowing (FORE-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_foreshadowing(
+        foreshadowing_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a foreshadowing entry by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. foreshadowing_registry is an append-only log with no FK
+        children — no IntegrityError expected.
+
+        Args:
+            foreshadowing_id: Primary key of the foreshadowing entry to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the foreshadowing entry does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM foreshadowing_registry WHERE id = ?",
+                (foreshadowing_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Foreshadowing entry {foreshadowing_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM foreshadowing_registry WHERE id = ?", (foreshadowing_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": foreshadowing_id}
+
+    # ------------------------------------------------------------------
+    # delete_motif_occurrence (FORE-10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_motif_occurrence(
+        motif_occurrence_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a motif occurrence by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. motif_occurrences is a log table with no FK children — no
+        IntegrityError expected.
+
+        Args:
+            motif_occurrence_id: Primary key of the motif occurrence to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the motif occurrence does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM motif_occurrences WHERE id = ?",
+                (motif_occurrence_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Motif occurrence {motif_occurrence_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM motif_occurrences WHERE id = ?", (motif_occurrence_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": motif_occurrence_id}
