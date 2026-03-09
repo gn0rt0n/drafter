@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-07-PLAN.md
-last_updated: "2026-03-09T19:40:12.292Z"
+stopped_at: Completed 14-08-PLAN.md
+last_updated: "2026-03-09T19:46:44.589Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P05 | 2 | 3 tasks | 3 files |
 | Phase 14 P06 | 3 | 3 tasks | 4 files |
 | Phase 14 P07 | 5 | 2 tasks | 2 files |
+| Phase 14 P08 | 242 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ Recent decisions affecting current work:
 - [Phase 14]: character_beliefs log_* tool checks optional formed_chapter_id FK only (no required chapter_id — table schema has formed_chapter_id as optional)
 - [Phase 14]: TitleState added to characters.py imports — model existed in models but was not imported in tools file
 - [Phase 14]: log-style delete (no try/except) used for character_beliefs, character_locations, injury_states, title_states — all append-only logs with no FK children
+- [Phase 14]: log_travel_segment is NOT gate-gated per plan spec (no GateViolation return type)
+- [Phase 14]: pov_balance_snapshots uses chapter_count + word_count fields (not pov_percentage) — real schema from migration 020 used
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:40:12.291Z
-Stopped at: Completed 14-07-PLAN.md
+Last session: 2026-03-09T19:46:44.587Z
+Stopped at: Completed 14-08-PLAN.md
 Resume file: None
