@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-06-PLAN.md
-last_updated: "2026-03-09T19:33:43.181Z"
+stopped_at: Completed 14-07-PLAN.md
+last_updated: "2026-03-09T19:40:12.292Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P04 | 2 | 3 tasks | 3 files |
 | Phase 14 P05 | 2 | 3 tasks | 3 files |
 | Phase 14 P06 | 3 | 3 tasks | 4 files |
+| Phase 14 P07 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 14]: ValidationFailure added to canon.py and knowledge.py imports for FK-safe delete pattern; log-delete (no try/except) used for leaf tables without FK children
 - [Phase 14]: voice.py and session.py delete tools are gate-gated; publishing.py and gate.py delete tools are not gate-gated (gate management tools exempt from gate requirement)
 - [Phase 14]: delete_gate_checklist_item added to gate.py as admin cleanup tool — not gate-gated, FK-safe pattern, analogous to update_checklist_item
+- [Phase 14]: character_beliefs log_* tool checks optional formed_chapter_id FK only (no required chapter_id — table schema has formed_chapter_id as optional)
+- [Phase 14]: TitleState added to characters.py imports — model existed in models but was not imported in tools file
+- [Phase 14]: log-style delete (no try/except) used for character_beliefs, character_locations, injury_states, title_states — all append-only logs with no FK children
 
 ### Pending Todos
 
@@ -95,6 +99,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:33:43.180Z
-Stopped at: Completed 14-06-PLAN.md
+Last session: 2026-03-09T19:40:12.291Z
+Stopped at: Completed 14-07-PLAN.md
 Resume file: None
