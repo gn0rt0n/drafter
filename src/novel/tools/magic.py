@@ -1,6 +1,6 @@
 """Magic domain MCP tools.
 
-All 5 magic tools are registered via the register(mcp) function pattern.
+All 10 magic tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 magic domain tools with the given FastMCP instance.
+    """Register all 10 magic domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -252,6 +252,337 @@ def register(mcp: FastMCP) -> None:
                 applicable_rules=applicable_rules,
                 character_has_ability=character_has_ability,
             )
+
+    # ------------------------------------------------------------------
+    # upsert_magic_element
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_magic_element(
+        element_id: int | None,
+        name: str,
+        element_type: str,
+        rules: str | None = None,
+        limitations: str | None = None,
+        costs: str | None = None,
+        exceptions: str | None = None,
+        introduced_chapter_id: int | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> MagicSystemElement | ValidationFailure:
+        """Create or update a magic system element.
+
+        Two-branch upsert on element_id:
+        - element_id=None: INSERT creates a new magic_system_elements row.
+        - element_id=N: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+        Not gate-gated: magic elements are worldbuilding data that must be
+        writable before gate certification.
+
+        Args:
+            element_id: Existing element ID for update branch (None to create).
+            name: Name of the magic element (required).
+            element_type: Category of element, e.g. 'ability', 'spell', 'rule'
+                          (required, default 'ability').
+            rules: Rules governing this element (optional).
+            limitations: Limitations of this element (optional).
+            costs: Costs associated with using this element (optional).
+            exceptions: Known exceptions to the rules (optional).
+            introduced_chapter_id: FK to chapters table — chapter where element
+                                    first appears (optional).
+            notes: Additional notes (optional).
+            canon_status: Canon status of the element (default 'draft').
+
+        Returns:
+            The created or updated MagicSystemElement record.
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if element_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO magic_system_elements
+                            (name, element_type, rules, limitations, costs,
+                             exceptions, introduced_chapter_id, notes, canon_status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (
+                            name,
+                            element_type,
+                            rules,
+                            limitations,
+                            costs,
+                            exceptions,
+                            introduced_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM magic_system_elements WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO magic_system_elements
+                            (id, name, element_type, rules, limitations, costs,
+                             exceptions, introduced_chapter_id, notes, canon_status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           ON CONFLICT(id) DO UPDATE SET
+                               name=excluded.name,
+                               element_type=excluded.element_type,
+                               rules=excluded.rules,
+                               limitations=excluded.limitations,
+                               costs=excluded.costs,
+                               exceptions=excluded.exceptions,
+                               introduced_chapter_id=excluded.introduced_chapter_id,
+                               notes=excluded.notes,
+                               canon_status=excluded.canon_status,
+                               updated_at=datetime('now')""",
+                        (
+                            element_id,
+                            name,
+                            element_type,
+                            rules,
+                            limitations,
+                            costs,
+                            exceptions,
+                            introduced_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM magic_system_elements WHERE id = ?", (element_id,)
+                    )
+                return MagicSystemElement(**dict(row[0]))
+            except Exception as exc:
+                logger.error("upsert_magic_element failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # list_magic_elements
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_magic_elements() -> list[MagicSystemElement]:
+        """Return all magic system elements ordered by name.
+
+        Returns every row from magic_system_elements ordered alphabetically
+        by name ASC. An empty list is valid when no elements have been
+        created yet.
+
+        Returns:
+            List of MagicSystemElement records ordered by name ASC
+            (may be empty).
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM magic_system_elements ORDER BY name ASC"
+            )
+            return [MagicSystemElement(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_practitioner_ability
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_practitioner_ability(
+        ability_id: int | None,
+        character_id: int,
+        magic_element_id: int,
+        proficiency_level: int = 1,
+        acquired_chapter_id: int | None = None,
+        notes: str | None = None,
+    ) -> PractitionerAbility | NotFoundResponse | ValidationFailure:
+        """Create or update a practitioner ability for a character.
+
+        Two-branch upsert on ability_id. Pre-checks that both character_id and
+        magic_element_id exist before attempting the upsert.
+
+        The practitioner_abilities table has a UNIQUE(character_id,
+        magic_element_id) constraint — use the update branch (ability_id=N)
+        when modifying an existing character/element pair to avoid conflicts.
+
+        Not gate-gated: practitioner abilities are worldbuilding data.
+
+        Args:
+            ability_id: Existing ability ID for update branch (None to create).
+            character_id: FK to characters table — character who has the ability.
+            magic_element_id: FK to magic_system_elements table — element the
+                              character can use.
+            proficiency_level: Proficiency level 1–10 (default 1).
+            acquired_chapter_id: FK to chapters — chapter where ability was
+                                  acquired (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated PractitionerAbility record.
+            NotFoundResponse if character or magic element does not exist.
+            ValidationFailure on DB error (e.g. UNIQUE conflict).
+        """
+        async with get_connection() as conn:
+            # Pre-check character exists
+            char_rows = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char_rows:
+                logger.debug(
+                    "Character %d not found for upsert_practitioner_ability", character_id
+                )
+                return NotFoundResponse(
+                    not_found_message=f"Character {character_id} not found"
+                )
+            # Pre-check magic element exists
+            elem_rows = await conn.execute_fetchall(
+                "SELECT id FROM magic_system_elements WHERE id = ?", (magic_element_id,)
+            )
+            if not elem_rows:
+                logger.debug(
+                    "Magic element %d not found for upsert_practitioner_ability",
+                    magic_element_id,
+                )
+                return NotFoundResponse(
+                    not_found_message=f"Magic element {magic_element_id} not found"
+                )
+            try:
+                if ability_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO practitioner_abilities
+                            (character_id, magic_element_id, proficiency_level,
+                             acquired_chapter_id, notes)
+                           VALUES (?, ?, ?, ?, ?)""",
+                        (
+                            character_id,
+                            magic_element_id,
+                            proficiency_level,
+                            acquired_chapter_id,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM practitioner_abilities WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO practitioner_abilities
+                            (id, character_id, magic_element_id, proficiency_level,
+                             acquired_chapter_id, notes)
+                           VALUES (?, ?, ?, ?, ?, ?)
+                           ON CONFLICT(id) DO UPDATE SET
+                               character_id=excluded.character_id,
+                               magic_element_id=excluded.magic_element_id,
+                               proficiency_level=excluded.proficiency_level,
+                               acquired_chapter_id=excluded.acquired_chapter_id,
+                               notes=excluded.notes,
+                               updated_at=datetime('now')""",
+                        (
+                            ability_id,
+                            character_id,
+                            magic_element_id,
+                            proficiency_level,
+                            acquired_chapter_id,
+                            notes,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM practitioner_abilities WHERE id = ?", (ability_id,)
+                    )
+                return PractitionerAbility(**dict(row[0]))
+            except Exception as exc:
+                logger.error("upsert_practitioner_ability failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_magic_element
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_magic_element(
+        magic_element_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a magic system element by ID.
+
+        FK-safe: magic_system_elements is referenced by practitioner_abilities
+        (via magic_element_id) and magic_use_log. If any FK constraint is
+        violated, returns ValidationFailure rather than raising.
+
+        Not gate-gated: consistent with phase 14 no-gate pattern for deletes.
+
+        Args:
+            magic_element_id: Primary key of the magic_system_elements row to delete.
+
+        Returns:
+            {"deleted": True, "id": magic_element_id} on success.
+            NotFoundResponse if the element does not exist.
+            ValidationFailure if FK constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM magic_system_elements WHERE id = ?",
+                (magic_element_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Magic element {magic_element_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM magic_system_elements WHERE id = ?",
+                    (magic_element_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": magic_element_id}
+            except Exception as exc:
+                logger.error("delete_magic_element failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_practitioner_ability
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_practitioner_ability(
+        ability_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a practitioner ability by ID.
+
+        FK-safe pattern used for safety: if an unexpected FK constraint is
+        violated, returns ValidationFailure rather than raising.
+
+        Not gate-gated: consistent with phase 14 no-gate pattern for deletes.
+
+        Args:
+            ability_id: Primary key of the practitioner_abilities row to delete.
+
+        Returns:
+            {"deleted": True, "id": ability_id} on success.
+            NotFoundResponse if the ability does not exist.
+            ValidationFailure if FK constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM practitioner_abilities WHERE id = ?", (ability_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Practitioner ability {ability_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM practitioner_abilities WHERE id = ?", (ability_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": ability_id}
+            except Exception as exc:
+                logger.error("delete_practitioner_ability failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
 
     # ------------------------------------------------------------------
     # delete_magic_use_log
