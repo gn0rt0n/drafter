@@ -1,6 +1,6 @@
 """Structure domain MCP tools — story-level 7-point beats and per-arc beats.
 
-All 4 structure tools are registered via the register(mcp) function pattern.
+All 6 structure tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -25,7 +25,7 @@ VALID_BEAT_TYPES = frozenset({
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 4 structure domain tools with the given FastMCP instance.
+    """Register all 6 structure domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -249,3 +249,75 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("upsert_arc_beat failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_story_structure
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_story_structure(
+        story_structure_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a story structure row by ID.
+
+        story_structure may be referenced by other tables (FK-safe delete).
+        Idempotent (returns NotFoundResponse if absent).
+
+        Args:
+            story_structure_id: Primary key of the story_structure row to delete.
+
+        Returns:
+            {"deleted": True, "id": story_structure_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM story_structure WHERE id = ?", (story_structure_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Story structure {story_structure_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM story_structure WHERE id = ?", (story_structure_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": story_structure_id}
+            except Exception as exc:
+                logger.error("delete_story_structure failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_arc_beat
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_arc_beat(arc_beat_id: int) -> NotFoundResponse | dict:
+        """Delete an arc seven-point beat row by ID.
+
+        arc_seven_point_beats is a leaf table with no FK children — uses the
+        simpler log-delete pattern. Idempotent (returns NotFoundResponse if
+        absent).
+
+        Args:
+            arc_beat_id: Primary key of the arc_seven_point_beats row to delete.
+
+        Returns:
+            {"deleted": True, "id": arc_beat_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM arc_seven_point_beats WHERE id = ?", (arc_beat_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Arc beat {arc_beat_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM arc_seven_point_beats WHERE id = ?", (arc_beat_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": arc_beat_id}

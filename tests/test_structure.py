@@ -134,3 +134,76 @@ async def test_upsert_arc_beat_invalid_beat_type(test_db_path):
     data = json.loads(result.content[0].text)
     assert data["is_valid"] is False
     assert len(data["errors"]) > 0
+
+
+# --- delete_story_structure ---
+
+@pytest.mark.asyncio
+async def test_delete_story_structure_not_found(test_db_path):
+    """delete_story_structure returns NotFoundResponse for a non-existent ID."""
+    result = await _call_tool(test_db_path, "delete_story_structure", {
+        "story_structure_id": 99999,
+    })
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.asyncio
+async def test_delete_story_structure_success(test_db_path):
+    """delete_story_structure removes the row and returns deleted=True."""
+    # Create a story structure for book 1 (or re-use if already exists)
+    create_result = await _call_tool(test_db_path, "upsert_story_structure", {
+        "book_id": 1,
+        "hook_chapter_id": 1,
+    })
+    assert not create_result.isError
+    created = json.loads(create_result.content[0].text)
+    ss_id = created["id"]
+
+    del_result = await _call_tool(test_db_path, "delete_story_structure", {
+        "story_structure_id": ss_id,
+    })
+    assert not del_result.isError
+    data = json.loads(del_result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == ss_id
+
+    # Confirm it's gone
+    get_result = await _call_tool(test_db_path, "get_story_structure", {"book_id": 1})
+    assert not get_result.isError
+    gone = json.loads(get_result.content[0].text)
+    assert "not_found_message" in gone
+
+
+# --- delete_arc_beat ---
+
+@pytest.mark.asyncio
+async def test_delete_arc_beat_not_found(test_db_path):
+    """delete_arc_beat returns NotFoundResponse for a non-existent ID."""
+    result = await _call_tool(test_db_path, "delete_arc_beat", {
+        "arc_beat_id": 99999,
+    })
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+@pytest.mark.asyncio
+async def test_delete_arc_beat_success(test_db_path):
+    """delete_arc_beat removes the beat row and returns deleted=True."""
+    # Create a beat to delete
+    create_result = await _call_tool(test_db_path, "upsert_arc_beat", {
+        "arc_id": 1, "beat_type": "resolution", "chapter_id": 1,
+    })
+    assert not create_result.isError
+    created = json.loads(create_result.content[0].text)
+    beat_id = created["id"]
+
+    del_result = await _call_tool(test_db_path, "delete_arc_beat", {
+        "arc_beat_id": beat_id,
+    })
+    assert not del_result.isError
+    data = json.loads(del_result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == beat_id
