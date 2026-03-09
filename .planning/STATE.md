@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Phase 13 context gathered
-last_updated: "2026-03-09T17:32:02.640Z"
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-03-09T17:46:09.480Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
   percent: 0
 ---
 
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 13 P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,8 @@ Recent decisions affecting current work:
 - [Roadmap v1.1]: 3 phases derived from 13 requirements at fine granularity — DEBT (13), MCP (14), DOCS (15)
 - [Roadmap v1.1]: DOCS phase depends on both DEBT and MCP — README bug fixes land in Phase 13, new write tools land in Phase 14, docs split happens in Phase 15
 - [Roadmap v1.1]: Phase numbering continues from v1.0 (v1.0 ended at 12, v1.1 starts at 13)
+- [Phase 13]: DEBT-04: export subcommand confirmed as 'all' (not 'export-all') — source-verified from src/novel/export/cli.py line 149
+- [Phase 13]: DEBT-07: pydantic pinned at >=2.11 with no patch version, matching >=major.minor style used by typer and aiosqlite
 
 ### Pending Todos
 
@@ -72,6 +75,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T17:32:02.638Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-tech-debt-clearance/13-CONTEXT.md
+Last session: 2026-03-09T17:46:06.742Z
+Stopped at: Completed 13-02-PLAN.md
+Resume file: None

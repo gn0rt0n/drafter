@@ -9,11 +9,11 @@
 
 - [ ] **DEBT-01**: Gate count displays "36 items" in all output — gate.py, cli.py corrected
 - [ ] **DEBT-02**: `novel db seed gate-ready` CLI help text uses underscore (gate_ready, not gate-ready)
-- [ ] **DEBT-03**: docs/README.md migration description is accurate (no false auto-apply claim)
-- [ ] **DEBT-04**: docs/README.md export command name is correct
-- [ ] **DEBT-05**: docs/README.md GateViolation type name is correct
-- [ ] **DEBT-06**: docs/README.md table names are correct
-- [ ] **DEBT-07**: pydantic declared as direct dependency in pyproject.toml
+- [x] **DEBT-03**: docs/README.md migration description is accurate (no false auto-apply claim)
+- [x] **DEBT-04**: docs/README.md export command name is correct
+- [x] **DEBT-05**: docs/README.md GateViolation type name is correct
+- [x] **DEBT-06**: docs/README.md table names are correct
+- [x] **DEBT-07**: pydantic declared as direct dependency in pyproject.toml
 - [ ] **DEBT-08**: gate audit and certify are consistent — both check/report 36 items
 
 ### MCP API
@@ -42,11 +42,11 @@
 |-------------|-------|--------|
 | DEBT-01 | Phase 13 | Pending |
 | DEBT-02 | Phase 13 | Pending |
-| DEBT-03 | Phase 13 | Pending |
-| DEBT-04 | Phase 13 | Pending |
-| DEBT-05 | Phase 13 | Pending |
-| DEBT-06 | Phase 13 | Pending |
-| DEBT-07 | Phase 13 | Pending |
+| DEBT-03 | Phase 13 | Complete |
+| DEBT-04 | Phase 13 | Complete |
+| DEBT-05 | Phase 13 | Complete |
+| DEBT-06 | Phase 13 | Complete |
+| DEBT-07 | Phase 13 | Complete |
 | DEBT-08 | Phase 13 | Pending |
 | MCP-01 | Phase 14 | Pending |
 | MCP-02 | Phase 14 | Pending |
