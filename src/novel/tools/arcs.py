@@ -1,6 +1,6 @@
 """Arc domain MCP tools.
 
-All 6 arc tools are registered via the register(mcp) function pattern.
+All 12 arc tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -13,14 +13,14 @@ import logging
 from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
-from novel.models.arcs import ArcHealthLog, CharacterArc, ChekhovGun
+from novel.models.arcs import ArcHealthLog, CharacterArc, ChekhovGun, SubplotTouchpoint
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 9 arc domain tools with the given FastMCP instance.
+    """Register all 12 arc domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -488,3 +488,240 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_chekov failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # upsert_arc
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_arc(
+        character_id: int,
+        arc_type: str = "growth",
+        arc_id: int | None = None,
+        starting_state: str | None = None,
+        desired_state: str | None = None,
+        wound: str | None = None,
+        lie_believed: str | None = None,
+        truth_to_learn: str | None = None,
+        opened_chapter_id: int | None = None,
+        closed_chapter_id: int | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> CharacterArc | NotFoundResponse | ValidationFailure:
+        """Create or update a character arc.
+
+        Two-branch upsert:
+        - arc_id=None: INSERT a new row; character_id existence is verified
+          first.
+        - arc_id provided: INSERT ... ON CONFLICT(id) DO UPDATE; character_id
+          existence is verified first.
+
+        Always selects back and returns the created or updated CharacterArc row.
+        No gate check — arc tools are not gated.
+
+        Args:
+            character_id: FK to characters table (required).
+            arc_type: Type of arc — e.g. "growth", "fall", "flat" (default:
+                      "growth").
+            arc_id: Existing arc ID to update, or None to create a new arc.
+            starting_state: Narrative state the character starts in (optional).
+            desired_state: Narrative state the character is striving toward
+                           (optional).
+            wound: Core wound driving the character's flaw (optional).
+            lie_believed: Lie the character believes about themselves or the
+                          world (optional).
+            truth_to_learn: Truth the character must learn to complete the arc
+                            (optional).
+            opened_chapter_id: Chapter where this arc begins (optional).
+            closed_chapter_id: Chapter where this arc concludes (optional).
+            notes: Free-form notes (optional).
+            canon_status: Canon status — e.g. "draft", "canon" (default:
+                          "draft").
+
+        Returns:
+            The created or updated CharacterArc record.
+            NotFoundResponse if the character_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            char = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char:
+                return NotFoundResponse(
+                    not_found_message=f"Character {character_id} not found"
+                )
+            try:
+                if arc_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO character_arcs
+                               (character_id, arc_type, starting_state, desired_state,
+                                wound, lie_believed, truth_to_learn,
+                                opened_chapter_id, closed_chapter_id,
+                                notes, canon_status, updated_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                        (
+                            character_id,
+                            arc_type,
+                            starting_state,
+                            desired_state,
+                            wound,
+                            lie_believed,
+                            truth_to_learn,
+                            opened_chapter_id,
+                            closed_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM character_arcs WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO character_arcs
+                               (id, character_id, arc_type, starting_state, desired_state,
+                                wound, lie_believed, truth_to_learn,
+                                opened_chapter_id, closed_chapter_id,
+                                notes, canon_status, updated_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                           ON CONFLICT(id) DO UPDATE SET
+                               character_id=excluded.character_id,
+                               arc_type=excluded.arc_type,
+                               starting_state=excluded.starting_state,
+                               desired_state=excluded.desired_state,
+                               wound=excluded.wound,
+                               lie_believed=excluded.lie_believed,
+                               truth_to_learn=excluded.truth_to_learn,
+                               opened_chapter_id=excluded.opened_chapter_id,
+                               closed_chapter_id=excluded.closed_chapter_id,
+                               notes=excluded.notes,
+                               canon_status=excluded.canon_status,
+                               updated_at=datetime('now')""",
+                        (
+                            arc_id,
+                            character_id,
+                            arc_type,
+                            starting_state,
+                            desired_state,
+                            wound,
+                            lie_believed,
+                            truth_to_learn,
+                            opened_chapter_id,
+                            closed_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM character_arcs WHERE id = ?", (arc_id,)
+                    )
+                return CharacterArc(**dict(row[0]))
+            except Exception as exc:
+                logger.error("upsert_arc failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # log_subplot_touchpoint
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_subplot_touchpoint(
+        plot_thread_id: int,
+        chapter_id: int,
+        touchpoint_type: str = "advance",
+        notes: str | None = None,
+    ) -> SubplotTouchpoint | NotFoundResponse | ValidationFailure:
+        """Append a subplot touchpoint entry to the log.
+
+        Append-only INSERT — subplot_touchpoint_log has no UNIQUE constraint
+        beyond the primary key, so each call always inserts a new row. Multiple
+        touchpoints per plot thread and chapter are valid.
+
+        Pre-checks that both plot_thread_id exists in plot_threads and
+        chapter_id exists in chapters.
+
+        Args:
+            plot_thread_id: FK to plot_threads — the subplot receiving this
+                            touchpoint (required).
+            chapter_id: FK to chapters — the chapter where the touchpoint
+                        occurs (required).
+            touchpoint_type: Type of touchpoint — e.g. "advance", "callback",
+                             "resolve" (default: "advance").
+            notes: Free-form notes about this touchpoint (optional).
+
+        Returns:
+            The newly created SubplotTouchpoint row.
+            NotFoundResponse if plot_thread_id or chapter_id does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            thread = await conn.execute_fetchall(
+                "SELECT id FROM plot_threads WHERE id = ?", (plot_thread_id,)
+            )
+            if not thread:
+                return NotFoundResponse(
+                    not_found_message=f"Plot thread {plot_thread_id} not found"
+                )
+            chapter = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not chapter:
+                return NotFoundResponse(
+                    not_found_message=f"Chapter {chapter_id} not found"
+                )
+            try:
+                cursor = await conn.execute(
+                    "INSERT INTO subplot_touchpoint_log "
+                    "(plot_thread_id, chapter_id, touchpoint_type, notes) "
+                    "VALUES (?, ?, ?, ?)",
+                    (plot_thread_id, chapter_id, touchpoint_type, notes),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM subplot_touchpoint_log WHERE id = ?", (new_id,)
+                )
+                return SubplotTouchpoint(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_subplot_touchpoint failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_subplot_touchpoint
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_subplot_touchpoint(
+        touchpoint_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a subplot touchpoint log entry by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        subplot_touchpoint_log is an append-only log with no FK children —
+        deletion uses the log-style pattern (no try/except needed).
+
+        Args:
+            touchpoint_id: Primary key of the subplot_touchpoint_log row to
+                           delete.
+
+        Returns:
+            {"deleted": True, "id": touchpoint_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM subplot_touchpoint_log WHERE id = ?", (touchpoint_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Subplot touchpoint {touchpoint_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM subplot_touchpoint_log WHERE id = ?", (touchpoint_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": touchpoint_id}
