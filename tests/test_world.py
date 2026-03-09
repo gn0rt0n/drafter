@@ -369,13 +369,13 @@ async def test_get_current_faction_political_state_not_found(test_db_path):
 
 async def test_delete_faction_political_state_success(test_db_path):
     """delete_faction_political_state removes entry and returns deleted=True."""
-    # Log a new state entry to delete (use chapter_id=4 to avoid collision)
+    # Log a new state entry to delete (use chapter_id=2 — seed only uses chapter_id=1 for faction 1)
     r1 = await _call_tool(
         test_db_path,
         "log_faction_political_state",
         {
             "faction_id": 1,
-            "chapter_id": 4,
+            "chapter_id": 2,
             "power_level": 3,
         },
     )

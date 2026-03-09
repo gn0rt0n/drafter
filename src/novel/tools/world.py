@@ -663,3 +663,134 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_culture failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # log_faction_political_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_faction_political_state(
+        faction_id: int,
+        chapter_id: int,
+        power_level: int = 5,
+        alliances: str | None = None,
+        conflicts: str | None = None,
+        internal_state: str | None = None,
+        noted_by_character_id: int | None = None,
+        notes: str | None = None,
+    ) -> FactionPoliticalState | NotFoundResponse | ValidationFailure:
+        """Record a political state snapshot for a faction at a specific chapter.
+
+        The faction_political_states table has a UNIQUE(faction_id, chapter_id)
+        constraint — only one political state per faction per chapter.
+
+        Args:
+            faction_id: ID of the faction whose political state to record (required).
+            chapter_id: Chapter at which this state is recorded (required).
+            power_level: Power level 1-10 (default: 5).
+            alliances: Current alliances description (optional).
+            conflicts: Current conflicts description (optional).
+            internal_state: Internal faction state description (optional).
+            noted_by_character_id: FK to characters — who noted this state (optional).
+            notes: Free-form notes (optional).
+
+        Returns:
+            The newly created FactionPoliticalState, NotFoundResponse if the
+            faction does not exist, or ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            fac = await conn.execute_fetchall(
+                "SELECT id FROM factions WHERE id = ?", (faction_id,)
+            )
+            if not fac:
+                return NotFoundResponse(
+                    not_found_message=f"Faction {faction_id} not found"
+                )
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO faction_political_states (
+                        faction_id, chapter_id, power_level, alliances,
+                        conflicts, internal_state, noted_by_character_id, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        faction_id, chapter_id, power_level, alliances,
+                        conflicts, internal_state, noted_by_character_id, notes,
+                    ),
+                )
+                new_id = cursor.lastrowid
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM faction_political_states WHERE id = ?", (new_id,)
+                )
+                return FactionPoliticalState(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_faction_political_state failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_current_faction_political_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_current_faction_political_state(
+        faction_id: int,
+    ) -> FactionPoliticalState | NotFoundResponse:
+        """Return the most recent political state for a faction.
+
+        Selects the row with the highest id for the given faction, which
+        corresponds to the most recently logged political state entry.
+
+        Args:
+            faction_id: ID of the faction whose most recent political state to retrieve.
+
+        Returns:
+            The most recent FactionPoliticalState for the faction, or
+            NotFoundResponse if no political state records exist for it.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM faction_political_states "
+                "WHERE faction_id = ? ORDER BY id DESC LIMIT 1",
+                (faction_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"No political state found for faction {faction_id}"
+                )
+            return FactionPoliticalState(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_faction_political_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_faction_political_state(
+        political_state_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a faction political state entry by ID.
+
+        Log-style delete: faction_political_states has no FK children, so
+        no try/except for FK violations is needed.
+
+        Args:
+            political_state_id: Primary key of the political state entry to delete.
+
+        Returns:
+            {"deleted": True, "id": political_state_id} on success, or
+            NotFoundResponse if the entry does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM faction_political_states WHERE id = ?",
+                (political_state_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Faction political state {political_state_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM faction_political_states WHERE id = ?",
+                (political_state_id,),
+            )
+            await conn.commit()
+            return {"deleted": True, "id": political_state_id}
