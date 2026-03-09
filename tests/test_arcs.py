@@ -229,3 +229,97 @@ async def test_log_arc_health(test_db_path):
     assert data["id"] is not None
     assert data["arc_id"] == 1
     assert data["health_status"] == "stalled"
+
+
+# ---------------------------------------------------------------------------
+# link_chapter_to_arc / unlink_chapter_from_arc / get_arcs_for_chapter
+# ---------------------------------------------------------------------------
+
+
+async def test_link_chapter_to_arc(test_db_path):
+    """Linking a chapter to an arc returns ChapterCharacterArc."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_arc",
+        {"chapter_id": 1, "arc_id": 1, "arc_progression": "advance"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["chapter_id"] == 1
+    assert data["arc_id"] == 1
+    assert data["arc_progression"] == "advance"
+
+
+async def test_link_chapter_to_arc_idempotent(test_db_path):
+    """Re-linking updates arc_progression without error."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_arc",
+        {"chapter_id": 1, "arc_id": 1, "arc_progression": "climax"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["arc_progression"] == "climax"
+
+
+async def test_link_chapter_to_arc_missing_chapter(test_db_path):
+    """Returns NotFoundResponse when chapter_id does not exist."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_arc",
+        {"chapter_id": 9999, "arc_id": 1},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_link_chapter_to_arc_missing_arc(test_db_path):
+    """Returns NotFoundResponse when arc_id does not exist."""
+    result = await _call_tool(
+        test_db_path,
+        "link_chapter_to_arc",
+        {"chapter_id": 1, "arc_id": 9999},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_get_arcs_for_chapter(test_db_path):
+    """Returns list of ChapterCharacterArc entries for a chapter."""
+    result = await _call_tool(
+        test_db_path,
+        "get_arcs_for_chapter",
+        {"chapter_id": 1},
+    )
+    assert not result.isError
+    links = [json.loads(c.text) for c in result.content]
+    assert len(links) >= 1
+    assert all(lnk["chapter_id"] == 1 for lnk in links)
+
+
+async def test_unlink_chapter_from_arc(test_db_path):
+    """Unlink removes the association and returns unlinked=True."""
+    result = await _call_tool(
+        test_db_path,
+        "unlink_chapter_from_arc",
+        {"chapter_id": 1, "arc_id": 1},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["unlinked"] is True
+    assert data["chapter_id"] == 1
+    assert data["arc_id"] == 1
+
+
+async def test_unlink_chapter_from_arc_not_found(test_db_path):
+    """Unlinking a non-existent link returns NotFoundResponse."""
+    result = await _call_tool(
+        test_db_path,
+        "unlink_chapter_from_arc",
+        {"chapter_id": 9999, "arc_id": 9999},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
