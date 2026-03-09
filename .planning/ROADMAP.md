@@ -47,7 +47,10 @@ See archive: `.planning/milestones/v1.0-ROADMAP.md`
   3. `docs/README.md` accurately describes migrations (no auto-apply claim), correct export command name, correct GateViolation type name, and correct table names
   4. `uv add pydantic` or inspecting `pyproject.toml` confirms pydantic is a declared direct dependency (not only transitive)
   5. `run_gate_audit` and `certify_gate` both operate on the same 36-item set — no off-by-one inconsistency between audit count and certify count
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — Fix stale gate count strings in gate/cli.py and seed help text typo in db/cli.py
+- [ ] 13-02-PLAN.md — Fix four factual bugs in docs/README.md and add pydantic direct dependency
 
 ### Phase 14: MCP API Completeness
 **Goal**: Every schema table is either covered by at least one MCP write tool, or has an explicit documented justification for being read-only — no silent gaps in the API surface
@@ -85,6 +88,6 @@ See archive: `.planning/milestones/v1.0-ROADMAP.md`
 | 10. CLI Completion & Integration Testing | v1.0 | 3/3 | Complete | 2026-03-08 |
 | 11. 7-Point Structure Extension | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
-| 13. Tech Debt Clearance | v1.1 | 0/TBD | Not started | - |
+| 13. Tech Debt Clearance | v1.1 | 0/2 | Not started | - |
 | 14. MCP API Completeness | v1.1 | 0/TBD | Not started | - |
 | 15. Documentation Restructure | v1.1 | 0/TBD | Not started | - |
