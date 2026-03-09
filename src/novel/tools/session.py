@@ -23,13 +23,13 @@ from novel.models.sessions import (
     SessionLog,
     SessionStartResult,
 )
-from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 10 session domain tools with the given FastMCP instance.
+    """Register all 14 session domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -570,3 +570,180 @@ def register(mcp: FastMCP) -> None:
                     not_found_message=f"Open question {question_id} not found"
                 )
             return OpenQuestion(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # delete_session_log (SESS-11)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_session_log(
+        session_log_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a session log entry by ID.
+
+        Gate-gated: deleting session records is a prose-phase operation that
+        requires gate certification. session_logs may be referenced by
+        agent_run_log (via session_id FK); FK violations are caught and
+        returned as ValidationFailure.
+
+        Args:
+            session_log_id: Primary key of the session_logs row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            session log does not exist. GateViolation if the gate is not
+            certified. ValidationFailure if a FK constraint prevents deletion
+            (e.g. linked agent_run_log entries exist).
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM session_logs WHERE id = ?",
+                (session_log_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Session log {session_log_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM session_logs WHERE id = ?", (session_log_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": session_log_id}
+            except Exception as exc:
+                logger.error("delete_session_log failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_agent_run_log (SESS-12)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_agent_run_log(
+        agent_run_log_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete an agent run log entry by ID.
+
+        Gate-gated: removing audit trail entries is a prose-phase operation
+        that requires gate certification. agent_run_log is an append-only
+        audit log with no FK children — deletion uses the log-style pattern
+        (no try/except needed for FK safety).
+
+        Args:
+            agent_run_log_id: Primary key of the agent_run_log row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            agent run log entry does not exist. GateViolation if the gate is
+            not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM agent_run_log WHERE id = ?",
+                (agent_run_log_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Agent run log entry {agent_run_log_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM agent_run_log WHERE id = ?", (agent_run_log_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": agent_run_log_id}
+
+    # ------------------------------------------------------------------
+    # delete_open_question (SESS-13)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_open_question(
+        open_question_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete an open question by ID.
+
+        Gate-gated: removing open questions is a prose-phase operation that
+        requires gate certification. open_questions is an append-only log
+        with no FK children — deletion uses the log-style pattern
+        (no try/except needed for FK safety).
+
+        Args:
+            open_question_id: Primary key of the open_questions row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            open question does not exist. GateViolation if the gate is not
+            certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM open_questions WHERE id = ?",
+                (open_question_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Open question {open_question_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM open_questions WHERE id = ?", (open_question_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": open_question_id}
+
+    # ------------------------------------------------------------------
+    # delete_project_snapshot (SESS-14)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_project_snapshot(
+        snapshot_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a project metrics snapshot by ID.
+
+        Gate-gated: removing project snapshots is a prose-phase operation
+        that requires gate certification. project_metrics_snapshots is a
+        log-style table with no FK children — deletion uses the log-style
+        pattern (no try/except needed for FK safety).
+
+        Args:
+            snapshot_id: Primary key of the project_metrics_snapshots row
+                         to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            snapshot does not exist. GateViolation if the gate is not certified.
+        """
+        async with get_connection() as conn:
+            violation = await check_gate(conn)
+            if violation:
+                return violation
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM project_metrics_snapshots WHERE id = ?",
+                (snapshot_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Project snapshot {snapshot_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM project_metrics_snapshots WHERE id = ?", (snapshot_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": snapshot_id}
