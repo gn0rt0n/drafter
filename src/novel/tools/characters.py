@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 8 character domain tools with the given FastMCP instance.
+    """Register all 10 character domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -432,3 +432,73 @@ def register(mcp: FastMCP) -> None:
                     (character_id,),
                 )
             return [CharacterLocation(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # delete_character
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_character(character_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a character by ID.
+
+        Idempotent: returns NotFoundResponse if the character does not exist.
+        Refuses with ValidationFailure if dependent records (scenes, relationships,
+        character_knowledge, etc.) reference this character.
+
+        Args:
+            character_id: Primary key of the character to delete.
+
+        Returns:
+            {"deleted": True, "id": character_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Character {character_id} not found")
+            try:
+                await conn.execute("DELETE FROM characters WHERE id = ?", (character_id,))
+                await conn.commit()
+                return {"deleted": True, "id": character_id}
+            except Exception as exc:
+                logger.error("delete_character failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_character_knowledge
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_character_knowledge(
+        character_knowledge_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a character knowledge record by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        character_knowledge is a log table with no FK children, so no FK
+        constraint check is needed.
+
+        Args:
+            character_knowledge_id: Primary key of the character_knowledge record.
+
+        Returns:
+            {"deleted": True, "id": character_knowledge_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM character_knowledge WHERE id = ?",
+                (character_knowledge_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Character knowledge {character_knowledge_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM character_knowledge WHERE id = ?", (character_knowledge_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": character_knowledge_id}
