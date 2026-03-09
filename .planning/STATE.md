@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 14-09-PLAN.md
-last_updated: "2026-03-09T19:51:58.112Z"
+stopped_at: Completed 14-10-PLAN.md
+last_updated: "2026-03-09T19:57:02.461Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 21
-  completed_plans: 11
+  completed_plans: 12
   percent: 0
 ---
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14 P07 | 5 | 2 tasks | 2 files |
 | Phase 14 P08 | 242 | 2 tasks | 4 files |
 | Phase 14 P09 | 3 | 2 tasks | 2 files |
+| Phase 14-mcp-api-completeness P10 | 15 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 14]: cultures UNIQUE(name) confirmed in migration 004 — upsert uses ON CONFLICT(name) pattern like upsert_faction
 - [Phase 14]: faction_political_states.chapter_id is NOT NULL — log_faction_political_state makes chapter_id required (not optional)
 - [Phase 14]: delete_culture is FK-safe (locations and name_registry reference cultures); delete_faction_political_state is log-style (no FK children)
+- [Phase 14-mcp-api-completeness]: magic_system_elements columns are rules/limitations/costs/exceptions (not description) — confirmed from migration 011; upsert uses correct column names
+- [Phase 14-mcp-api-completeness]: supernatural_voice_guidelines upsert uses ON CONFLICT(id) (not element_name) to allow element_name edits after creation
+- [Phase 14-mcp-api-completeness]: upsert_supernatural_voice_guideline and delete_supernatural_voice_guideline are gate-gated; upsert_name_registry_entry is gate-free — consistent with existing module patterns
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T19:51:58.110Z
-Stopped at: Completed 14-09-PLAN.md
+Last session: 2026-03-09T19:57:02.459Z
+Stopped at: Completed 14-10-PLAN.md
 Resume file: None
