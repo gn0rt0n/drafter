@@ -206,14 +206,14 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 8. Canon, Knowledge & Foreshadowing | 3/3 | Complete   | 2026-03-08 |
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
 | 10. CLI Completion & Integration Testing | 3/3 | Complete    | 2026-03-08 |
-| 11. 7-Point Structure & Gate Extension | 1/3 | In Progress|  |
+| 11. 7-Point Structure & Gate Extension | 2/3 | In Progress|  |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
 **Goal:** Add 7-point structure tracking at story level and per-POV-character arc, extend the gate to enforce complete beat coverage, and update all related planning docs
 **Requirements**: STRUCT-01, STRUCT-02, STRUCT-03, STRUCT-04, STRUCT-05, STRUCT-06, STRUCT-07
 **Depends on:** Phase 10
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 11-01-PLAN.md — Migration 022 + Pydantic models (StoryStructure, ArcSevenPointBeat) + models/__init__.py (Wave 1)
