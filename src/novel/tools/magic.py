@@ -1,6 +1,6 @@
 """Magic domain MCP tools.
 
-All 4 magic tools are registered via the register(mcp) function pattern.
+All 5 magic tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 4 magic domain tools with the given FastMCP instance.
+    """Register all 5 magic domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -252,3 +252,34 @@ def register(mcp: FastMCP) -> None:
                 applicable_rules=applicable_rules,
                 character_has_ability=character_has_ability,
             )
+
+    # ------------------------------------------------------------------
+    # delete_magic_use_log
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_magic_use_log(magic_use_log_id: int) -> NotFoundResponse | dict:
+        """Delete a magic use log entry by ID.
+
+        Log-table delete (simpler pattern): magic_use_log is an append-only
+        log with no FK children, so no try/except is needed. Returns
+        NotFoundResponse if the entry does not exist.
+
+        Args:
+            magic_use_log_id: Primary key of the magic use log entry to delete.
+
+        Returns:
+            {"deleted": True, "id": magic_use_log_id} on success, or
+            NotFoundResponse if the entry does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM magic_use_log WHERE id = ?", (magic_use_log_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Magic use log entry {magic_use_log_id} not found"
+                )
+            await conn.execute("DELETE FROM magic_use_log WHERE id = ?", (magic_use_log_id,))
+            await conn.commit()
+            return {"deleted": True, "id": magic_use_log_id}
