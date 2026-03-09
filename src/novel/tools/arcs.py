@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 6 arc domain tools with the given FastMCP instance.
+    """Register all 9 arc domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -379,4 +379,112 @@ def register(mcp: FastMCP) -> None:
                 return ArcHealthLog(**dict(row[0]))
             except Exception as exc:
                 logger.error("log_arc_health failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_arc
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_arc(arc_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a character arc by ID.
+
+        Idempotent: returns NotFoundResponse if the arc does not exist.
+        Refuses with ValidationFailure if dependent records reference this arc
+        (chapter_character_arcs, arc_health_log, or arc_seven_point_beats all
+        have FK into character_arcs).
+
+        Args:
+            arc_id: Primary key of the character_arcs row.
+
+        Returns:
+            {"deleted": True, "id": arc_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM character_arcs WHERE id = ?", (arc_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Arc {arc_id} not found")
+            try:
+                await conn.execute("DELETE FROM character_arcs WHERE id = ?", (arc_id,))
+                await conn.commit()
+                return {"deleted": True, "id": arc_id}
+            except Exception as exc:
+                logger.error("delete_arc failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_arc_health_log
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_arc_health_log(
+        arc_health_log_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete an arc health log entry by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        arc_health_log is a log table with no FK children, so no FK constraint
+        check is needed.
+
+        Args:
+            arc_health_log_id: Primary key of the arc_health_log row.
+
+        Returns:
+            {"deleted": True, "id": arc_health_log_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM arc_health_log WHERE id = ?", (arc_health_log_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Arc health log {arc_health_log_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM arc_health_log WHERE id = ?", (arc_health_log_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": arc_health_log_id}
+
+    # ------------------------------------------------------------------
+    # delete_chekov
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_chekov(chekov_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a Chekhov's gun registry entry by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        Uses FK-safe pattern (ValidationFailure on exception) for consistency
+        with the safety-first delete approach.
+
+        Args:
+            chekov_id: Primary key of the chekovs_gun_registry row.
+
+        Returns:
+            {"deleted": True, "id": chekov_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM chekovs_gun_registry WHERE id = ?", (chekov_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Chekhov's gun {chekov_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM chekovs_gun_registry WHERE id = ?", (chekov_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": chekov_id}
+            except Exception as exc:
+                logger.error("delete_chekov failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
