@@ -685,6 +685,47 @@ created_at          timestamp
 
 ---
 
+### `story_structure`
+
+```sql
+id                                  bigint PK
+book_id                             bigint FK -> books.id  UNIQUE (one row per book)
+hook_chapter_id                     bigint FK -> chapters.id  nullable
+plot_turn_1_chapter_id              bigint FK -> chapters.id  nullable
+pinch_1_chapter_id                  bigint FK -> chapters.id  nullable
+midpoint_chapter_id                 bigint FK -> chapters.id  nullable
+pinch_2_chapter_id                  bigint FK -> chapters.id  nullable
+plot_turn_2_chapter_id              bigint FK -> chapters.id  nullable
+resolution_chapter_id               bigint FK -> chapters.id  nullable
+act_1_inciting_incident_chapter_id  bigint FK -> chapters.id  nullable  -- 3-act alignment: Act 1→2 inciting incident
+act_2_midpoint_chapter_id           bigint FK -> chapters.id  nullable  -- 3-act alignment: Act 2 midpoint
+act_3_climax_chapter_id             bigint FK -> chapters.id  nullable  -- 3-act alignment: Act 2→3 climax
+notes                               text
+created_at                          timestamp
+updated_at                          timestamp
+```
+
+One row per book. The 7 beat fields (hook through resolution) represent the Story Architect's 7-point structural map. The 3 act-alignment fields satisfy PRD gate item 12's `inciting_incident`, `midpoint`, `climax` requirements without modifying the `acts` table.
+
+---
+
+### `arc_seven_point_beats`
+
+```sql
+id          bigint PK
+arc_id      bigint FK -> character_arcs.id
+beat_type   text NOT NULL  -- 'hook' | 'plot_turn_1' | 'pinch_1' | 'midpoint' | 'pinch_2' | 'plot_turn_2' | 'resolution'
+chapter_id  bigint FK -> chapters.id  nullable  -- can be recorded before chapter is locked
+notes       text
+created_at  timestamp
+updated_at  timestamp
+UNIQUE(arc_id, beat_type)
+```
+
+Junction table: one row per beat per arc. Upsertable on (arc_id, beat_type). Partial population is valid — arcs are populated progressively. All 7 beats with non-null chapter_id required to pass gate item `arcs_seven_point_beats`.
+
+---
+
 ## Section 4: Timeline and Chronology Tables
 
 ---

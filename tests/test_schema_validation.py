@@ -20,6 +20,7 @@ from novel.models import (
     PublishingAsset, SubmissionEntry, ResearchNote, DocumentationTask,
     MagicSystemElement, SupernaturalElement, MagicUseLog, PractitionerAbility, NameRegistryEntry,
     PacingBeat, TensionMeasurement,
+    StoryStructure, ArcSevenPointBeat,
 )
 
 
@@ -58,6 +59,8 @@ TABLE_MODEL_MAP = {
     "arc_health_log": ArcHealthLog,
     "chekovs_gun_registry": ChekhovGun,
     "subplot_touchpoint_log": SubplotTouchpoint,
+    "story_structure": StoryStructure,
+    "arc_seven_point_beats": ArcSevenPointBeat,
     # voice
     "voice_profiles": VoiceProfile,
     "voice_drift_log": VoiceDriftLog,

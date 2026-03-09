@@ -1,10 +1,10 @@
 """In-memory MCP client tests for gate domain tools.
 
-CRITICAL: Uses 'gate_ready' seed (NOT 'minimal') — gate tests require 34
-gate_checklist_items to exist and all 34 SQL queries to pass.
+CRITICAL: Uses 'gate_ready' seed (NOT 'minimal') — gate tests require 36
+gate_checklist_items to exist and all 36 SQL queries to pass.
 
-Total gate_checklist_items after gate_ready seed: 35 rows
-  - 34 rows from GATE_ITEM_META (all gate SQL check items)
+Total gate_checklist_items after gate_ready seed: 37 rows
+  - 36 rows from GATE_ITEM_META (all gate SQL check items)
   - 1 row from minimal seed: 'min_characters' (outside GATE_ITEM_META)
 
 Tests verify the full MCP protocol path: call_tool → FastMCP → tool handler → SQLite → response.
@@ -88,13 +88,13 @@ async def test_get_gate_status_returns_not_certified(test_db_path):
 
 @pytest.mark.asyncio
 async def test_get_gate_checklist_returns_items(test_db_path):
-    """After gate_ready seed, checklist has 35 items (34 GATE_ITEM_META + 1 min_characters)."""
+    """After gate_ready seed, checklist has 37 items (36 GATE_ITEM_META + 1 min_characters)."""
     result = await _call_tool(test_db_path, "get_gate_checklist", {})
     assert not result.isError
     # list[GateChecklistItem] serializes as N TextContent blocks
     items = [json.loads(c.text) for c in result.content]
-    # 34 items from GATE_ITEM_META + 1 'min_characters' from minimal seed = 35
-    assert len(items) == 35
+    # 36 items from GATE_ITEM_META + 1 'min_characters' from minimal seed = 37
+    assert len(items) == 37
     # Each item has required fields
     for item in items:
         assert "item_key" in item
@@ -110,20 +110,20 @@ async def test_get_gate_checklist_returns_items(test_db_path):
 
 @pytest.mark.asyncio
 async def test_run_gate_audit_returns_expected_items(test_db_path):
-    """run_gate_audit evaluates all 34 SQL queries and returns all gate_checklist_items."""
+    """run_gate_audit evaluates all 36 SQL queries and returns all gate_checklist_items."""
     result = await _call_tool(test_db_path, "run_gate_audit", {})
     assert not result.isError
     data = json.loads(result.content[0].text)
-    # total_items is count of all gate_checklist_items rows (35 = 34 + min_characters)
-    assert data["total_items"] == 35
+    # total_items is count of all gate_checklist_items rows (37 = 36 + min_characters)
+    assert data["total_items"] == 37
     assert "passing_count" in data
     assert "failing_count" in data
-    assert len(data["items"]) == 35
+    assert len(data["items"]) == 37
 
 
 @pytest.mark.asyncio
 async def test_run_gate_audit_gate_ready_all_pass(test_db_path):
-    """Gate-ready seed satisfies all 34 gate SQL checklist items — failing_count for GATE_QUERIES items must be 0."""
+    """Gate-ready seed satisfies all 36 gate SQL checklist items — failing_count for GATE_QUERIES items must be 0."""
     result = await _call_tool(test_db_path, "run_gate_audit", {})
     assert not result.isError
     data = json.loads(result.content[0].text)
@@ -138,7 +138,7 @@ async def test_run_gate_audit_gate_ready_all_pass(test_db_path):
         f"Failing items: {[i['item_key'] for i in failing_sql_items]}"
     )
     # The overall failing_count should be 0 — min_characters has no is_passing set so defaults to 0 (False)
-    # Run audit sets is_passing for all 34 GATE_QUERIES items; min_characters stays as-is
+    # Run audit sets is_passing for all 36 GATE_QUERIES items; min_characters stays as-is
     assert data["failing_count"] == 0 or data["failing_count"] == 1, (
         # min_characters row may or may not be counted depending on its initial state
         f"Unexpected failing_count: {data['failing_count']}"
