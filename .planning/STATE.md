@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-03-09T14:35:56.932Z"
+stopped_at: Completed 11-03-PLAN.md
+last_updated: "2026-03-09T14:47:46.023Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 36
-  completed_plans: 35
+  completed_plans: 36
   percent: 100
 ---
 
@@ -85,6 +85,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 10-cli-completion-integration-testing P03 | 4 | 2 tasks | 7 files |
 | Phase 11 P01 | 2 | 2 tasks | 3 files |
 | Phase 11-update-schema-cli-mcp-and-planning-docs-to-support-7-point-structure-and-3-act-7-point-integration P02 | 4 | 2 tasks | 2 files |
+| Phase 11 P03 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -182,6 +183,8 @@ Recent decisions affecting current work:
 - [Phase 11-02]: gate.py goes from 34 to 36 items — struct_story_beats (structure category) and arcs_seven_point_beats (plot category) added to both GATE_ITEM_META and GATE_QUERIES simultaneously to keep assert passing
 - [Phase 11-02]: seed uses chapter_id=1 for all 14 arc_seven_point_beats rows — seed needs valid FK values, not narrative accuracy
 - [Phase 11-02]: story_structure seed row maps all 7 structural beats to existing seed chapters (1, 2, 3) plus all 3 act-level FKs — satisfies gate query which checks all 7 beat FKs are non-null
+- [Phase 11-03]: test_structure.py uses create_connected_server_and_client_session(mcp) not mcp._mcp_server — matches test_arcs.py pattern established in Phase 03-03
+- [Phase 11-03]: gate_ready seed inserts story_structure rows for both books (book_id=1 and 2) — minimal seed has 2 books, gate query checks ALL books without status filter
 
 ### Roadmap Evolution
 
@@ -197,6 +200,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T14:35:56.930Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-03-09T14:47:46.021Z
+Stopped at: Completed 11-03-PLAN.md
 Resume file: None
