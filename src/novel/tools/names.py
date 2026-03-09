@@ -1,6 +1,6 @@
 """Names domain MCP tools.
 
-All 5 name tools are registered via the register(mcp) function pattern.
+All 6 name tools are registered via the register(mcp) function pattern.
 This module is gate-free: name tools must work during worldbuilding (before
 gate certification). Do NOT add check_gate() to this module.
 
@@ -30,7 +30,7 @@ class NameSuggestionsResult(BaseModel):
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 5 name domain tools with the given FastMCP instance.
+    """Register all 6 name domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -238,6 +238,105 @@ def register(mcp: FastMCP) -> None:
                 linguistic_context=linguistic_context,
                 culture_id=culture_id,
             )
+
+    # ------------------------------------------------------------------
+    # upsert_name_registry_entry
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_name_registry_entry(
+        entry_id: int | None,
+        name: str,
+        entity_type: str = "character",
+        culture_id: int | None = None,
+        linguistic_notes: str | None = None,
+        introduced_chapter_id: int | None = None,
+        notes: str | None = None,
+    ) -> NameRegistryEntry | ValidationFailure:
+        """Create or update a name registry entry.
+
+        Two-branch upsert on entry_id:
+        - entry_id=None: INSERT creates a new name_registry row.
+        - entry_id=N: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+        Not gate-gated: name registry is worldbuilding data that must be
+        writable before gate certification.
+
+        Note: name_registry has a UNIQUE(name) constraint. If creating with
+        entry_id=None and the name already exists, returns ValidationFailure.
+        Use check_name first to verify name availability.
+
+        Args:
+            entry_id: Existing entry ID for update branch (None to create).
+            name: The name to register (must be unique in the registry).
+            entity_type: Category of entity (default 'character').
+            culture_id: FK to cultures table (optional).
+            linguistic_notes: Notes on name etymology or pronunciation (optional).
+            introduced_chapter_id: FK to chapters table where name first appears
+                                   (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated NameRegistryEntry record.
+            ValidationFailure on DB error (e.g. UNIQUE constraint violation).
+        """
+        async with get_connection() as conn:
+            try:
+                if entry_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO name_registry
+                            (name, entity_type, culture_id, linguistic_notes,
+                             introduced_chapter_id, notes)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            name,
+                            entity_type,
+                            culture_id,
+                            linguistic_notes,
+                            introduced_chapter_id,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    async with conn.execute(
+                        "SELECT * FROM name_registry WHERE id = ?", (new_id,)
+                    ) as cur:
+                        row = await cur.fetchone()
+                else:
+                    await conn.execute(
+                        """INSERT INTO name_registry
+                            (id, name, entity_type, culture_id, linguistic_notes,
+                             introduced_chapter_id, notes)
+                           VALUES (?, ?, ?, ?, ?, ?, ?)
+                           ON CONFLICT(id) DO UPDATE SET
+                               name=excluded.name,
+                               entity_type=excluded.entity_type,
+                               culture_id=excluded.culture_id,
+                               linguistic_notes=excluded.linguistic_notes,
+                               introduced_chapter_id=excluded.introduced_chapter_id,
+                               notes=excluded.notes""",
+                        (
+                            entry_id,
+                            name,
+                            entity_type,
+                            culture_id,
+                            linguistic_notes,
+                            introduced_chapter_id,
+                            notes,
+                        ),
+                    )
+                    await conn.commit()
+                    async with conn.execute(
+                        "SELECT * FROM name_registry WHERE id = ?", (entry_id,)
+                    ) as cur:
+                        row = await cur.fetchone()
+                return NameRegistryEntry(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_name_registry_entry failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
 
     # ------------------------------------------------------------------
     # delete_name_registry_entry

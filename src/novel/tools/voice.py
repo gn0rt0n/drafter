@@ -1,6 +1,6 @@
 """Voice domain MCP tools.
 
-All 7 voice tools are registered via the register(mcp) function pattern.
+All 9 voice tools are registered via the register(mcp) function pattern.
 All tools call check_gate(conn) before any database logic — voice tools
 are prose-phase operations requiring gate certification.
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 7 voice domain tools with the given FastMCP instance.
+    """Register all 9 voice domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -399,3 +399,157 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": voice_drift_id}
+
+    # ------------------------------------------------------------------
+    # upsert_supernatural_voice_guideline
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_supernatural_voice_guideline(
+        guideline_id: int | None,
+        element_name: str,
+        writing_rules: str,
+        element_type: str = "creature",
+        avoid: str | None = None,
+        example_phrases: str | None = None,
+        notes: str | None = None,
+    ) -> GateViolation | SupernaturalVoiceGuideline | ValidationFailure:
+        """Create or update a supernatural voice guideline.
+
+        Gate-gated: supernatural voice guidelines are prose-phase data
+        requiring gate certification.
+
+        Two-branch upsert on guideline_id:
+        - guideline_id=None: INSERT creates a new supernatural_voice_guidelines row.
+        - guideline_id=N: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        Args:
+            guideline_id: Existing guideline ID for update branch (None to create).
+            element_name: Name of the supernatural element (UNIQUE in table).
+            writing_rules: Writing rules for this element's voice (required).
+            element_type: Category of element, e.g. 'creature', 'spirit'
+                          (default 'creature').
+            avoid: Words, phrases, or patterns to avoid (optional).
+            example_phrases: Example phrases that capture the voice (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated SupernaturalVoiceGuideline record.
+            GateViolation if the gate is not certified.
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            try:
+                if guideline_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO supernatural_voice_guidelines
+                            (element_name, element_type, writing_rules,
+                             avoid, example_phrases, notes)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            element_name,
+                            element_type,
+                            writing_rules,
+                            avoid,
+                            example_phrases,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    async with conn.execute(
+                        "SELECT * FROM supernatural_voice_guidelines WHERE id = ?",
+                        (new_id,),
+                    ) as cur:
+                        row = await cur.fetchone()
+                else:
+                    await conn.execute(
+                        """INSERT INTO supernatural_voice_guidelines
+                            (id, element_name, element_type, writing_rules,
+                             avoid, example_phrases, notes)
+                           VALUES (?, ?, ?, ?, ?, ?, ?)
+                           ON CONFLICT(id) DO UPDATE SET
+                               element_name=excluded.element_name,
+                               element_type=excluded.element_type,
+                               writing_rules=excluded.writing_rules,
+                               avoid=excluded.avoid,
+                               example_phrases=excluded.example_phrases,
+                               notes=excluded.notes,
+                               updated_at=datetime('now')""",
+                        (
+                            guideline_id,
+                            element_name,
+                            element_type,
+                            writing_rules,
+                            avoid,
+                            example_phrases,
+                            notes,
+                        ),
+                    )
+                    await conn.commit()
+                    async with conn.execute(
+                        "SELECT * FROM supernatural_voice_guidelines WHERE id = ?",
+                        (guideline_id,),
+                    ) as cur:
+                        row = await cur.fetchone()
+                return SupernaturalVoiceGuideline(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_supernatural_voice_guideline failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_supernatural_voice_guideline
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_supernatural_voice_guideline(
+        guideline_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a supernatural voice guideline by ID.
+
+        Gate-gated: deleting supernatural voice guidelines is a prose-phase
+        operation requiring gate certification. FK-safe: if any FK constraint
+        is violated, returns ValidationFailure rather than raising.
+
+        Args:
+            guideline_id: Primary key of the supernatural_voice_guidelines row to delete.
+
+        Returns:
+            {"deleted": True, "id": guideline_id} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the guideline does not exist.
+            ValidationFailure if FK constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            async with conn.execute(
+                "SELECT id FROM supernatural_voice_guidelines WHERE id = ?",
+                (guideline_id,),
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Supernatural voice guideline {guideline_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM supernatural_voice_guidelines WHERE id = ?",
+                    (guideline_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": guideline_id}
+            except Exception as exc:
+                logger.error("delete_supernatural_voice_guideline failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
