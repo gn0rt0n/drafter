@@ -15,13 +15,13 @@ from mcp.server.fastmcp import FastMCP
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.canon import CanonFact, ContinuityIssue, StoryDecision
-from novel.models.shared import GateViolation, NotFoundResponse
+from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 7 canon domain tools with the given FastMCP instance.
+    """Register all 10 canon domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -368,3 +368,132 @@ def register(mcp: FastMCP) -> None:
                 )
 
             return ContinuityIssue(**dict(row))
+
+    # ------------------------------------------------------------------
+    # delete_canon_fact (CANO-08)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_canon_fact(
+        canon_fact_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a canon fact by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. canon_facts has a self-referencing parent_fact_id FK; deleting
+        a parent with children raises IntegrityError — returns ValidationFailure.
+
+        Args:
+            canon_fact_id: Primary key of the canon fact to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the canon fact does not exist.
+            ValidationFailure if the delete violates a FK constraint.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM canon_facts WHERE id = ?", (canon_fact_id,)
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Canon fact {canon_fact_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM canon_facts WHERE id = ?", (canon_fact_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": canon_fact_id}
+            except Exception as exc:
+                logger.error("delete_canon_fact failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_continuity_issue (CANO-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_continuity_issue(
+        continuity_issue_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a continuity issue by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. continuity_issues is a log table with no FK children — no
+        IntegrityError expected.
+
+        Args:
+            continuity_issue_id: Primary key of the continuity issue to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the continuity issue does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM continuity_issues WHERE id = ?",
+                (continuity_issue_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Continuity issue {continuity_issue_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM continuity_issues WHERE id = ?", (continuity_issue_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": continuity_issue_id}
+
+    # ------------------------------------------------------------------
+    # delete_decision (CANO-10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_decision(
+        decision_id: int,
+    ) -> GateViolation | NotFoundResponse | dict:
+        """Delete a story decision by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. decisions_log is a log table with no FK children — no
+        IntegrityError expected.
+
+        Args:
+            decision_id: Primary key of the decision to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the decision does not exist.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM decisions_log WHERE id = ?", (decision_id,)
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Decision {decision_id} not found"
+                )
+
+            await conn.execute(
+                "DELETE FROM decisions_log WHERE id = ?", (decision_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": decision_id}
