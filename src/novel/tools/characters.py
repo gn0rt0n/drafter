@@ -735,3 +735,196 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": location_id}
+
+    # ------------------------------------------------------------------
+    # log_injury_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_injury_state(
+        character_id: int,
+        chapter_id: int,
+        description: str,
+        injury_type: str = "wound",
+        severity: str = "minor",
+        is_resolved: bool = False,
+        resolved_chapter_id: int | None = None,
+        notes: str | None = None,
+    ) -> InjuryState | NotFoundResponse | ValidationFailure:
+        """Log an injury state for a character at a specific chapter.
+
+        Injury records are append-only and chapter-scoped, tracking when
+        injuries occur and their resolution status as the story progresses.
+
+        Args:
+            character_id: ID of the character who is injured.
+            chapter_id: Chapter at which this injury occurred.
+            description: Description of the injury (required).
+            injury_type: Type of injury — "wound", "bruise", "illness", etc.
+            severity: Injury severity — "minor", "moderate", "severe", "critical".
+            is_resolved: Whether the injury has healed.
+            resolved_chapter_id: Chapter at which the injury resolved (optional).
+            notes: Free-form notes (optional).
+
+        Returns:
+            The newly created InjuryState with its assigned id, or
+            NotFoundResponse if the character or chapter does not exist, or
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            char_row = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char_row:
+                return NotFoundResponse(not_found_message=f"Character {character_id} not found")
+
+            ch_row = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch_row:
+                return NotFoundResponse(not_found_message=f"Chapter {chapter_id} not found")
+
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO injury_states
+                        (character_id, chapter_id, injury_type, description,
+                         severity, is_resolved, resolved_chapter_id, notes,
+                         created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))""",
+                    (character_id, chapter_id, injury_type, description,
+                     severity, is_resolved, resolved_chapter_id, notes),
+                )
+                await conn.commit()
+                new_id = cursor.lastrowid
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM injury_states WHERE id = ?", (new_id,)
+                )
+                return InjuryState(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_injury_state failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_injury_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_injury_state(injury_state_id: int) -> NotFoundResponse | dict:
+        """Delete an injury state record by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        injury_states is a log table with no FK children, so no FK
+        constraint check is needed.
+
+        Args:
+            injury_state_id: Primary key of the injury_states record.
+
+        Returns:
+            {"deleted": True, "id": injury_state_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM injury_states WHERE id = ?", (injury_state_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Injury state {injury_state_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM injury_states WHERE id = ?", (injury_state_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": injury_state_id}
+
+    # ------------------------------------------------------------------
+    # log_title_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def log_title_state(
+        character_id: int,
+        chapter_id: int,
+        title: str,
+        granted_by: str | None = None,
+        notes: str | None = None,
+    ) -> TitleState | NotFoundResponse | ValidationFailure:
+        """Log a title or rank held by a character at a specific chapter.
+
+        Title records are append-only and chapter-scoped, tracking when
+        characters gain or hold official titles as the story progresses.
+
+        Args:
+            character_id: ID of the character receiving the title.
+            chapter_id: Chapter at which this title was granted.
+            title: The title or rank (required).
+            granted_by: Who or what granted this title (optional).
+            notes: Free-form notes (optional).
+
+        Returns:
+            The newly created TitleState with its assigned id, or
+            NotFoundResponse if the character or chapter does not exist, or
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            char_row = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not char_row:
+                return NotFoundResponse(not_found_message=f"Character {character_id} not found")
+
+            ch_row = await conn.execute_fetchall(
+                "SELECT id FROM chapters WHERE id = ?", (chapter_id,)
+            )
+            if not ch_row:
+                return NotFoundResponse(not_found_message=f"Chapter {chapter_id} not found")
+
+            try:
+                cursor = await conn.execute(
+                    """INSERT INTO title_states
+                        (character_id, chapter_id, title, granted_by, notes, created_at)
+                       VALUES (?, ?, ?, ?, ?, datetime('now'))""",
+                    (character_id, chapter_id, title, granted_by, notes),
+                )
+                await conn.commit()
+                new_id = cursor.lastrowid
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM title_states WHERE id = ?", (new_id,)
+                )
+                return TitleState(**dict(row[0]))
+            except Exception as exc:
+                logger.error("log_title_state failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_title_state
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_title_state(title_state_id: int) -> NotFoundResponse | dict:
+        """Delete a title state record by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        title_states is a log table with no FK children, so no FK
+        constraint check is needed.
+
+        Args:
+            title_state_id: Primary key of the title_states record.
+
+        Returns:
+            {"deleted": True, "id": title_state_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM title_states WHERE id = ?", (title_state_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Title state {title_state_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM title_states WHERE id = ?", (title_state_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": title_state_id}
