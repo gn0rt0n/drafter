@@ -1,6 +1,6 @@
 """Magic domain MCP tools.
 
-All 10 magic tools are registered via the register(mcp) function pattern.
+All 14 magic tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -18,6 +18,7 @@ from novel.models.magic import (
     MagicSystemElement,
     MagicUseLog,
     PractitionerAbility,
+    SupernaturalElement,
 )
 from novel.models.shared import NotFoundResponse, ValidationFailure
 
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 10 magic domain tools with the given FastMCP instance.
+    """Register all 14 magic domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -614,3 +615,211 @@ def register(mcp: FastMCP) -> None:
             await conn.execute("DELETE FROM magic_use_log WHERE id = ?", (magic_use_log_id,))
             await conn.commit()
             return {"deleted": True, "id": magic_use_log_id}
+
+    # ------------------------------------------------------------------
+    # get_supernatural_element
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_supernatural_element(
+        element_id: int,
+    ) -> SupernaturalElement | NotFoundResponse:
+        """Look up a single supernatural element by ID, returning all fields.
+
+        Returns the full element record including description, rules,
+        voice_guidelines, and notes.
+
+        Args:
+            element_id: Primary key of the supernatural element to retrieve.
+
+        Returns:
+            SupernaturalElement with all fields populated, or NotFoundResponse
+            if the element does not exist.
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM supernatural_elements WHERE id = ?",
+                (element_id,),
+            )
+            if not rows:
+                logger.debug("Supernatural element %d not found", element_id)
+                return NotFoundResponse(
+                    not_found_message=f"Supernatural element {element_id} not found"
+                )
+            return SupernaturalElement(**dict(rows[0]))
+
+    # ------------------------------------------------------------------
+    # list_supernatural_elements
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def list_supernatural_elements() -> list[SupernaturalElement]:
+        """Return all supernatural elements ordered by name.
+
+        Returns every row from supernatural_elements ordered alphabetically
+        by name ASC. An empty list is valid when no elements have been
+        created yet.
+
+        Not gate-gated: supernatural elements are worldbuilding data that must
+        be writable before gate certification.
+
+        Returns:
+            List of SupernaturalElement records ordered by name ASC
+            (may be empty).
+        """
+        async with get_connection() as conn:
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM supernatural_elements ORDER BY name ASC"
+            )
+            return [SupernaturalElement(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_supernatural_element
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_supernatural_element(
+        element_id: int | None,
+        name: str,
+        element_type: str,
+        description: str | None = None,
+        rules: str | None = None,
+        voice_guidelines: str | None = None,
+        introduced_chapter_id: int | None = None,
+        notes: str | None = None,
+        canon_status: str = "draft",
+    ) -> SupernaturalElement | ValidationFailure:
+        """Create or update a supernatural element.
+
+        Two-branch upsert on element_id:
+        - element_id=None: INSERT creates a new supernatural_elements row.
+        - element_id=N: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+        Not gate-gated: supernatural elements are worldbuilding data that must
+        be writable before gate certification.
+
+        Args:
+            element_id: Existing element ID for update branch (None to create).
+            name: Name of the supernatural element (required).
+            element_type: Category of element, e.g. 'creature', 'curse',
+                          'blessing', 'entity' (required).
+            description: Description of the supernatural element (optional).
+            rules: Rules governing this element (optional).
+            voice_guidelines: Voice/writing guidelines for this element (optional).
+            introduced_chapter_id: FK to chapters table — chapter where element
+                                    first appears (optional).
+            notes: Additional notes (optional).
+            canon_status: Canon status of the element (default 'draft').
+
+        Returns:
+            The created or updated SupernaturalElement record.
+            ValidationFailure on DB error.
+        """
+        async with get_connection() as conn:
+            try:
+                if element_id is None:
+                    cursor = await conn.execute(
+                        """INSERT INTO supernatural_elements
+                            (name, element_type, description, rules, voice_guidelines,
+                             introduced_chapter_id, notes, canon_status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (
+                            name,
+                            element_type,
+                            description,
+                            rules,
+                            voice_guidelines,
+                            introduced_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM supernatural_elements WHERE id = ?", (new_id,)
+                    )
+                else:
+                    await conn.execute(
+                        """INSERT INTO supernatural_elements
+                            (id, name, element_type, description, rules, voice_guidelines,
+                             introduced_chapter_id, notes, canon_status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           ON CONFLICT(id) DO UPDATE SET
+                               name=excluded.name,
+                               element_type=excluded.element_type,
+                               description=excluded.description,
+                               rules=excluded.rules,
+                               voice_guidelines=excluded.voice_guidelines,
+                               introduced_chapter_id=excluded.introduced_chapter_id,
+                               notes=excluded.notes,
+                               canon_status=excluded.canon_status,
+                               updated_at=datetime('now')""",
+                        (
+                            element_id,
+                            name,
+                            element_type,
+                            description,
+                            rules,
+                            voice_guidelines,
+                            introduced_chapter_id,
+                            notes,
+                            canon_status,
+                        ),
+                    )
+                    await conn.commit()
+                    row = await conn.execute_fetchall(
+                        "SELECT * FROM supernatural_elements WHERE id = ?", (element_id,)
+                    )
+                return SupernaturalElement(**dict(row[0]))
+            except Exception as exc:
+                logger.error("upsert_supernatural_element failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_supernatural_element
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_supernatural_element(
+        element_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a supernatural element by ID.
+
+        FK-safe: uses try/except pattern to catch any unexpected FK constraint
+        violations and return ValidationFailure rather than raising. The
+        supernatural_elements table has no direct FK children in the current
+        schema (supernatural_voice_guidelines references by element_name text,
+        not by FK), but the safe pattern is used for robustness.
+
+        Not gate-gated: consistent with phase 14 no-gate pattern for deletes.
+
+        Args:
+            element_id: Primary key of the supernatural_elements row to delete.
+
+        Returns:
+            {"deleted": True, "id": element_id} on success.
+            NotFoundResponse if the element does not exist.
+            ValidationFailure if FK constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM supernatural_elements WHERE id = ?",
+                (element_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Supernatural element {element_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM supernatural_elements WHERE id = ?",
+                    (element_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": element_id}
+            except Exception as exc:
+                logger.error("delete_supernatural_element failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
