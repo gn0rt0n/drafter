@@ -1,6 +1,6 @@
 """World domain MCP tools.
 
-All 6 world tools are registered via the register(mcp) function pattern.
+All 8 world tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 6 world domain tools with the given FastMCP instance.
+    """Register all 8 world domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -419,3 +419,73 @@ def register(mcp: FastMCP) -> None:
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
 
             return Faction(**dict(row[0]))
+
+    # ------------------------------------------------------------------
+    # delete_location
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_location(location_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a location by ID, refusing if referenced records exist.
+
+        FK-safe: factions and characters may reference locations via
+        controlling_faction_id and other optional FK columns. If any FK
+        constraint is violated, returns ValidationFailure with the error
+        rather than raising.
+
+        Args:
+            location_id: Primary key of the location to delete.
+
+        Returns:
+            {"deleted": True, "id": location_id} on success, NotFoundResponse
+            if the location does not exist, or ValidationFailure if FK
+            constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM locations WHERE id = ?", (location_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Location {location_id} not found")
+            try:
+                await conn.execute("DELETE FROM locations WHERE id = ?", (location_id,))
+                await conn.commit()
+                return {"deleted": True, "id": location_id}
+            except Exception as exc:
+                logger.error("delete_location failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_faction
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_faction(faction_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a faction by ID, refusing if referenced records exist.
+
+        FK-safe: factions are referenced by faction_political_states
+        (faction_id FK) and by characters (faction_id FK, nullable). If
+        either FK constraint is violated, returns ValidationFailure with the
+        error rather than raising.
+
+        Args:
+            faction_id: Primary key of the faction to delete.
+
+        Returns:
+            {"deleted": True, "id": faction_id} on success, NotFoundResponse
+            if the faction does not exist, or ValidationFailure if FK
+            constraints prevent deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM factions WHERE id = ?", (faction_id,)
+            )
+            if not row:
+                return NotFoundResponse(not_found_message=f"Faction {faction_id} not found")
+            try:
+                await conn.execute("DELETE FROM factions WHERE id = ?", (faction_id,))
+                await conn.commit()
+                return {"deleted": True, "id": faction_id}
+            except Exception as exc:
+                logger.error("delete_faction failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
