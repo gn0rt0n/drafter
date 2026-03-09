@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 6 relationship domain tools with the given FastMCP instance.
+    """Register all 9 relationship domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -363,4 +363,128 @@ def register(mcp: FastMCP) -> None:
                 return RelationshipChangeEvent(**dict(rows[0]))
             except Exception as exc:
                 logger.error("log_relationship_change failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_relationship
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_relationship(
+        relationship_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a character relationship by ID.
+
+        Idempotent: returns NotFoundResponse if the relationship does not exist.
+        Refuses with ValidationFailure if dependent records (e.g.
+        relationship_change_events) reference this relationship.
+
+        Args:
+            relationship_id: Primary key of the character_relationships row.
+
+        Returns:
+            {"deleted": True, "id": relationship_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM character_relationships WHERE id = ?",
+                (relationship_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Relationship {relationship_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM character_relationships WHERE id = ?",
+                    (relationship_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": relationship_id}
+            except Exception as exc:
+                logger.error("delete_relationship failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_relationship_change
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_relationship_change(
+        relationship_change_event_id: int,
+    ) -> NotFoundResponse | dict:
+        """Delete a relationship change event by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        relationship_change_events is a log table with no FK children, so no
+        FK constraint check is needed.
+
+        Args:
+            relationship_change_event_id: Primary key of the
+                relationship_change_events row.
+
+        Returns:
+            {"deleted": True, "id": relationship_change_event_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM relationship_change_events WHERE id = ?",
+                (relationship_change_event_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=(
+                        f"Relationship change event {relationship_change_event_id} not found"
+                    )
+                )
+            await conn.execute(
+                "DELETE FROM relationship_change_events WHERE id = ?",
+                (relationship_change_event_id,),
+            )
+            await conn.commit()
+            return {"deleted": True, "id": relationship_change_event_id}
+
+    # ------------------------------------------------------------------
+    # delete_perception_profile
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_perception_profile(
+        perception_profile_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a perception profile by ID.
+
+        Idempotent: returns NotFoundResponse if the record does not exist.
+        Uses FK-safe pattern (ValidationFailure on exception) for consistency
+        with the safety-first delete approach, even if no known FK children.
+
+        Args:
+            perception_profile_id: Primary key of the perception_profiles row.
+
+        Returns:
+            {"deleted": True, "id": perception_profile_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM perception_profiles WHERE id = ?",
+                (perception_profile_id,),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Perception profile {perception_profile_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM perception_profiles WHERE id = ?",
+                    (perception_profile_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": perception_profile_id}
+            except Exception as exc:
+                logger.error("delete_perception_profile failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
