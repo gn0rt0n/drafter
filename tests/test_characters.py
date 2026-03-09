@@ -406,3 +406,182 @@ async def test_delete_character_location_not_found(test_db_path):
     assert not result.isError
     data = json.loads(result.content[0].text)
     assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# log_injury_state
+# ---------------------------------------------------------------------------
+
+
+async def test_log_injury_state_success(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_injury_state",
+        {
+            "character_id": 1,
+            "chapter_id": 1,
+            "injury_type": "wound",
+            "description": "Arrow wound to the left shoulder.",
+            "severity": "moderate",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["character_id"] == 1
+    assert data["chapter_id"] == 1
+    assert data["description"] == "Arrow wound to the left shoulder."
+    assert data["injury_type"] == "wound"
+    assert data["severity"] == "moderate"
+
+
+async def test_log_injury_state_character_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_injury_state",
+        {
+            "character_id": 9999,
+            "chapter_id": 1,
+            "injury_type": "wound",
+            "description": "Test injury",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_log_injury_state_chapter_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_injury_state",
+        {
+            "character_id": 1,
+            "chapter_id": 99999,
+            "injury_type": "wound",
+            "description": "Test injury",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# delete_injury_state
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_injury_state_success(test_db_path):
+    # Create an injury record to delete
+    log_result = await _call_tool(
+        test_db_path,
+        "log_injury_state",
+        {
+            "character_id": 1,
+            "chapter_id": 1,
+            "injury_type": "bruise",
+            "description": "Bruise to delete",
+        },
+    )
+    assert not log_result.isError
+    created = json.loads(log_result.content[0].text)
+    injury_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_injury_state", {"injury_state_id": injury_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == injury_id
+
+
+async def test_delete_injury_state_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path, "delete_injury_state", {"injury_state_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# log_title_state
+# ---------------------------------------------------------------------------
+
+
+async def test_log_title_state_success(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_title_state",
+        {
+            "character_id": 1,
+            "chapter_id": 1,
+            "title": "Commander of the Northern Watch",
+            "granted_by": "King Eradon",
+        },
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "id" in data
+    assert data["character_id"] == 1
+    assert data["chapter_id"] == 1
+    assert data["title"] == "Commander of the Northern Watch"
+    assert data["granted_by"] == "King Eradon"
+
+
+async def test_log_title_state_character_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_title_state",
+        {"character_id": 9999, "chapter_id": 1, "title": "Test Title"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_log_title_state_chapter_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path,
+        "log_title_state",
+        {"character_id": 1, "chapter_id": 99999, "title": "Test Title"},
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+# ---------------------------------------------------------------------------
+# delete_title_state
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_title_state_success(test_db_path):
+    # Create a title record to delete
+    log_result = await _call_tool(
+        test_db_path,
+        "log_title_state",
+        {"character_id": 1, "chapter_id": 1, "title": "Title to delete"},
+    )
+    assert not log_result.isError
+    created = json.loads(log_result.content[0].text)
+    title_id = created["id"]
+
+    result = await _call_tool(
+        test_db_path, "delete_title_state", {"title_state_id": title_id}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert data["deleted"] is True
+    assert data["id"] == title_id
+
+
+async def test_delete_title_state_not_found(test_db_path):
+    result = await _call_tool(
+        test_db_path, "delete_title_state", {"title_state_id": 99999}
+    )
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
