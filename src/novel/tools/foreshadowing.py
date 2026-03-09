@@ -772,3 +772,298 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("delete_prophecy failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # upsert_thematic_mirror (FORE-15)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_thematic_mirror(
+        name: str,
+        element_a_id: int,
+        element_b_id: int,
+        mirror_id: int | None = None,
+        mirror_type: str = "character",
+        element_a_type: str = "character",
+        element_b_type: str = "character",
+        mirror_description: str | None = None,
+        thematic_purpose: str | None = None,
+        notes: str | None = None,
+    ) -> GateViolation | ThematicMirror | ValidationFailure:
+        """Create or update a thematic mirror in the thematic_mirrors table.
+
+        Two-branch upsert:
+        - None mirror_id: plain INSERT creates a new thematic mirror.
+        - Provided mirror_id: INSERT ... ON CONFLICT(id) DO UPDATE sets all
+          editable fields on the existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        Args:
+            name: Name of the thematic mirror (required).
+            element_a_id: ID of the first element being mirrored (required).
+            element_b_id: ID of the second element being mirrored (required).
+            mirror_id: If provided, upsert the existing mirror by primary key.
+            mirror_type: Type of mirror relationship (default "character").
+            element_a_type: Type of first element (default "character").
+            element_b_type: Type of second element (default "character").
+            mirror_description: Description of the mirror relationship (optional).
+            thematic_purpose: Thematic purpose of the mirror (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated ThematicMirror record.
+            GateViolation if the gate is not certified.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+            try:
+                if mirror_id is None:
+                    cursor = await conn.execute(
+                        """
+                        INSERT INTO thematic_mirrors
+                            (name, mirror_type, element_a_id, element_a_type,
+                             element_b_id, element_b_type, mirror_description,
+                             thematic_purpose, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            name,
+                            mirror_type,
+                            element_a_id,
+                            element_a_type,
+                            element_b_id,
+                            element_b_type,
+                            mirror_description,
+                            thematic_purpose,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                else:
+                    await conn.execute(
+                        """
+                        INSERT INTO thematic_mirrors
+                            (id, name, mirror_type, element_a_id, element_a_type,
+                             element_b_id, element_b_type, mirror_description,
+                             thematic_purpose, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            mirror_type=excluded.mirror_type,
+                            element_a_id=excluded.element_a_id,
+                            element_a_type=excluded.element_a_type,
+                            element_b_id=excluded.element_b_id,
+                            element_b_type=excluded.element_b_type,
+                            mirror_description=excluded.mirror_description,
+                            thematic_purpose=excluded.thematic_purpose,
+                            notes=excluded.notes
+                        """,
+                        (
+                            mirror_id,
+                            name,
+                            mirror_type,
+                            element_a_id,
+                            element_a_type,
+                            element_b_id,
+                            element_b_type,
+                            mirror_description,
+                            thematic_purpose,
+                            notes,
+                        ),
+                    )
+                    new_id = mirror_id
+                await conn.commit()
+                async with conn.execute(
+                    "SELECT * FROM thematic_mirrors WHERE id = ?", (new_id,)
+                ) as cur:
+                    row = await cur.fetchone()
+                return ThematicMirror(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_thematic_mirror failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_thematic_mirror (FORE-16)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_thematic_mirror(
+        mirror_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a thematic mirror from thematic_mirrors by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. thematic_mirrors has no FK children — no IntegrityError expected.
+
+        Args:
+            mirror_id: Primary key of the thematic mirror to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the thematic mirror does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM thematic_mirrors WHERE id = ?", (mirror_id,)
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Thematic mirror {mirror_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM thematic_mirrors WHERE id = ?", (mirror_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": mirror_id}
+            except Exception as exc:
+                logger.error("delete_thematic_mirror failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # upsert_opposition_pair (FORE-17)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_opposition_pair(
+        name: str,
+        concept_a: str,
+        concept_b: str,
+        pair_id: int | None = None,
+        manifested_in: str | None = None,
+        resolved_chapter_id: int | None = None,
+        notes: str | None = None,
+    ) -> GateViolation | OppositionPair | ValidationFailure:
+        """Create or update an opposition pair in the opposition_pairs table.
+
+        Two-branch upsert:
+        - None pair_id: plain INSERT creates a new opposition pair.
+        - Provided pair_id: INSERT ... ON CONFLICT(id) DO UPDATE sets all
+          editable fields on the existing row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        Args:
+            name: Name of the opposition pair (required).
+            concept_a: First concept in the opposition (required).
+            concept_b: Second concept in the opposition (required).
+            pair_id: If provided, upsert the existing pair by primary key.
+            manifested_in: How the opposition manifests in the narrative (optional).
+            resolved_chapter_id: Chapter where the opposition resolves (optional FK).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated OppositionPair record.
+            GateViolation if the gate is not certified.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+            try:
+                if pair_id is None:
+                    cursor = await conn.execute(
+                        """
+                        INSERT INTO opposition_pairs
+                            (name, concept_a, concept_b, manifested_in,
+                             resolved_chapter_id, notes)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            name,
+                            concept_a,
+                            concept_b,
+                            manifested_in,
+                            resolved_chapter_id,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                else:
+                    await conn.execute(
+                        """
+                        INSERT INTO opposition_pairs
+                            (id, name, concept_a, concept_b, manifested_in,
+                             resolved_chapter_id, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            concept_a=excluded.concept_a,
+                            concept_b=excluded.concept_b,
+                            manifested_in=excluded.manifested_in,
+                            resolved_chapter_id=excluded.resolved_chapter_id,
+                            notes=excluded.notes
+                        """,
+                        (
+                            pair_id,
+                            name,
+                            concept_a,
+                            concept_b,
+                            manifested_in,
+                            resolved_chapter_id,
+                            notes,
+                        ),
+                    )
+                    new_id = pair_id
+                await conn.commit()
+                async with conn.execute(
+                    "SELECT * FROM opposition_pairs WHERE id = ?", (new_id,)
+                ) as cur:
+                    row = await cur.fetchone()
+                return OppositionPair(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_opposition_pair failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_opposition_pair (FORE-18)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_opposition_pair(
+        pair_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete an opposition pair from opposition_pairs by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. opposition_pairs has no FK children — no IntegrityError expected.
+
+        Args:
+            pair_id: Primary key of the opposition pair to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the opposition pair does not exist.
+            ValidationFailure on database error.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM opposition_pairs WHERE id = ?", (pair_id,)
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Opposition pair {pair_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "DELETE FROM opposition_pairs WHERE id = ?", (pair_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": pair_id}
+            except Exception as exc:
+                logger.error("delete_opposition_pair failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
