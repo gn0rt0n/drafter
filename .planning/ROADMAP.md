@@ -207,7 +207,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Names, Voice & Publishing | 3/3 | Complete    | 2026-03-08 |
 | 10. CLI Completion & Integration Testing | 3/3 | Complete    | 2026-03-08 |
 | 11. 7-Point Structure & Gate Extension | 4/4 | Complete    | 2026-03-09 |
-| 12. Schema and MCP System Documentation | 3/3 | Complete   | 2026-03-09 |
+| 12. Schema and MCP System Documentation | 4/4 | Complete   | 2026-03-09 |
 
 ### Phase 11: Update schema, CLI, MCP, and planning docs to support 7-point structure and 3-act/7-point integration
 
@@ -226,7 +226,7 @@ Plans:
 **Goal:** Create implementation-accurate reference documentation for the complete system: docs/schema.md (71 tables, 16 domains, Mermaid ER diagrams), docs/mcp-tools.md (103 tools, 18 domains, full tool cards), and docs/README.md (architecture overview and navigation entry point)
 **Requirements**: TBD (documentation phase — no formal requirement IDs)
 **Depends on:** Phase 11
-**Plans:** 3/3 plans complete
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 12-01-PLAN.md — docs/README.md (architecture overview) + pointer note in project-research/database-schema.md (Wave 1)

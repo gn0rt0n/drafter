@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 12-02-PLAN.md (docs/schema.md)
-last_updated: "2026-03-09T16:25:51.850Z"
+stopped_at: "Completed 12-04-PLAN.md (gap closure: schema.md + README.md)"
+last_updated: "2026-03-09T16:43:57.664Z"
 last_activity: 2026-03-07 -- Roadmap created with 10 phases covering 131 requirements
 progress:
   total_phases: 12
   completed_phases: 12
-  total_plans: 40
-  completed_plans: 40
+  total_plans: 41
+  completed_plans: 41
   percent: 100
 ---
 
@@ -90,6 +90,7 @@ Progress: [████████████████████] 3/3 pla
 | Phase 12-schema-and-mcp-system-documentation P01 | 2 | 2 tasks | 2 files |
 | Phase 12-schema-and-mcp-system-documentation P03 | 8 | 1 tasks | 1 files |
 | Phase 12 P02 | 26 | 1 tasks | 1 files |
+| Phase 12-schema-and-mcp-system-documentation P04 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -195,6 +196,8 @@ Recent decisions affecting current work:
 - [Phase 12-01]: Migration count documented as 22 (actual glob count); Phase 11 added migration 022 for seven-point structure
 - [Phase 12-schema-and-mcp-system-documentation]: Python source files used as single source of truth for tool names — REQUIREMENTS.md excluded due to confirmed drift from implementation
 - [Phase 12]: docs/schema.md field names derived from migration SQL files — not from project-research/database-schema.md
+- [Phase 12-schema-and-mcp-system-documentation]: magic_use_log and practitioner_abilities placed in World section of schema.md — semantically part of the magic system already documented there
+- [Phase 12-schema-and-mcp-system-documentation]: Correct tool count is 103 (not 121) — 121 was a grep artifact counting @mcp.tool() mentions in docstrings; correct module count is 18 (not 19)
 
 ### Roadmap Evolution
 
@@ -211,6 +214,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T16:25:51.847Z
-Stopped at: Completed 12-02-PLAN.md (docs/schema.md)
+Last session: 2026-03-09T16:43:57.661Z
+Stopped at: Completed 12-04-PLAN.md (gap closure: schema.md + README.md)
 Resume file: None
