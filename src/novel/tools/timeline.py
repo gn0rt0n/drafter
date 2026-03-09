@@ -1,13 +1,15 @@
 """Timeline domain MCP tools.
 
-All 12 timeline tools are registered via the register(mcp) function
+All 18 timeline tools are registered via the register(mcp) function
 pattern.  This module is standalone — it does not modify server.py; wiring
 happens in the server module.
 
 Tools: 5 reads (get_pov_positions, get_pov_position, get_event, list_events,
 get_travel_segments) + 4 write/validation tools (validate_travel_realism,
 upsert_event, upsert_pov_position, log_travel_segment) + 3 delete tools
-(delete_event, delete_pov_position, delete_travel_segment).
+(delete_event, delete_pov_position, delete_travel_segment) + 6 junction tools
+(add_event_participant, remove_event_participant, get_event_participants,
+add_event_artifact, remove_event_artifact, get_event_artifacts).
 
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
@@ -20,20 +22,20 @@ from mcp.server.fastmcp import FastMCP
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
 from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
-from novel.models.timeline import Event, PovChronologicalPosition, TravelSegment, TravelValidationResult
+from novel.models.timeline import Event, EventArtifact, EventParticipant, PovChronologicalPosition, TravelSegment, TravelValidationResult
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 12 timeline tools with the given FastMCP instance.
+    """Register all 18 timeline tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
 
     Most read and write/validation tools call check_gate(conn) and return
-    GateViolation if the gate is not certified. Delete tools and
-    log_travel_segment do not call check_gate.
+    GateViolation if the gate is not certified. Delete tools,
+    log_travel_segment, and junction tools do not call check_gate.
 
     Args:
         mcp: The FastMCP server instance to register tools against.
@@ -710,3 +712,304 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": travel_segment_id}
+
+    # ------------------------------------------------------------------
+    # add_event_participant
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def add_event_participant(
+        event_id: int,
+        character_id: int,
+        role: str | None = None,
+        notes: str | None = None,
+    ) -> EventParticipant | NotFoundResponse | ValidationFailure:
+        """Associate a character with a timeline event.
+
+        Verifies that both the event and character exist before inserting.
+        Uses ON CONFLICT(event_id, character_id) DO UPDATE — calling this tool
+        again with the same pair updates role and notes (upsert semantics).
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: FK to events — the event to associate the character with.
+            character_id: FK to characters — the character to associate.
+            role: Role the character plays in the event (e.g. "protagonist",
+                  "witness"). Defaults to "participant" per DB schema default.
+            notes: Freeform notes about the character's involvement.
+
+        Returns:
+            The created or updated EventParticipant row, NotFoundResponse if
+            the event or character does not exist, or ValidationFailure on
+            database error.
+        """
+        async with get_connection() as conn:
+            ev = await conn.execute_fetchall(
+                "SELECT id FROM events WHERE id = ?", (event_id,)
+            )
+            if not ev:
+                return NotFoundResponse(
+                    not_found_message=f"Event {event_id} not found"
+                )
+            ch = await conn.execute_fetchall(
+                "SELECT id FROM characters WHERE id = ?", (character_id,)
+            )
+            if not ch:
+                return NotFoundResponse(
+                    not_found_message=f"Character {character_id} not found"
+                )
+            try:
+                # Build SET clause — only update role if caller provided it
+                if role is not None:
+                    await conn.execute(
+                        "INSERT INTO event_participants "
+                        "(event_id, character_id, role, notes) "
+                        "VALUES (?, ?, ?, ?) "
+                        "ON CONFLICT(event_id, character_id) DO UPDATE SET "
+                        "role=excluded.role, notes=excluded.notes",
+                        (event_id, character_id, role, notes),
+                    )
+                else:
+                    await conn.execute(
+                        "INSERT INTO event_participants "
+                        "(event_id, character_id, notes) "
+                        "VALUES (?, ?, ?) "
+                        "ON CONFLICT(event_id, character_id) DO UPDATE SET "
+                        "notes=excluded.notes",
+                        (event_id, character_id, notes),
+                    )
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM event_participants "
+                    "WHERE event_id=? AND character_id=?",
+                    (event_id, character_id),
+                )
+                return EventParticipant(**dict(row[0]))
+            except Exception as exc:
+                logger.error("add_event_participant failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # remove_event_participant
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def remove_event_participant(
+        event_id: int,
+        character_id: int,
+    ) -> NotFoundResponse | dict:
+        """Remove a character from a timeline event.
+
+        Checks existence before deleting. event_participants is a junction
+        table with no FK children — no try/except needed.
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: FK to events.
+            character_id: FK to characters.
+
+        Returns:
+            {"removed": True, "event_id": event_id, "character_id": character_id}
+            on success, or NotFoundResponse if the association does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM event_participants "
+                "WHERE event_id=? AND character_id=?",
+                (event_id, character_id),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=(
+                        f"No participant: event {event_id}, character {character_id}"
+                    )
+                )
+            await conn.execute(
+                "DELETE FROM event_participants "
+                "WHERE event_id=? AND character_id=?",
+                (event_id, character_id),
+            )
+            await conn.commit()
+            return {"removed": True, "event_id": event_id, "character_id": character_id}
+
+    # ------------------------------------------------------------------
+    # get_event_participants
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_event_participants(
+        event_id: int,
+    ) -> list[EventParticipant] | NotFoundResponse:
+        """Return all characters associated with a timeline event.
+
+        Verifies the event exists before querying participants. Returns an
+        empty list if the event has no participants (valid state).
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: Primary key of the event to look up participants for.
+
+        Returns:
+            List of EventParticipant records (may be empty), or NotFoundResponse
+            if the event does not exist.
+        """
+        async with get_connection() as conn:
+            ev = await conn.execute_fetchall(
+                "SELECT id FROM events WHERE id = ?", (event_id,)
+            )
+            if not ev:
+                return NotFoundResponse(
+                    not_found_message=f"Event {event_id} not found"
+                )
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM event_participants WHERE event_id=? ORDER BY id",
+                (event_id,),
+            )
+            return [EventParticipant(**dict(r)) for r in rows]
+
+    # ------------------------------------------------------------------
+    # add_event_artifact
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def add_event_artifact(
+        event_id: int,
+        artifact_id: int,
+        involvement: str | None = None,
+    ) -> EventArtifact | NotFoundResponse | ValidationFailure:
+        """Associate an artifact with a timeline event.
+
+        Verifies that both the event and artifact exist before inserting.
+        Uses ON CONFLICT(event_id, artifact_id) DO UPDATE — calling this tool
+        again with the same pair updates involvement (upsert semantics).
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: FK to events — the event to associate the artifact with.
+            artifact_id: FK to artifacts — the artifact to associate.
+            involvement: Description of the artifact's role in the event
+                         (e.g. "weapon", "target", "trophy").
+
+        Returns:
+            The created or updated EventArtifact row, NotFoundResponse if the
+            event or artifact does not exist, or ValidationFailure on database
+            error.
+        """
+        async with get_connection() as conn:
+            ev = await conn.execute_fetchall(
+                "SELECT id FROM events WHERE id = ?", (event_id,)
+            )
+            if not ev:
+                return NotFoundResponse(
+                    not_found_message=f"Event {event_id} not found"
+                )
+            art = await conn.execute_fetchall(
+                "SELECT id FROM artifacts WHERE id = ?", (artifact_id,)
+            )
+            if not art:
+                return NotFoundResponse(
+                    not_found_message=f"Artifact {artifact_id} not found"
+                )
+            try:
+                await conn.execute(
+                    "INSERT INTO event_artifacts "
+                    "(event_id, artifact_id, involvement) "
+                    "VALUES (?, ?, ?) "
+                    "ON CONFLICT(event_id, artifact_id) DO UPDATE SET "
+                    "involvement=excluded.involvement",
+                    (event_id, artifact_id, involvement),
+                )
+                await conn.commit()
+                row = await conn.execute_fetchall(
+                    "SELECT * FROM event_artifacts "
+                    "WHERE event_id=? AND artifact_id=?",
+                    (event_id, artifact_id),
+                )
+                return EventArtifact(**dict(row[0]))
+            except Exception as exc:
+                logger.error("add_event_artifact failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # remove_event_artifact
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def remove_event_artifact(
+        event_id: int,
+        artifact_id: int,
+    ) -> NotFoundResponse | dict:
+        """Remove an artifact from a timeline event.
+
+        Checks existence before deleting. event_artifacts is a junction table
+        with no FK children — no try/except needed.
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: FK to events.
+            artifact_id: FK to artifacts.
+
+        Returns:
+            {"removed": True, "event_id": event_id, "artifact_id": artifact_id}
+            on success, or NotFoundResponse if the association does not exist.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM event_artifacts "
+                "WHERE event_id=? AND artifact_id=?",
+                (event_id, artifact_id),
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=(
+                        f"No artifact: event {event_id}, artifact {artifact_id}"
+                    )
+                )
+            await conn.execute(
+                "DELETE FROM event_artifacts "
+                "WHERE event_id=? AND artifact_id=?",
+                (event_id, artifact_id),
+            )
+            await conn.commit()
+            return {"removed": True, "event_id": event_id, "artifact_id": artifact_id}
+
+    # ------------------------------------------------------------------
+    # get_event_artifacts
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_event_artifacts(
+        event_id: int,
+    ) -> list[EventArtifact] | NotFoundResponse:
+        """Return all artifacts associated with a timeline event.
+
+        Verifies the event exists before querying artifacts. Returns an
+        empty list if the event has no artifacts (valid state).
+
+        Does not call check_gate — junction tools follow no-gate pattern.
+
+        Args:
+            event_id: Primary key of the event to look up artifacts for.
+
+        Returns:
+            List of EventArtifact records (may be empty), or NotFoundResponse
+            if the event does not exist.
+        """
+        async with get_connection() as conn:
+            ev = await conn.execute_fetchall(
+                "SELECT id FROM events WHERE id = ?", (event_id,)
+            )
+            if not ev:
+                return NotFoundResponse(
+                    not_found_message=f"Event {event_id} not found"
+                )
+            rows = await conn.execute_fetchall(
+                "SELECT * FROM event_artifacts WHERE event_id=? ORDER BY id",
+                (event_id,),
+            )
+            return [EventArtifact(**dict(r)) for r in rows]
