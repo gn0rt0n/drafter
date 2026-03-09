@@ -19,7 +19,7 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
-from novel.tools import characters, relationships, chapters, scenes, world, magic, plot, arcs, gate, session, timeline, canon, knowledge, foreshadowing, names, voice, publishing
+from novel.tools import characters, relationships, chapters, scenes, world, magic, plot, arcs, gate, session, timeline, canon, knowledge, foreshadowing, names, voice, publishing, structure
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,9 @@ foreshadowing.register(mcp)
 names.register(mcp)
 voice.register(mcp)
 publishing.register(mcp)
+
+# Register domain tools — Phase 11
+structure.register(mcp)
 
 
 def run() -> None:
