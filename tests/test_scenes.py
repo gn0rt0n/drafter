@@ -144,3 +144,84 @@ async def test_upsert_scene_goal(test_db_path):
     assert data["scene_id"] == 1
     assert data["character_id"] == 1
     assert data["goal"] == "Updated goal"
+
+
+# ---------------------------------------------------------------------------
+# delete_scene
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_scene_not_found(test_db_path):
+    """delete_scene returns NotFoundResponse for a non-existent scene ID."""
+    result = await _call_tool(test_db_path, "delete_scene", {"scene_id": 99999})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_delete_scene_success(test_db_path):
+    """delete_scene removes a scene with no FK dependents and returns deleted=True."""
+    # Create a fresh scene with no dependents
+    create_result = await _call_tool(
+        test_db_path,
+        "upsert_scene",
+        {
+            "scene_id": None,
+            "chapter_id": 1,
+            "scene_number": 888,
+            "summary": "Temp scene to delete",
+        },
+    )
+    assert not create_result.isError
+    created = json.loads(create_result.content[0].text)
+    new_id = created["id"]
+
+    # Delete it
+    del_result = await _call_tool(test_db_path, "delete_scene", {"scene_id": new_id})
+    assert not del_result.isError
+    data = json.loads(del_result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == new_id
+
+    # Confirm it's gone
+    get_result = await _call_tool(test_db_path, "get_scene", {"scene_id": new_id})
+    assert not get_result.isError
+    gone = json.loads(get_result.content[0].text)
+    assert "not_found_message" in gone
+
+
+# ---------------------------------------------------------------------------
+# delete_scene_goal
+# ---------------------------------------------------------------------------
+
+
+async def test_delete_scene_goal_not_found(test_db_path):
+    """delete_scene_goal returns NotFoundResponse for a non-existent goal ID."""
+    result = await _call_tool(test_db_path, "delete_scene_goal", {"scene_goal_id": 99999})
+    assert not result.isError
+    data = json.loads(result.content[0].text)
+    assert "not_found_message" in data
+
+
+async def test_delete_scene_goal_success(test_db_path):
+    """delete_scene_goal removes a goal record and returns deleted=True."""
+    # Upsert a goal to get an ID
+    upsert_result = await _call_tool(
+        test_db_path,
+        "upsert_scene_goal",
+        {
+            "scene_id": 1,
+            "character_id": 2,
+            "goal": "Goal to be deleted",
+        },
+    )
+    assert not upsert_result.isError
+    goal_data = json.loads(upsert_result.content[0].text)
+    goal_id = goal_data["id"]
+
+    # Delete it
+    del_result = await _call_tool(test_db_path, "delete_scene_goal", {"scene_goal_id": goal_id})
+    assert not del_result.isError
+    data = json.loads(del_result.content[0].text)
+    assert data.get("deleted") is True
+    assert data.get("id") == goal_id

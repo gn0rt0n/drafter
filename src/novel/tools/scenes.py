@@ -1,6 +1,6 @@
 """Scene domain MCP tools.
 
-All 4 scene tools are registered via the register(mcp) function pattern.
+All 6 scene tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 4 scene domain tools with the given FastMCP instance.
+    """Register all 6 scene domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -312,3 +312,71 @@ def register(mcp: FastMCP) -> None:
             except Exception as exc:
                 logger.error("upsert_scene_goal failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_scene
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_scene(scene_id: int) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a scene by ID.
+
+        Refuses if scene_character_goals or other records reference this scene
+        (FK-safe). Idempotent (returns NotFoundResponse if absent).
+
+        Args:
+            scene_id: Primary key of the scene to delete.
+
+        Returns:
+            {"deleted": True, "id": scene_id} on success.
+            NotFoundResponse if not found.
+            ValidationFailure if FK constraint blocks deletion.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM scenes WHERE id = ?", (scene_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Scene {scene_id} not found"
+                )
+            try:
+                await conn.execute("DELETE FROM scenes WHERE id = ?", (scene_id,))
+                await conn.commit()
+                return {"deleted": True, "id": scene_id}
+            except Exception as exc:
+                logger.error("delete_scene failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_scene_goal
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_scene_goal(scene_goal_id: int) -> NotFoundResponse | dict:
+        """Delete a scene character goal by ID.
+
+        scene_character_goals is a leaf table with no FK children — uses the
+        simpler log-delete pattern (no ValidationFailure return needed).
+        Idempotent (returns NotFoundResponse if absent).
+
+        Args:
+            scene_goal_id: Primary key of the scene_character_goals row to delete.
+
+        Returns:
+            {"deleted": True, "id": scene_goal_id} on success.
+            NotFoundResponse if not found.
+        """
+        async with get_connection() as conn:
+            row = await conn.execute_fetchall(
+                "SELECT id FROM scene_character_goals WHERE id = ?", (scene_goal_id,)
+            )
+            if not row:
+                return NotFoundResponse(
+                    not_found_message=f"Scene goal {scene_goal_id} not found"
+                )
+            await conn.execute(
+                "DELETE FROM scene_character_goals WHERE id = ?", (scene_goal_id,)
+            )
+            await conn.commit()
+            return {"deleted": True, "id": scene_goal_id}
