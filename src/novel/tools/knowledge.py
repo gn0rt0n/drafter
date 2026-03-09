@@ -1,6 +1,6 @@
 """Knowledge domain MCP tools.
 
-All 5 knowledge tools are registered via the register(mcp) function pattern.
+All 12 knowledge tools are registered via the register(mcp) function pattern.
 This module is standalone — it does not modify server.py; wiring happens in
 the server module.
 
@@ -14,14 +14,19 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
-from novel.models.canon import DramaticIronyEntry, ReaderInformationState, ReaderReveal
+from novel.models.canon import (
+    DramaticIronyEntry,
+    ReaderExperienceNote,
+    ReaderInformationState,
+    ReaderReveal,
+)
 from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
 
 
 def register(mcp: FastMCP) -> None:
-    """Register all 7 knowledge domain tools with the given FastMCP instance.
+    """Register all 12 knowledge domain tools with the given FastMCP instance.
 
     Tools are defined as local async functions and decorated with @mcp.tool().
     The FastMCP instance is always the one passed in — never imported globally.
@@ -397,3 +402,172 @@ def register(mcp: FastMCP) -> None:
             )
             await conn.commit()
             return {"deleted": True, "id": dramatic_irony_id}
+
+    # ------------------------------------------------------------------
+    # upsert_reader_reveal (KNOW-08)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_reader_reveal(
+        reveal_id: int | None,
+        reveal_type: str,
+        chapter_id: int | None = None,
+        scene_id: int | None = None,
+        character_id: int | None = None,
+        planned_reveal: str | None = None,
+        actual_reveal: str | None = None,
+        reader_impact: str | None = None,
+        notes: str | None = None,
+    ) -> GateViolation | ReaderReveal | NotFoundResponse | ValidationFailure:
+        """Create or update a reader reveal entry.
+
+        Two-branch upsert:
+
+        - reveal_id is None: INSERT a new reader reveal row. If chapter_id is
+          provided, validates the chapter exists first.
+        - reveal_id is provided: INSERT with ON CONFLICT(id) DO UPDATE — updates
+          the specific row by primary key.
+
+        After either branch the row is SELECT-ed back by id and returned.
+
+        Args:
+            reveal_id: If None, creates a new entry; if provided, upserts by
+                       primary key.
+            reveal_type: Category of reader reveal (e.g. 'exposition', 'twist',
+                         'red_herring').
+            chapter_id: Optional FK to chapters. If provided, the chapter must
+                        exist.
+            scene_id: Optional FK to scenes.
+            character_id: Optional FK to characters.
+            planned_reveal: Description of the planned reveal (before writing).
+            actual_reveal: Description of how the reveal was actually executed.
+            reader_impact: Notes on how the reveal affects the reader.
+            notes: Optional freeform notes.
+
+        Returns:
+            The created or updated ReaderReveal row.
+            GateViolation if gate is not certified.
+            NotFoundResponse if chapter_id is provided but does not exist.
+            ValidationFailure if the DB operation fails.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            if chapter_id is not None:
+                ch = await conn.execute_fetchall(
+                    "SELECT id FROM chapters WHERE id = ?",
+                    (chapter_id,),
+                )
+                if not ch:
+                    return NotFoundResponse(
+                        not_found_message=f"Chapter {chapter_id} not found"
+                    )
+
+            try:
+                if reveal_id is None:
+                    cursor = await conn.execute(
+                        "INSERT INTO reader_reveals "
+                        "(chapter_id, scene_id, character_id, reveal_type, "
+                        "planned_reveal, actual_reveal, reader_impact, notes) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            chapter_id,
+                            scene_id,
+                            character_id,
+                            reveal_type,
+                            planned_reveal,
+                            actual_reveal,
+                            reader_impact,
+                            notes,
+                        ),
+                    )
+                    new_id = cursor.lastrowid
+                else:
+                    await conn.execute(
+                        "INSERT INTO reader_reveals "
+                        "(id, chapter_id, scene_id, character_id, reveal_type, "
+                        "planned_reveal, actual_reveal, reader_impact, notes) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                        "ON CONFLICT(id) DO UPDATE SET "
+                        "chapter_id = excluded.chapter_id, "
+                        "scene_id = excluded.scene_id, "
+                        "character_id = excluded.character_id, "
+                        "reveal_type = excluded.reveal_type, "
+                        "planned_reveal = excluded.planned_reveal, "
+                        "actual_reveal = excluded.actual_reveal, "
+                        "reader_impact = excluded.reader_impact, "
+                        "notes = excluded.notes",
+                        (
+                            reveal_id,
+                            chapter_id,
+                            scene_id,
+                            character_id,
+                            reveal_type,
+                            planned_reveal,
+                            actual_reveal,
+                            reader_impact,
+                            notes,
+                        ),
+                    )
+                    new_id = reveal_id
+
+                await conn.commit()
+
+                rows = await conn.execute_fetchall(
+                    "SELECT * FROM reader_reveals WHERE id = ?",
+                    (new_id,),
+                )
+                return ReaderReveal(**dict(rows[0]))
+            except Exception as exc:
+                logger.error("upsert_reader_reveal failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_reader_reveal (KNOW-09)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_reader_reveal(
+        reveal_id: int,
+    ) -> GateViolation | NotFoundResponse | ValidationFailure | dict:
+        """Delete a reader reveal entry by ID.
+
+        Requires gate certification. Idempotent: returns NotFoundResponse if
+        absent. reader_reveals may be referenced by other tables — FK-safe
+        try/except pattern used to handle IntegrityError if FK children exist.
+
+        Args:
+            reveal_id: Primary key of the reader reveal entry to delete.
+
+        Returns:
+            {"deleted": True, "id": N} on success.
+            GateViolation if the gate is not certified.
+            NotFoundResponse if the reader reveal does not exist.
+            ValidationFailure if the delete violates a FK constraint.
+        """
+        async with get_connection() as conn:
+            gate = await check_gate(conn)
+            if gate is not None:
+                return gate
+
+            rows = await conn.execute_fetchall(
+                "SELECT id FROM reader_reveals WHERE id = ?",
+                (reveal_id,),
+            )
+            if not rows:
+                return NotFoundResponse(
+                    not_found_message=f"Reader reveal {reveal_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM reader_reveals WHERE id = ?",
+                    (reveal_id,),
+                )
+                await conn.commit()
+                return {"deleted": True, "id": reveal_id}
+            except Exception as exc:
+                logger.error("delete_reader_reveal failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
