@@ -16,7 +16,12 @@ from mcp.server.fastmcp import FastMCP
 
 from novel.mcp.db import get_connection
 from novel.mcp.gate import check_gate
-from novel.models.publishing import DocumentationTask, PublishingAsset, SubmissionEntry
+from novel.models.publishing import (
+    DocumentationTask,
+    PublishingAsset,
+    ResearchNote,
+    SubmissionEntry,
+)
 from novel.models.shared import GateViolation, NotFoundResponse, ValidationFailure
 
 logger = logging.getLogger(__name__)
@@ -564,4 +569,162 @@ def register(mcp: FastMCP) -> None:
                 return {"deleted": True, "id": task_id}
             except Exception as exc:
                 logger.error("delete_documentation_task failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # get_research_notes (PUBL-11)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_research_notes(
+        relevance: str | None = None,
+    ) -> list[ResearchNote]:
+        """Retrieve all research notes, with optional relevance filter.
+
+        Returns a list of ResearchNote records ordered by id ASC.
+        The relevance filter is optional; when provided, uses LIKE match
+        so partial relevance values are supported.
+
+        NOT gate-gated: research_notes is a dev-internal table and does
+        not require architecture gate certification.
+
+        Args:
+            relevance: Filter by relevance (LIKE '%value%' match, optional).
+
+        Returns:
+            List of ResearchNote records ordered by id ASC (may be empty).
+        """
+        async with get_connection() as conn:
+            if relevance is not None:
+                sql = "SELECT * FROM research_notes WHERE relevance LIKE ? ORDER BY id"
+                params: list[object] = [f"%{relevance}%"]
+            else:
+                sql = "SELECT * FROM research_notes ORDER BY id"
+                params = []
+
+            async with conn.execute(sql, params) as cursor:
+                rows = await cursor.fetchall()
+
+            return [ResearchNote(**dict(row)) for row in rows]
+
+    # ------------------------------------------------------------------
+    # upsert_research_note (PUBL-12)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def upsert_research_note(
+        topic: str,
+        content: str,
+        note_id: int | None = None,
+        source: str | None = None,
+        relevance: str | None = None,
+        notes: str | None = None,
+    ) -> ResearchNote | ValidationFailure:
+        """Create or update a research note.
+
+        Two-branch upsert on id (PK):
+        - None note_id: plain INSERT creates a new research note row.
+        - Provided note_id: INSERT ... ON CONFLICT(id) DO UPDATE updates the
+          existing note row.
+
+        After either branch, the row is SELECT-ed back by id and returned.
+
+        NOT gate-gated: research_notes is a dev-internal table and does
+        not require architecture gate certification.
+
+        Args:
+            topic: Topic or subject of the research note.
+            content: Full content/body of the research note.
+            note_id: Existing note ID for update branch (optional).
+            source: Source reference for the research (optional).
+            relevance: How this research relates to the novel (optional).
+            notes: Additional notes (optional).
+
+        Returns:
+            The created or updated ResearchNote record.
+            ValidationFailure if the operation fails.
+        """
+        async with get_connection() as conn:
+            try:
+                if note_id is None:
+                    cursor = await conn.execute(
+                        """
+                        INSERT INTO research_notes
+                            (topic, content, source, relevance, notes, updated_at)
+                        VALUES (?, ?, ?, ?, ?, datetime('now'))
+                        """,
+                        (topic, content, source, relevance, notes),
+                    )
+                    new_id = cursor.lastrowid
+                else:
+                    await conn.execute(
+                        """
+                        INSERT INTO research_notes
+                            (id, topic, content, source, relevance, notes, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                        ON CONFLICT(id) DO UPDATE SET
+                            topic=excluded.topic,
+                            content=excluded.content,
+                            source=excluded.source,
+                            relevance=excluded.relevance,
+                            notes=excluded.notes,
+                            updated_at=datetime('now')
+                        """,
+                        (note_id, topic, content, source, relevance, notes),
+                    )
+                    new_id = note_id
+
+                await conn.commit()
+
+                async with conn.execute(
+                    "SELECT * FROM research_notes WHERE id = ?", (new_id,)
+                ) as cur:
+                    row = await cur.fetchone()
+
+                return ResearchNote(**dict(row))
+            except Exception as exc:
+                logger.error("upsert_research_note failed: %s", exc)
+                return ValidationFailure(is_valid=False, errors=[str(exc)])
+
+    # ------------------------------------------------------------------
+    # delete_research_note (PUBL-13)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def delete_research_note(
+        note_id: int,
+    ) -> NotFoundResponse | ValidationFailure | dict:
+        """Delete a research note by ID.
+
+        NOT gate-gated: research note deletions are administrative operations
+        that do not require architecture gate certification. research_notes is
+        a leaf table with no FK children — uses FK-safe pattern for consistency.
+
+        Args:
+            note_id: Primary key of the research_notes row to delete.
+
+        Returns:
+            Dict with deleted=True and id on success. NotFoundResponse if the
+            note does not exist. ValidationFailure if a FK constraint prevents
+            deletion.
+        """
+        async with get_connection() as conn:
+            async with conn.execute(
+                "SELECT id FROM research_notes WHERE id = ?", (note_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row is None:
+                return NotFoundResponse(
+                    not_found_message=f"Research note {note_id} not found"
+                )
+
+            try:
+                await conn.execute(
+                    "DELETE FROM research_notes WHERE id = ?", (note_id,)
+                )
+                await conn.commit()
+                return {"deleted": True, "id": note_id}
+            except Exception as exc:
+                logger.error("delete_research_note failed: %s", exc)
                 return ValidationFailure(is_valid=False, errors=[str(exc)])
