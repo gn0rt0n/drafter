@@ -7,7 +7,7 @@ the server module (06-02).
 IMPORTANT: Never use the print function in this module. All logging goes to
 stderr via the logging module — using print corrupts the stdio protocol.
 
-The 34 SQL evidence queries in GATE_QUERIES are the core intellectual content
+The 36 SQL evidence queries in GATE_QUERIES are the core intellectual content
 of this module. Every query is relational ("all existing X must have Y"), not
 hard-coded counts, making the gate valid for any novel size.
 """
@@ -192,11 +192,24 @@ GATE_ITEM_META: dict[str, dict[str, str]] = {
         "category": "canon",
         "description": "At least one motif is registered",
     },
+    "struct_story_beats": {
+        "category": "structure",
+        "description": (
+            "Story-level 7-point beats are defined "
+            "(story_structure row exists with all 7 beats populated)"
+        ),
+    },
+    "arcs_seven_point_beats": {
+        "category": "plot",
+        "description": (
+            "All POV character arcs have all 7-point beat chapters defined"
+        ),
+    },
 }
 
 
 # ---------------------------------------------------------------------------
-# GATE_QUERIES — 34 SQL evidence queries (zero missing_count = passing)
+# GATE_QUERIES — 36 SQL evidence queries (zero missing_count = passing)
 # ---------------------------------------------------------------------------
 
 GATE_QUERIES: dict[str, str] = {
@@ -356,6 +369,33 @@ GATE_QUERIES: dict[str, str] = {
         "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END AS missing_count"
         " FROM motif_registry"
     ),
+    "struct_story_beats": (
+        "SELECT COUNT(*) AS missing_count FROM books b"
+        " WHERE NOT EXISTS ("
+        " SELECT 1 FROM story_structure ss"
+        " WHERE ss.book_id = b.id"
+        "   AND ss.hook_chapter_id IS NOT NULL"
+        "   AND ss.plot_turn_1_chapter_id IS NOT NULL"
+        "   AND ss.pinch_1_chapter_id IS NOT NULL"
+        "   AND ss.midpoint_chapter_id IS NOT NULL"
+        "   AND ss.pinch_2_chapter_id IS NOT NULL"
+        "   AND ss.plot_turn_2_chapter_id IS NOT NULL"
+        "   AND ss.resolution_chapter_id IS NOT NULL"
+        ")"
+    ),
+    "arcs_seven_point_beats": (
+        "SELECT COUNT(DISTINCT ca.id) AS missing_count"
+        " FROM character_arcs ca"
+        " WHERE EXISTS ("
+        "   SELECT 1 FROM chapters ch"
+        "   WHERE ch.pov_character_id = ca.character_id"
+        " )"
+        " AND ("
+        "   SELECT COUNT(*) FROM arc_seven_point_beats ab"
+        "   WHERE ab.arc_id = ca.id"
+        "     AND ab.chapter_id IS NOT NULL"
+        " ) < 7"
+    ),
 }
 
 # Sanity check: both dicts must have identical key sets
@@ -365,7 +405,7 @@ assert set(GATE_QUERIES) == set(GATE_ITEM_META), (
     f"only in META: {set(GATE_ITEM_META) - set(GATE_QUERIES)}"
 )
 
-_GATE_ITEM_COUNT = len(GATE_QUERIES)  # 34 items — store once for tool use
+_GATE_ITEM_COUNT = len(GATE_QUERIES)  # 36 items — store once for tool use
 
 
 # ---------------------------------------------------------------------------
