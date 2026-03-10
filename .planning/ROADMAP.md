@@ -33,7 +33,7 @@ See archive: `.planning/milestones/v1.0-ROADMAP.md`
 
 - [x] **Phase 13: Tech Debt Clearance** - Fix stale gate count strings, CLI help text bug, README doc bugs, and missing pydantic dependency (completed 2026-03-09)
 - [x] **Phase 14: MCP API Completeness** - Audit all schema tables, implement missing write tools, enforce error contract (completed 2026-03-09)
-- [ ] **Phase 15: Documentation Restructure** - Update and split mcp-tools.md and schema.md into per-domain files, create master index
+- [x] **Phase 15: Documentation Restructure** - Update and split mcp-tools.md and schema.md into per-domain files, create master index (completed 2026-03-10)
 
 ## Phase Details
 
@@ -116,4 +116,4 @@ Plans:
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 13. Tech Debt Clearance | 2/2 | Complete    | 2026-03-09 | - |
 | 14. MCP API Completeness | 19/19 | Complete    | 2026-03-09 | - |
-| 15. Documentation Restructure | 4/5 | In Progress|  | - |
+| 15. Documentation Restructure | 5/5 | Complete   | 2026-03-10 | - |

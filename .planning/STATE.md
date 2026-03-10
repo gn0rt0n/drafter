@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 15-03-PLAN.md
-last_updated: "2026-03-10T02:53:27.473Z"
+stopped_at: Completed 15-05-PLAN.md
+last_updated: "2026-03-10T02:57:23.199Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 26
-  completed_plans: 25
+  completed_plans: 26
   percent: 0
 ---
 
@@ -75,6 +75,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 15-documentation-restructure P01 | 45 | 2 tasks | 1 files |
 | Phase 15-documentation-restructure P04 | 9 | 2 tasks | 18 files |
 | Phase 15-documentation-restructure P03 | 45 | 2 tasks | 18 files |
+| Phase 15-documentation-restructure P05 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,8 @@ Recent decisions affecting current work:
 - [Phase 15-documentation-restructure]: research_notes and documentation_tasks merged into publishing.md — publishing.py owns all 6 MCP write tools for both tables
 - [Phase 15-documentation-restructure]: magic_use_log placed in magic.md (not world.md) — magic.py owns log_magic_use and delete_magic_use_log tools
 - [Phase 15-03]: Per-domain tool headers use level-2 headers enabling grep-based counting; timeline and publishing annotated as mixed-gate domains
+- [Phase 15-documentation-restructure]: docs/README.md condensed from 170-line architecture overview to 79-line master index — full architecture detail lives in project-overview/
+- [Phase 15-documentation-restructure]: project-research/database-schema.md historical note updated to link to docs/README.md and per-domain directories — both monolith paths deleted
 
 ### Pending Todos
 
@@ -153,6 +156,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T02:53:24.744Z
-Stopped at: Completed 15-03-PLAN.md
+Last session: 2026-03-10T02:57:23.197Z
+Stopped at: Completed 15-05-PLAN.md
 Resume file: None
