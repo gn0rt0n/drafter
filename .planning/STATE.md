@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-03-10T02:34:44.244Z"
+stopped_at: Completed 15-04-PLAN.md
+last_updated: "2026-03-10T02:45:42.868Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 26
-  completed_plans: 23
+  completed_plans: 24
   percent: 0
 ---
 
@@ -73,6 +73,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P19 | 4 | 3 tasks | 2 files |
 | Phase 15-documentation-restructure P02 | 18 | 2 tasks | 1 files |
 | Phase 15-documentation-restructure P01 | 45 | 2 tasks | 1 files |
+| Phase 15-documentation-restructure P04 | 9 | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase 15-02]: architecture_gate gets Read-only note alongside Populated-by certify_gate — clarifies no direct write tool bypasses gate flow
 - [Phase 15-01]: Timeline Phase 14 junction/delete tools are gate-free per source; AST ast.unparse() erroneously flags them as gated due to outer function scope — direct ast.Await check used for accurate gate detection
 - [Phase 15-01]: Publishing delete/documentation/research tools are gate-free; existing publishing_assets and submission_tracker tools remain gated — mixed domain pattern documented in Index
+- [Phase 15-documentation-restructure]: chapter_plot_threads placed in plot.md — junction owned by plot domain (mirrors arc_seven_point_beats in structure.md)
+- [Phase 15-documentation-restructure]: research_notes and documentation_tasks merged into publishing.md — publishing.py owns all 6 MCP write tools for both tables
+- [Phase 15-documentation-restructure]: magic_use_log placed in magic.md (not world.md) — magic.py owns log_magic_use and delete_magic_use_log tools
 
 ### Pending Todos
 
@@ -147,6 +151,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T02:34:44.243Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-03-10T02:45:42.866Z
+Stopped at: Completed 15-04-PLAN.md
 Resume file: None
