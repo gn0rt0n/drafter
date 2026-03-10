@@ -338,6 +338,246 @@ Manages the core character registry, character state across chapters (injuries, 
 
 ---
 
+#### `delete_character`
+
+**Purpose:** Delete a character record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | Primary key of the character to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": character_id}` on success; `NotFoundResponse` if character does not exist; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a character that was created in error or is no longer needed in the story — only safe when no arcs, relationships, or other records reference the character.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`. Writes `characters`.
+
+---
+
+#### `delete_character_knowledge`
+
+**Purpose:** Delete a character knowledge record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `knowledge_id` | `int` | Yes | Primary key of the knowledge record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": knowledge_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged knowledge entry for a character — character_knowledge is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_knowledge`. Writes `character_knowledge`.
+
+---
+
+#### `log_character_belief`
+
+**Purpose:** Append a new belief record for a character at a specific chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to the character holding this belief |
+| `chapter_id` | `int` | Yes | Chapter at which this belief is held |
+| `belief_text` | `str` | Yes | The belief content |
+| `belief_type` | `str` | No | Category of belief — e.g. "core", "situational" (default: "core") |
+| `certainty` | `str` | No | Certainty level — e.g. "certain", "uncertain" (default: "certain") |
+| `formed_chapter_id` | `int \| None` | No | FK to chapter where this belief was formed (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `CharacterBelief | NotFoundResponse | ValidationFailure` — The newly created `CharacterBelief`; `NotFoundResponse` if character_id or chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to record a character's belief state at a specific story point — establishes the belief history for consistency checking during later chapters.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `chapters`. Writes `character_beliefs`.
+
+---
+
+#### `delete_character_belief`
+
+**Purpose:** Delete a character belief record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `belief_id` | `int` | Yes | Primary key of the belief record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": belief_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged belief entry — character_beliefs is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_beliefs`. Writes `character_beliefs`.
+
+---
+
+#### `log_character_location`
+
+**Purpose:** Append a new location record for a character at a specific chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to the character whose location to record |
+| `chapter_id` | `int` | Yes | Chapter at which this location is recorded |
+| `location_id` | `int \| None` | No | FK to locations table (optional) |
+| `location_description` | `str \| None` | No | Free-text location description if no FK (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `CharacterLocation | NotFoundResponse | ValidationFailure` — The newly created `CharacterLocation`; `NotFoundResponse` if character_id or chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to establish where a character is at a specific chapter — feeds the travel-realism validation and prevents scene placement contradictions.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `chapters`. Writes `character_locations`.
+
+---
+
+#### `get_current_character_location`
+
+**Purpose:** Return the most recent location record for a character.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | ID of the character whose current location to retrieve |
+
+**Returns:** `CharacterLocation | NotFoundResponse` — The most recent `CharacterLocation` for the character; `NotFoundResponse` if no location records exist.
+
+**Invocation reason:** Called before placing a character in a scene to confirm their last known location — prevents scene continuity errors.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_locations`.
+
+---
+
+#### `delete_character_location`
+
+**Purpose:** Delete a character location record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `location_record_id` | `int` | Yes | Primary key of the location record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": location_record_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged location entry — character_locations is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_locations`. Writes `character_locations`.
+
+---
+
+#### `log_injury_state`
+
+**Purpose:** Append a new injury state record for a character at a specific chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to the character whose injury to record |
+| `chapter_id` | `int` | Yes | Chapter at which this injury state is recorded |
+| `injury_description` | `str` | Yes | Description of the injury |
+| `severity` | `str` | No | Severity level — e.g. "minor", "moderate", "severe" (default: "minor") |
+| `is_healed` | `bool` | No | Whether the injury has healed (default: False) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `InjuryState | NotFoundResponse | ValidationFailure` — The newly created `InjuryState`; `NotFoundResponse` if character_id or chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to track a character's physical condition across chapters — used to ensure injury effects are consistently applied in subsequent scenes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `chapters`. Writes `injury_states`.
+
+---
+
+#### `delete_injury_state`
+
+**Purpose:** Delete an injury state record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `injury_id` | `int` | Yes | Primary key of the injury state record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": injury_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged injury entry — injury_states is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `injury_states`. Writes `injury_states`.
+
+---
+
+#### `log_title_state`
+
+**Purpose:** Append a new title/rank state record for a character at a specific chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to the character whose title to record |
+| `chapter_id` | `int` | Yes | Chapter at which this title state is recorded |
+| `title` | `str` | Yes | The title or rank held |
+| `title_type` | `str` | No | Category of title — e.g. "noble", "military", "religious" (default: "noble") |
+| `is_current` | `bool` | No | Whether this is the current active title (default: True) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `TitleState | NotFoundResponse | ValidationFailure` — The newly created `TitleState`; `NotFoundResponse` if character_id or chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to record changes in a character's social standing or rank — ensures honorifics and titles are used consistently in dialogue and narration.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `chapters`. Writes `title_states`.
+
+---
+
+#### `delete_title_state`
+
+**Purpose:** Delete a title state record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `title_id` | `int` | Yes | Primary key of the title state record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": title_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged title entry — title_states is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `title_states`. Writes `title_states`.
+
+---
+
 ## Relationships Domain
 
 Manages character-to-character relationships (bidirectional bond) and directional perception profiles (how one character views another). Handles the canonical pair ordering so callers never need to know min/max storage order.
@@ -492,6 +732,66 @@ Manages character-to-character relationships (bidirectional bond) and directiona
 
 ---
 
+#### `delete_relationship`
+
+**Purpose:** Delete a character relationship record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `relationship_id` | `int` | Yes | Primary key of the relationship to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": relationship_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a relationship record that was created in error — only safe when no relationship_change_events or perception_profiles reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_relationships`. Writes `character_relationships`.
+
+---
+
+#### `delete_relationship_change`
+
+**Purpose:** Delete a relationship change event record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `change_id` | `int` | Yes | Primary key of the relationship change event to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": change_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged relationship change event — relationship_change_events is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `relationship_change_events`. Writes `relationship_change_events`.
+
+---
+
+#### `delete_perception_profile`
+
+**Purpose:** Delete a perception profile record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `profile_id` | `int` | Yes | Primary key of the perception profile to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": profile_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a perception profile created in error — safe when no child records reference this profile.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `perception_profiles`. Writes `perception_profiles`.
+
+---
+
 ## Chapters Domain
 
 Manages book chapters, chapter writing plans (a focused subset of chapter fields), and structural obligations. The structural obligations capture what each chapter must accomplish narratively.
@@ -617,6 +917,71 @@ Manages book chapters, chapter writing plans (a focused subset of chapter fields
 
 ---
 
+#### `delete_chapter`
+
+**Purpose:** Delete a chapter record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | Primary key of the chapter to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": chapter_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a chapter that was created in error — only safe when no scenes, arcs, or other chapter-scoped records exist for it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`. Writes `chapters`.
+
+---
+
+#### `upsert_chapter_obligation`
+
+**Purpose:** Create or update a structural obligation for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to the chapter this obligation belongs to |
+| `obligation_type` | `str` | Yes | Type of obligation — e.g. "introduce", "resolve", "escalate" |
+| `description` | `str` | Yes | Description of the narrative obligation |
+| `obligation_id` | `int \| None` | No | Existing obligation ID to update, or None to create |
+| `is_fulfilled` | `bool` | No | Whether the obligation has been met (default: False) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `ChapterObligation | NotFoundResponse | ValidationFailure` — The created or updated `ChapterObligation`; `NotFoundResponse` if chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during planning to record what narrative tasks a chapter must accomplish — used for consistency checking and completeness verification before marking a chapter as finished.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`. Writes `chapter_obligations`.
+
+---
+
+#### `delete_chapter_obligation`
+
+**Purpose:** Delete a chapter obligation record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `obligation_id` | `int` | Yes | Primary key of the obligation record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": obligation_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an obligation that is no longer relevant — chapter_obligations is a leaf table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapter_obligations`. Writes `chapter_obligations`.
+
+---
+
 ## Scenes Domain
 
 Manages individual scenes within chapters, including per-character scene goals. Scenes are the atomic narrative unit: each has a dramatic question, goal, obstacle, turn, and consequence.
@@ -725,6 +1090,174 @@ Manages individual scenes within chapters, including per-character scene goals. 
 **Gate status:** Gate-free.
 
 **Tables touched:** Reads `scene_character_goals`. Writes `scene_character_goals`.
+
+---
+
+#### `delete_scene`
+
+**Purpose:** Delete a scene record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `scene_id` | `int` | Yes | Primary key of the scene to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": scene_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a scene that was created in error — only safe when no scene goals or other scene-scoped records exist for it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `scenes`. Writes `scenes`.
+
+---
+
+#### `delete_scene_goal`
+
+**Purpose:** Delete a scene character goal record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `goal_id` | `int` | Yes | Primary key of the scene goal record to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": goal_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly created scene goal entry — scene_character_goals is a leaf table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `scene_character_goals`. Writes `scene_character_goals`.
+
+---
+
+#### `get_pacing_beats`
+
+**Purpose:** Return all pacing beat records for a scene or chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int \| None` | No | Filter to beats for this chapter |
+| `scene_id` | `int \| None` | No | Filter to beats for this scene |
+
+**Returns:** `list[PacingBeat]` — List of `PacingBeat` records ordered by `sequence_order`. Returns an empty list if no beats exist.
+
+**Invocation reason:** Called to review the structural rhythm of a chapter before drafting — confirms that tension rises and falls as intended across the sequence of beats.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `pacing_beats`.
+
+---
+
+#### `log_pacing_beat`
+
+**Purpose:** Append a new pacing beat record for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to the chapter this beat belongs to |
+| `description` | `str` | Yes | Description of the pacing beat |
+| `sequence_order` | `int` | Yes | Position of this beat in the chapter's sequence |
+| `scene_id` | `int \| None` | No | FK to associated scene (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `PacingBeat | NotFoundResponse | ValidationFailure` — The newly created `PacingBeat`; `NotFoundResponse` if chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during scene planning to record each narrative beat's pacing role — enables the agent to verify rhythm and tension structure before committing to a draft.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`. Writes `pacing_beats`.
+
+---
+
+#### `delete_pacing_beat`
+
+**Purpose:** Delete a pacing beat record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `beat_id` | `int` | Yes | Primary key of the pacing beat to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": beat_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged pacing beat — pacing_beats is a leaf table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `pacing_beats`. Writes `pacing_beats`.
+
+---
+
+#### `get_tension_measurements`
+
+**Purpose:** Return all tension measurement records for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | Chapter whose tension measurements to retrieve |
+
+**Returns:** `list[TensionMeasurement]` — List of `TensionMeasurement` records ordered by `id`. Returns an empty list if no measurements exist.
+
+**Invocation reason:** Called to audit the tension arc of a chapter — confirms that tension measurements align with the expected narrative trajectory before finalizing the chapter.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `tension_measurements`.
+
+---
+
+#### `log_tension_measurement`
+
+**Purpose:** Append a new tension measurement record for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to the chapter this measurement belongs to |
+| `measurement_type` | `str` | Yes | Type of tension being measured — e.g. "conflict", "suspense", "emotional" |
+| `level` | `int` | Yes | Tension level on a 1-10 scale |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `TensionMeasurement | NotFoundResponse | ValidationFailure` — The newly created `TensionMeasurement`; `NotFoundResponse` if chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called after drafting a chapter to record the tension profile — provides data for pacing analysis across the full manuscript.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`. Writes `tension_measurements`.
+
+---
+
+#### `delete_tension_measurement`
+
+**Purpose:** Delete a tension measurement record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `measurement_id` | `int` | Yes | Primary key of the tension measurement to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": measurement_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged tension measurement — tension_measurements is a leaf table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `tension_measurements`. Writes `tension_measurements`.
 
 ---
 
@@ -881,6 +1414,589 @@ Manages world-building entities: locations, factions, faction political states, 
 
 ---
 
+#### `get_book`
+
+**Purpose:** Look up a single book by ID, returning all fields.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `book_id` | `int` | Yes | Primary key of the book to retrieve |
+
+**Returns:** `Book | NotFoundResponse` — `Book` with all fields if found; `NotFoundResponse` if no book with that ID exists.
+
+**Invocation reason:** Called to load book metadata (title, series_order, word count targets) before performing chapter or act operations that require the book context.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `books`.
+
+---
+
+#### `list_books`
+
+**Purpose:** Return all books ordered by series_order then id.
+
+**Parameters:** None
+
+**Returns:** `list[Book]` — All book records ordered by `series_order` (nulls last), then `id`. Returns an empty list if no books exist.
+
+**Invocation reason:** Called when generating a project overview or building navigation for a multi-book series — provides the full list of books with their status and word count targets.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `books`.
+
+---
+
+#### `upsert_book`
+
+**Purpose:** Create or update a book record.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `book_id` | `int \| None` | Yes | Existing book ID to update, or None to create |
+| `title` | `str` | Yes | Book title (required) |
+| `series_order` | `int \| None` | No | Position in the series (optional) |
+| `word_count_target` | `int \| None` | No | Target word count (optional) |
+| `actual_word_count` | `int` | No | Actual word count written so far (default: 0) |
+| `status` | `str` | No | Drafting status — e.g. "planning", "drafting", "complete" (default: "planning") |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+| `canon_status` | `str` | No | Canon status — e.g. "draft", "canon" (default: "draft") |
+
+**Returns:** `Book | ValidationFailure` — The created or updated `Book`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during project initialization to create book records for a series, and during production to update word count progress and drafting status.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `books`. Writes `books`.
+
+---
+
+#### `delete_book`
+
+**Purpose:** Delete a book record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `book_id` | `int` | Yes | Primary key of the book to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": book_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (acts, chapters, or story structures reference the book).
+
+**Invocation reason:** Called to remove a book that was created in error — only safe when no acts, chapters, or story structures exist for it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `books`. Writes `books`.
+
+---
+
+#### `get_era`
+
+**Purpose:** Look up a single era by ID, returning all fields.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `era_id` | `int` | Yes | Primary key of the era to retrieve |
+
+**Returns:** `Era | NotFoundResponse` — `Era` with all fields if found; `NotFoundResponse` if no era with that ID exists.
+
+**Invocation reason:** Called to load era details for worldbuilding context — provides date ranges and certainty level before placing artifacts or characters in historical settings.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `eras`.
+
+---
+
+#### `list_eras`
+
+**Purpose:** Return all eras ordered by sequence_order then name.
+
+**Parameters:** None
+
+**Returns:** `list[Era]` — All era records ordered by `sequence_order` (nulls last), then `name`. Returns an empty list if no eras exist.
+
+**Invocation reason:** Called when building a timeline overview or resolving chronological references in worldbuilding — provides the full historical sequence of eras.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `eras`.
+
+---
+
+#### `upsert_era`
+
+**Purpose:** Create or update an era record.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `era_id` | `int \| None` | Yes | Existing era ID to update, or None to create |
+| `name` | `str` | Yes | Era name (required) |
+| `sequence_order` | `int \| None` | No | Chronological order position (optional) |
+| `date_start` | `str \| None` | No | Start date as text string (optional) |
+| `date_end` | `str \| None` | No | End date as text string (optional) |
+| `summary` | `str \| None` | No | Brief summary of the era (optional) |
+| `certainty_level` | `str` | No | How established this era is (default: "established") |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+| `canon_status` | `str` | No | Canon status — e.g. "draft", "canon" (default: "draft") |
+
+**Returns:** `Era | ValidationFailure` — The created or updated `Era`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during worldbuilding to define historical eras that provide context for artifacts and character backstories.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `eras`. Writes `eras`.
+
+---
+
+#### `delete_era`
+
+**Purpose:** Delete an era record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `era_id` | `int` | Yes | Primary key of the era to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": era_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (artifacts or characters reference the era).
+
+**Invocation reason:** Called to remove an era that was created in error — only safe when no artifacts or characters reference it via origin_era_id or home_era_id.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `eras`. Writes `eras`.
+
+---
+
+#### `delete_location`
+
+**Purpose:** Delete a location record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `location_id` | `int` | Yes | Primary key of the location to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": location_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a location that was created in error — only safe when no factions, characters, or other records reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `locations`. Writes `locations`.
+
+---
+
+#### `delete_faction`
+
+**Purpose:** Delete a faction record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `faction_id` | `int` | Yes | Primary key of the faction to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": faction_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (faction_political_states or characters reference the faction).
+
+**Invocation reason:** Called to remove a faction that was created in error — only safe when no political states or characters reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `factions`. Writes `factions`.
+
+---
+
+#### `upsert_culture`
+
+**Purpose:** Create or update a culture record. When `culture_id` is None, merges by name (ON CONFLICT(name)).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `culture_id` | `int \| None` | Yes | Existing culture ID to update, or None to create/merge by name |
+| `name` | `str` | Yes | Culture name — UNIQUE constraint (required) |
+| `region` | `str \| None` | No | Geographic region of the culture (optional) |
+| `language_family` | `str \| None` | No | Language family or linguistic grouping (optional) |
+| `naming_conventions` | `str \| None` | No | Naming patterns and conventions (optional) |
+| `social_structure` | `str \| None` | No | Description of social hierarchy (optional) |
+| `values_beliefs` | `str \| None` | No | Core values and belief systems (optional) |
+| `taboos` | `str \| None` | No | Cultural taboos and prohibitions (optional) |
+| `aesthetic_style` | `str \| None` | No | Artistic and aesthetic preferences (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+| `source_file` | `str \| None` | No | Source seed file if applicable (optional) |
+
+**Returns:** `Culture | ValidationFailure` — The created or updated `Culture`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during worldbuilding to establish cultures that inform naming conventions, social dynamics, and location character — used by the names domain and character backstory tools.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `cultures`. Writes `cultures`.
+
+---
+
+#### `list_cultures`
+
+**Purpose:** Return all cultures ordered by name.
+
+**Parameters:** None
+
+**Returns:** `list[Culture]` — All culture records ordered alphabetically by `name`. Returns an empty list if no cultures exist.
+
+**Invocation reason:** Called when selecting a culture for a new location or character, or when auditing cultural diversity across the world — provides a full list for selection.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `cultures`.
+
+---
+
+#### `delete_culture`
+
+**Purpose:** Delete a culture record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `culture_id` | `int` | Yes | Primary key of the culture to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": culture_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (locations or name_registry reference the culture).
+
+**Invocation reason:** Called to remove a culture that was created in error — only safe when no locations or name registry entries reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `cultures`. Writes `cultures`.
+
+---
+
+#### `log_faction_political_state`
+
+**Purpose:** Record a political state snapshot for a faction at a specific chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `faction_id` | `int` | Yes | FK to the faction whose state to record (required) |
+| `chapter_id` | `int` | Yes | Chapter at which this state is recorded (required) |
+| `power_level` | `int` | No | Power level 1-10 (default: 5) |
+| `alliances` | `str \| None` | No | Current alliances description (optional) |
+| `conflicts` | `str \| None` | No | Current conflicts description (optional) |
+| `internal_state` | `str \| None` | No | Internal faction state description (optional) |
+| `noted_by_character_id` | `int \| None` | No | FK to characters — who noted this state (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `FactionPoliticalState | NotFoundResponse | ValidationFailure` — The newly created `FactionPoliticalState`; `NotFoundResponse` if faction_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called after major political events to snapshot a faction's current standing — provides historical context for how power dynamics evolved across the narrative.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `factions`. Writes `faction_political_states`.
+
+---
+
+#### `get_current_faction_political_state`
+
+**Purpose:** Return the most recent political state record for a faction.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `faction_id` | `int` | Yes | ID of the faction whose most recent political state to retrieve |
+
+**Returns:** `FactionPoliticalState | NotFoundResponse` — The most recent `FactionPoliticalState` for the faction; `NotFoundResponse` if no political state records exist.
+
+**Invocation reason:** Called before drafting a scene involving a faction to confirm its current power level and alliance state — ensures faction behavior is consistent with its documented political trajectory.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `faction_political_states`.
+
+---
+
+#### `delete_faction_political_state`
+
+**Purpose:** Delete a faction political state entry by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `political_state_id` | `int` | Yes | Primary key of the political state entry to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": political_state_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged political state entry — faction_political_states is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `faction_political_states`. Writes `faction_political_states`.
+
+---
+
+#### `get_act`
+
+**Purpose:** Look up a single act by ID, returning all fields.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `act_id` | `int` | Yes | Primary key of the act to retrieve |
+
+**Returns:** `Act | NotFoundResponse` — `Act` with all fields if found; `NotFoundResponse` if no act with that ID exists.
+
+**Invocation reason:** Called to load act structure details before outlining chapters within that act — provides the act's narrative purpose and word count target.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `acts`.
+
+---
+
+#### `list_acts`
+
+**Purpose:** Return all acts for a given book, ordered by act_number.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `book_id` | `int` | Yes | ID of the book whose acts to list |
+
+**Returns:** `list[Act]` — All act records for the book ordered by `act_number`. Returns an empty list if no acts exist.
+
+**Invocation reason:** Called when reviewing the structural outline of a book — shows all acts with their boundaries and purposes for structural planning.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `acts`.
+
+---
+
+#### `upsert_act`
+
+**Purpose:** Create or update an act record. Pre-checks that book_id exists before writing.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `act_id` | `int \| None` | Yes | Existing act ID to update, or None to create |
+| `book_id` | `int` | Yes | FK to books — the book this act belongs to (required) |
+| `act_number` | `int` | Yes | Act number within the book — UNIQUE per book (required) |
+| `name` | `str \| None` | No | Act name or title (optional) |
+| `purpose` | `str \| None` | No | Narrative purpose of the act (optional) |
+| `word_count_target` | `int \| None` | No | Target word count for this act (optional) |
+| `start_chapter_id` | `int \| None` | No | FK to chapters — first chapter of the act (optional) |
+| `end_chapter_id` | `int \| None` | No | FK to chapters — last chapter of the act (optional) |
+| `structural_notes` | `str \| None` | No | Notes on act structure (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+
+**Returns:** `Act | NotFoundResponse | ValidationFailure` — The created or updated `Act`; `NotFoundResponse` if book_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during structural planning to define the book's act structure before populating chapters — start/end chapter IDs can be updated later once chapters are created.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `books`. Writes `acts`.
+
+---
+
+#### `delete_act`
+
+**Purpose:** Delete an act record by ID.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `act_id` | `int` | Yes | Primary key of the act to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": act_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove an act that was created in error or restructured out of the narrative.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `acts`. Writes `acts`.
+
+---
+
+#### `get_artifact`
+
+**Purpose:** Look up a single artifact by ID, returning all fields.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `artifact_id` | `int` | Yes | Primary key of the artifact to retrieve |
+
+**Returns:** `Artifact | NotFoundResponse` — `Artifact` with all fields if found; `NotFoundResponse` if no artifact with that ID exists.
+
+**Invocation reason:** Called before placing an artifact in a scene to confirm its current owner, location, and magical properties — ensures consistent artifact handling.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `artifacts`.
+
+---
+
+#### `list_artifacts`
+
+**Purpose:** Return all artifacts ordered by name.
+
+**Parameters:** None
+
+**Returns:** `list[Artifact]` — All artifact records ordered alphabetically by `name`. Returns an empty list if no artifacts exist.
+
+**Invocation reason:** Called when generating a world inventory or checking for prop continuity across chapters — provides the full list of tracked artifacts.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `artifacts`.
+
+---
+
+#### `upsert_artifact`
+
+**Purpose:** Create or update an artifact record.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `artifact_id` | `int \| None` | Yes | Existing artifact ID to update, or None to create |
+| `name` | `str` | Yes | Artifact name (required) |
+| `artifact_type` | `str \| None` | No | Category — e.g. "weapon", "relic", "document" (optional) |
+| `current_owner_id` | `int \| None` | No | FK to characters — current owner (optional) |
+| `current_location_id` | `int \| None` | No | FK to locations — current location (optional) |
+| `origin_era_id` | `int \| None` | No | FK to eras — era of origin (optional) |
+| `description` | `str \| None` | No | Narrative description (optional) |
+| `significance` | `str \| None` | No | Story significance (optional) |
+| `magical_properties` | `str \| None` | No | Magical or special properties (optional) |
+| `history` | `str \| None` | No | Historical background (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+| `source_file` | `str \| None` | No | Source seed file if applicable (optional) |
+
+**Returns:** `Artifact | ValidationFailure` — The created or updated `Artifact`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during worldbuilding to register significant objects — provides a record of each artifact's properties and history for consistent prop handling in scenes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `artifacts`. Writes `artifacts`.
+
+---
+
+#### `delete_artifact`
+
+**Purpose:** Delete an artifact record by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `artifact_id` | `int` | Yes | Primary key of the artifact to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": artifact_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (object_states or event_artifacts reference the artifact).
+
+**Invocation reason:** Called to remove an artifact that was created in error — only safe when no object states or event artifact links exist for it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `artifacts`. Writes `artifacts`.
+
+---
+
+#### `get_object_states`
+
+**Purpose:** Return all state records for an artifact, ordered by chapter_id.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `artifact_id` | `int` | Yes | ID of the artifact whose state history to retrieve |
+
+**Returns:** `list[ObjectState]` — All `ObjectState` records for the artifact ordered by `chapter_id`. Returns an empty list if no states have been recorded.
+
+**Invocation reason:** Called to review the ownership and condition history of an artifact across the narrative — confirms the artifact's current state before placing it in a new scene.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `object_states`.
+
+---
+
+#### `log_object_state`
+
+**Purpose:** Record the state of an artifact at a specific chapter. Pre-checks both artifact_id and chapter_id FKs.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `artifact_id` | `int` | Yes | FK to the artifact whose state to record (required) |
+| `chapter_id` | `int` | Yes | Chapter at which this state is recorded (required) |
+| `condition` | `str` | No | State of the artifact — e.g. "intact", "damaged", "destroyed" (default: "intact") |
+| `owner_id` | `int \| None` | No | FK to characters — current owner at this chapter (optional) |
+| `location_id` | `int \| None` | No | FK to locations — current location at this chapter (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `ObjectState | NotFoundResponse | ValidationFailure` — The newly created `ObjectState`; `NotFoundResponse` if artifact_id or chapter_id do not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called after any chapter where an artifact changes hands, location, or condition — maintains a complete audit trail of the artifact's state across the story.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `artifacts`, `chapters`. Writes `object_states`.
+
+---
+
+#### `delete_object_state`
+
+**Purpose:** Delete an object state entry by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `object_state_id` | `int` | Yes | Primary key of the object state entry to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": object_state_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged object state entry — object_states is a leaf table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `object_states`. Writes `object_states`.
+
+---
+
 ## Magic Domain
 
 Manages the magic system, practitioner abilities, magic use events, and compliance checking. `check_magic_compliance` is read-only; `log_magic_use` is append-only (no UNIQUE constraint).
@@ -980,6 +2096,220 @@ Manages the magic system, practitioner abilities, magic use events, and complian
 
 ---
 
+#### `upsert_magic_element`
+
+**Purpose:** Create or update a magic system element.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element_id` | `int \| None` | Yes | Existing element ID to update, or None to create |
+| `name` | `str` | Yes | Name of the magic element (required) |
+| `element_type` | `str` | Yes | Category — e.g. "ability", "spell", "rule" (required) |
+| `rules` | `str \| None` | No | Rules governing this element (optional) |
+| `limitations` | `str \| None` | No | Limitations of this element (optional) |
+| `costs` | `str \| None` | No | Costs associated with using this element (optional) |
+| `exceptions` | `str \| None` | No | Known exceptions to the rules (optional) |
+| `introduced_chapter_id` | `int \| None` | No | FK to chapters — chapter where element first appears (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+
+**Returns:** `MagicSystemElement | ValidationFailure` — The created or updated `MagicSystemElement`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during worldbuilding to define the magic system rules and elements — provides the structured data that `check_magic_compliance` uses to validate scenes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `magic_system_elements`. Writes `magic_system_elements`.
+
+---
+
+#### `list_magic_elements`
+
+**Purpose:** Return all magic system elements ordered by name.
+
+**Parameters:** None
+
+**Returns:** `list[MagicSystemElement]` — All magic system element records ordered alphabetically by `name`. Returns an empty list if no elements exist.
+
+**Invocation reason:** Called when auditing the full magic system or selecting elements for compliance checks — provides a complete list of all defined magic rules and abilities.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `magic_system_elements`.
+
+---
+
+#### `upsert_practitioner_ability`
+
+**Purpose:** Create or update a practitioner ability linking a character to a magic element. Pre-checks that both character_id and magic_element_id exist.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ability_id` | `int \| None` | Yes | Existing ability ID to update, or None to create |
+| `character_id` | `int` | Yes | FK to characters — character who has the ability (required) |
+| `magic_element_id` | `int` | Yes | FK to magic_system_elements — element the character can use (required) |
+| `proficiency_level` | `int` | No | Proficiency level 1-10 (default: 1) |
+| `acquired_chapter_id` | `int \| None` | No | FK to chapters — chapter where ability was acquired (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `PractitionerAbility | NotFoundResponse | ValidationFailure` — The created or updated `PractitionerAbility`; `NotFoundResponse` if character or magic element does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called when a character gains or improves a magical ability — this record is used by `check_magic_compliance` to confirm a character is authorized to use a specific element.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `magic_system_elements`. Writes `practitioner_abilities`.
+
+---
+
+#### `delete_magic_element`
+
+**Purpose:** Delete a magic system element by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `magic_element_id` | `int` | Yes | Primary key of the magic element to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": magic_element_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (practitioner_abilities or magic_use_log reference the element).
+
+**Invocation reason:** Called to remove a magic element that was created in error — only safe when no practitioner abilities or magic use logs reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `magic_system_elements`. Writes `magic_system_elements`.
+
+---
+
+#### `delete_practitioner_ability`
+
+**Purpose:** Delete a practitioner ability record by ID.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ability_id` | `int` | Yes | Primary key of the practitioner ability to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": ability_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a character's magic ability when it is retconned or was logged in error.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `practitioner_abilities`. Writes `practitioner_abilities`.
+
+---
+
+#### `delete_magic_use_log`
+
+**Purpose:** Delete a magic use log entry by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `magic_use_log_id` | `int` | Yes | Primary key of the magic use log entry to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": magic_use_log_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged magic use entry — magic_use_log is an append-only log with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `magic_use_log`. Writes `magic_use_log`.
+
+---
+
+#### `get_supernatural_element`
+
+**Purpose:** Look up a single supernatural element by ID, returning all fields.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element_id` | `int` | Yes | Primary key of the supernatural element to retrieve |
+
+**Returns:** `SupernaturalElement | NotFoundResponse` — `SupernaturalElement` with all fields if found; `NotFoundResponse` if no element with that ID exists.
+
+**Invocation reason:** Called to load a supernatural element's rules and voice guidelines before writing a scene featuring it — ensures consistent narrative treatment.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `supernatural_elements`.
+
+---
+
+#### `list_supernatural_elements`
+
+**Purpose:** Return all supernatural elements ordered by name.
+
+**Parameters:** None
+
+**Returns:** `list[SupernaturalElement]` — All supernatural element records ordered alphabetically by `name`. Returns an empty list if no elements exist.
+
+**Invocation reason:** Called when auditing the supernatural world or selecting elements for scene planning — provides a complete list of all defined supernatural entities and phenomena.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `supernatural_elements`.
+
+---
+
+#### `upsert_supernatural_element`
+
+**Purpose:** Create or update a supernatural element record.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element_id` | `int \| None` | Yes | Existing element ID to update, or None to create |
+| `name` | `str` | Yes | Name of the supernatural element (required) |
+| `element_type` | `str` | Yes | Category — e.g. "creature", "curse", "blessing", "entity" (required) |
+| `description` | `str \| None` | No | Description of the supernatural element (optional) |
+| `rules` | `str \| None` | No | Rules governing this element (optional) |
+| `voice_guidelines` | `str \| None` | No | Voice/writing guidelines for this element (optional) |
+| `introduced_chapter_id` | `int \| None` | No | FK to chapters — chapter where element first appears (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+
+**Returns:** `SupernaturalElement | ValidationFailure` — The created or updated `SupernaturalElement`; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during worldbuilding to define supernatural phenomena — provides the rules and voice guidelines used for consistent narrative treatment.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `supernatural_elements`. Writes `supernatural_elements`.
+
+---
+
+#### `delete_supernatural_element`
+
+**Purpose:** Delete a supernatural element record by ID.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element_id` | `int` | Yes | Primary key of the supernatural element to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": element_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a supernatural element that was created in error or written out of the story.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `supernatural_elements`. Writes `supernatural_elements`.
+
+---
+
 ## Plot Domain
 
 Manages plot threads (main, subplot, backstory). Does NOT touch the `chapter_plot_threads` junction table — that is managed via chapter tools.
@@ -1059,6 +2389,90 @@ Manages plot threads (main, subplot, backstory). Does NOT touch the `chapter_plo
 **Gate status:** Gate-free.
 
 **Tables touched:** Reads `plot_threads`. Writes `plot_threads`.
+
+---
+
+#### `delete_plot_thread`
+
+**Purpose:** Delete a plot thread by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `plot_thread_id` | `int` | Yes | Primary key of the plot thread to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": plot_thread_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (chapter_plot_threads or subplot_touchpoint_log reference the thread).
+
+**Invocation reason:** Called to remove a plot thread that was created in error or restructured out of the narrative — only safe when no chapter links or subplot touchpoints reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `plot_threads`. Writes `plot_threads`.
+
+---
+
+#### `link_chapter_to_plot_thread`
+
+**Purpose:** Link a chapter to a plot thread via the chapter_plot_threads junction table. Idempotent: updates thread_role and notes if the link already exists.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to chapters table (required) |
+| `plot_thread_id` | `int` | Yes | FK to plot_threads table (required) |
+| `thread_role` | `str` | No | Role of this chapter in the thread — e.g. "advance", "introduce", "resolve" (default: "advance") |
+| `notes` | `str \| None` | No | Free-form notes about this chapter-thread association (optional) |
+
+**Returns:** `ChapterPlotThread | NotFoundResponse | ValidationFailure` — The created or updated `ChapterPlotThread`; `NotFoundResponse` if chapter_id or plot_thread_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during chapter planning to associate a chapter with the plot threads it advances — enables tracking of which chapters drive which threads across the narrative.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`, `plot_threads`. Writes `chapter_plot_threads`.
+
+---
+
+#### `unlink_chapter_from_plot_thread`
+
+**Purpose:** Remove the link between a chapter and a plot thread. Idempotent: returns NotFoundResponse if the link does not exist.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to chapters table (required) |
+| `plot_thread_id` | `int` | Yes | FK to plot_threads table (required) |
+
+**Returns:** `NotFoundResponse | dict` — `{"unlinked": True, "chapter_id": chapter_id, "plot_thread_id": plot_thread_id}` on success; `NotFoundResponse` if the link does not exist.
+
+**Invocation reason:** Called when a chapter's role in a plot thread is removed during restructuring — cleans up the junction table after plot changes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapter_plot_threads`. Writes `chapter_plot_threads`.
+
+---
+
+#### `get_plot_threads_for_chapter`
+
+**Purpose:** Get all plot thread associations for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | Primary key of the chapter to query |
+
+**Returns:** `list[ChapterPlotThread]` — All `ChapterPlotThread` records for the chapter ordered by `plot_thread_id`. Returns an empty list if no associations exist.
+
+**Invocation reason:** Called before drafting a chapter to confirm which plot threads it is responsible for advancing — ensures the agent has the full narrative context before writing.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapter_plot_threads`.
 
 ---
 
@@ -1207,6 +2621,204 @@ Manages character arcs, Chekhov's gun registry, subplot touchpoint tracking, and
 
 ---
 
+#### `delete_arc`
+
+**Purpose:** Delete a character arc by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `arc_id` | `int` | Yes | Primary key of the character arc to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": arc_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (chapter_character_arcs, arc_health_log, or arc_seven_point_beats reference the arc).
+
+**Invocation reason:** Called to remove a character arc that was created in error — only safe when no chapter links, health logs, or beat records reference it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `character_arcs`. Writes `character_arcs`.
+
+---
+
+#### `delete_arc_health_log`
+
+**Purpose:** Delete an arc health log entry by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `arc_health_log_id` | `int` | Yes | Primary key of the arc health log entry to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": arc_health_log_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged arc health entry — arc_health_log is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `arc_health_log`. Writes `arc_health_log`.
+
+---
+
+#### `delete_chekov`
+
+**Purpose:** Delete a Chekhov's gun registry entry by ID.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chekov_id` | `int` | Yes | Primary key of the Chekhov's gun entry to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": chekov_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a Chekhov's gun entry that was registered in error or written out of the story.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chekovs_gun_registry`. Writes `chekovs_gun_registry`.
+
+---
+
+#### `upsert_arc`
+
+**Purpose:** Create or update a character arc. Pre-checks that character_id exists.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to characters — the character this arc belongs to (required) |
+| `arc_type` | `str` | No | Type of arc — e.g. "growth", "fall", "flat" (default: "growth") |
+| `arc_id` | `int \| None` | No | Existing arc ID to update, or None to create |
+| `starting_state` | `str \| None` | No | Narrative state the character starts in (optional) |
+| `desired_state` | `str \| None` | No | Narrative state the character strives toward (optional) |
+| `wound` | `str \| None` | No | Core wound driving the character's flaw (optional) |
+| `lie_believed` | `str \| None` | No | Lie the character believes (optional) |
+| `truth_to_learn` | `str \| None` | No | Truth the character must learn (optional) |
+| `opened_chapter_id` | `int \| None` | No | Chapter where this arc begins (optional) |
+| `closed_chapter_id` | `int \| None` | No | Chapter where this arc concludes (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+
+**Returns:** `CharacterArc | NotFoundResponse | ValidationFailure` — The created or updated `CharacterArc`; `NotFoundResponse` if character_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during character planning to define the arc structure — the wound, lie, and truth fields are used for consistent character voice and narrative coherence checking.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`. Writes `character_arcs`.
+
+---
+
+#### `log_subplot_touchpoint`
+
+**Purpose:** Append a subplot touchpoint entry to the log. Pre-checks that both plot_thread_id and chapter_id exist.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `plot_thread_id` | `int` | Yes | FK to plot_threads — the subplot receiving this touchpoint (required) |
+| `chapter_id` | `int` | Yes | FK to chapters — the chapter where the touchpoint occurs (required) |
+| `touchpoint_type` | `str` | No | Type of touchpoint — e.g. "advance", "callback", "resolve" (default: "advance") |
+| `notes` | `str \| None` | No | Free-form notes about this touchpoint (optional) |
+
+**Returns:** `SubplotTouchpoint | NotFoundResponse | ValidationFailure` — The newly created `SubplotTouchpoint`; `NotFoundResponse` if plot_thread_id or chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called after drafting a chapter that touches a subplot — prevents subplot threads from going unacknowledged too long between appearances.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `plot_threads`, `chapters`. Writes `subplot_touchpoint_log`.
+
+---
+
+#### `delete_subplot_touchpoint`
+
+**Purpose:** Delete a subplot touchpoint log entry by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `touchpoint_id` | `int` | Yes | Primary key of the subplot touchpoint entry to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": touchpoint_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an incorrectly logged subplot touchpoint — subplot_touchpoint_log is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `subplot_touchpoint_log`. Writes `subplot_touchpoint_log`.
+
+---
+
+#### `link_chapter_to_arc`
+
+**Purpose:** Link a chapter to a character arc via the chapter_character_arcs junction table. Idempotent: updates arc_progression and notes if the link already exists.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to chapters table (required) |
+| `arc_id` | `int` | Yes | FK to character_arcs table (required) |
+| `arc_progression` | `str` | No | Progression state in this chapter — e.g. "advance", "climax", "setup", "stasis" (default: "advance") |
+| `notes` | `str \| None` | No | Free-form notes about this chapter-arc association (optional) |
+
+**Returns:** `ChapterCharacterArc | NotFoundResponse | ValidationFailure` — The created or updated `ChapterCharacterArc`; `NotFoundResponse` if chapter_id or arc_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during chapter planning to associate a chapter with the character arcs it advances — enables tracking of arc progression across the full manuscript.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapters`, `character_arcs`. Writes `chapter_character_arcs`.
+
+---
+
+#### `unlink_chapter_from_arc`
+
+**Purpose:** Remove the link between a chapter and a character arc. Idempotent: returns NotFoundResponse if the link does not exist.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | FK to chapters table (required) |
+| `arc_id` | `int` | Yes | FK to character_arcs table (required) |
+
+**Returns:** `NotFoundResponse | dict` — `{"unlinked": True, "chapter_id": chapter_id, "arc_id": arc_id}` on success; `NotFoundResponse` if the link does not exist.
+
+**Invocation reason:** Called when a chapter's role in a character arc is removed during restructuring — cleans up the junction table after story changes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapter_character_arcs`. Writes `chapter_character_arcs`.
+
+---
+
+#### `get_arcs_for_chapter`
+
+**Purpose:** Get all character arc associations for a chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | Primary key of the chapter to query |
+
+**Returns:** `list[ChapterCharacterArc]` — All `ChapterCharacterArc` records for the chapter ordered by `arc_id`. Returns an empty list if no associations exist.
+
+**Invocation reason:** Called before drafting a chapter to confirm which character arcs it is responsible for advancing — ensures the agent has the full arc context before writing.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `chapter_character_arcs`.
+
+---
+
 ## Gate Domain
 
 Manages the architecture gate — the certification mechanism that blocks prose-phase tools until all 36 worldbuilding requirements are verified. Tools are gate-free themselves (they manage the gate, not use it).
@@ -1308,6 +2920,26 @@ Manages the architecture gate — the certification mechanism that blocks prose-
 
 ---
 
+#### `delete_gate_checklist_item`
+
+**Purpose:** Delete a gate checklist item by ID (admin cleanup). NOT gate-gated — this tool manages the gate itself.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `checklist_item_id` | `int` | Yes | Primary key of the gate checklist item to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": checklist_item_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove stale or erroneous gate checklist items during gate administration — analogous to `update_checklist_item` in that it manages the gate rather than being subject to it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `gate_checklist_items`. Writes `gate_checklist_items`.
+
+---
+
 ## Names Domain
 
 Manages the name registry — a global uniqueness tracker for all names used in the story. Gate-free by locked design decision: name tools must work during worldbuilding before the gate is certified.
@@ -1401,6 +3033,52 @@ Manages the name registry — a global uniqueness tracker for all names used in 
 **Gate status:** Gate-free.
 
 **Tables touched:** Reads `name_registry`, `cultures`.
+
+---
+
+#### `upsert_name_registry_entry`
+
+**Purpose:** Create or update a name registry entry.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `entry_id` | `int \| None` | Yes | Existing entry ID to update, or None to create |
+| `name` | `str` | Yes | The name to register — must be unique in the registry (required) |
+| `entity_type` | `str` | No | Category of entity (default: "character") |
+| `culture_id` | `int \| None` | No | FK to cultures table (optional) |
+| `linguistic_notes` | `str \| None` | No | Notes on name etymology or pronunciation (optional) |
+| `introduced_chapter_id` | `int \| None` | No | FK to chapters — chapter where name first appears (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `NameRegistryEntry | ValidationFailure` — The created or updated `NameRegistryEntry`; `ValidationFailure` on DB error (e.g. UNIQUE constraint violation if name already exists).
+
+**Invocation reason:** Called to register a new name after confirming availability via `check_name` — ensures all names used in the story are tracked for uniqueness and cultural consistency.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `name_registry`. Writes `name_registry`.
+
+---
+
+#### `delete_name_registry_entry`
+
+**Purpose:** Delete a name registry entry by its integer primary key. FK-safe.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name_registry_id` | `int` | Yes | Primary key (id) of the name registry entry to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": name_registry_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a name registry entry for a name that was retired or logged in error — uses the integer primary key (not the name string) for unambiguous deletion.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `name_registry`. Writes `name_registry`.
 
 ---
 
@@ -1501,6 +3179,46 @@ Manages story-level 7-point structural beats (story_structure table with one row
 **Returns:** `ArcSevenPointBeat | ValidationFailure` — The created or updated `ArcSevenPointBeat`; `ValidationFailure` on invalid `beat_type` or DB error.
 
 **Invocation reason:** Called when mapping a character's arc to the 7-point structure — required for the `arcs_seven_point_beats` gate item which checks all 7 beats have a chapter_id assigned.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `arc_seven_point_beats`. Writes `arc_seven_point_beats`.
+
+---
+
+#### `delete_story_structure`
+
+**Purpose:** Delete a story structure row by ID if no FK children reference it.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `story_structure_id` | `int` | Yes | Primary key of the story structure row to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": story_structure_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a story structure record that was created in error or superseded by a revised structure for the same book.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `story_structure`. Writes `story_structure`.
+
+---
+
+#### `delete_arc_beat`
+
+**Purpose:** Delete an arc seven-point beat record by primary key.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `arc_beat_id` | `int` | Yes | Primary key of the arc seven-point beat to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": arc_beat_id}` on success; `NotFoundResponse` if the record does not exist.
+
+**Invocation reason:** Called to remove an arc beat that was created in error — arc_seven_point_beats is a leaf table with no FK children so deletion is always safe.
 
 **Gate status:** Gate-free.
 
@@ -1717,6 +3435,129 @@ Manages writing session lifecycle, project metrics snapshots, POV balance analys
 
 ---
 
+#### `delete_session_log`
+
+**Purpose:** Delete a session log entry by ID. Gate-gated — session_logs may be referenced by agent_run_log via FK.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `session_log_id` | `int` | Yes | Primary key of the session log entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": session_log_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a session log entry that was created in error — requires gate certification since session management is a prose-phase operation.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `session_logs`. Writes `session_logs`.
+
+---
+
+#### `delete_agent_run_log`
+
+**Purpose:** Delete an agent run log entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `agent_run_log_id` | `int` | Yes | Primary key of the agent run log entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": agent_run_log_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove an agent run log entry that was created in error — agent_run_log is an append-only log with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `agent_run_log`. Writes `agent_run_log`.
+
+---
+
+#### `delete_open_question`
+
+**Purpose:** Delete an open question by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `open_question_id` | `int` | Yes | Primary key of the open question to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": open_question_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove an open question that was logged in error or is no longer relevant — open_questions is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `open_questions`. Writes `open_questions`.
+
+---
+
+#### `delete_project_snapshot`
+
+**Purpose:** Delete a project metrics snapshot by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `snapshot_id` | `int` | Yes | Primary key of the project metrics snapshot to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": snapshot_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove an obsolete or incorrectly logged project metrics snapshot — project_metrics_snapshots is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `project_metrics_snapshots`. Writes `project_metrics_snapshots`.
+
+---
+
+#### `log_pov_balance_snapshot`
+
+**Purpose:** Append a POV balance snapshot entry to the log. Gate-gated. Pre-checks chapter_id if provided.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int \| None` | No | FK to chapters — chapter context for this snapshot (optional) |
+| `character_id` | `int \| None` | No | FK to characters — character whose POV balance is recorded (optional) |
+| `chapter_count` | `int` | No | Number of chapters from this character's POV (default: 0) |
+| `word_count` | `int` | No | Word count from this character's POV (default: 0) |
+
+**Returns:** `PovBalanceSnapshot | GateViolation | NotFoundResponse | ValidationFailure` — The newly created `PovBalanceSnapshot`; `GateViolation` if gate not certified; `NotFoundResponse` if chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called periodically during production to track POV distribution across chapters — enables detection of POV imbalance that could signal under-served character arcs.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `chapters`. Writes `pov_balance_snapshots`.
+
+---
+
+#### `delete_pov_balance_snapshot`
+
+**Purpose:** Delete a POV balance snapshot entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `snapshot_id` | `int` | Yes | Primary key of the POV balance snapshot to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": snapshot_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove an incorrectly logged POV balance snapshot — pov_balance_snapshots is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `pov_balance_snapshots`. Writes `pov_balance_snapshots`.
+
+---
+
 ## Timeline Domain
 
 Manages story timeline events, POV character chronological positions, and travel segment tracking. Includes travel realism validation. All tools are gated.
@@ -1906,6 +3747,221 @@ Manages story timeline events, POV character chronological positions, and travel
 
 ---
 
+#### `log_travel_segment`
+
+**Purpose:** Append a travel segment record for a character. Pre-checks character_id and optionally start_chapter_id. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `character_id` | `int` | Yes | FK to characters — the travelling character (required) |
+| `from_location_id` | `int \| None` | No | FK to locations — starting location (optional) |
+| `to_location_id` | `int \| None` | No | FK to locations — destination location (optional) |
+| `start_chapter_id` | `int \| None` | No | FK to chapters — chapter where travel begins (optional) |
+| `end_chapter_id` | `int \| None` | No | FK to chapters — chapter where travel ends (optional) |
+| `start_event_id` | `int \| None` | No | FK to events — event triggering this travel (optional) |
+| `elapsed_days` | `int \| None` | No | Number of in-story days the journey takes (optional) |
+| `travel_method` | `str \| None` | No | Mode of travel — e.g. "walking", "horse", "ship" (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `TravelSegment | NotFoundResponse | ValidationFailure` — The newly created `TravelSegment`; `NotFoundResponse` if character_id or start_chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to record a character's journey between locations — feeds the travel realism validation and POV position tracking.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `characters`, `chapters`. Writes `travel_segments`.
+
+---
+
+#### `delete_event`
+
+**Purpose:** Delete a timeline event by ID if no FK children reference it. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | Primary key of the timeline event to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": event_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion (event_participants or event_artifacts reference the event).
+
+**Invocation reason:** Called to remove a timeline event that was created in error — only safe when no participants or artifacts are linked to it.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `events`. Writes `events`.
+
+---
+
+#### `delete_pov_position`
+
+**Purpose:** Delete a POV chronological position row by its integer primary key. FK-safe. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pov_position_id` | `int` | Yes | Primary key (id) of the pov_chronological_position row to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": pov_position_id}` on success; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a POV position record that was created in error — uses the integer primary key for unambiguous deletion.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `pov_chronological_position`. Writes `pov_chronological_position`.
+
+---
+
+#### `delete_travel_segment`
+
+**Purpose:** Delete a travel segment by primary key. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `travel_segment_id` | `int` | Yes | Primary key of the travel segment to delete |
+
+**Returns:** `NotFoundResponse | dict` — `{"deleted": True, "id": travel_segment_id}` on success; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove an incorrectly logged travel segment — travel_segments is a log table with no FK children so deletion is always safe.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `travel_segments`. Writes `travel_segments`.
+
+---
+
+#### `add_event_participant`
+
+**Purpose:** Associate a character with a timeline event. Idempotent: updates role and notes if the association already exists. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | FK to events — the event to associate the character with (required) |
+| `character_id` | `int` | Yes | FK to characters — the character to associate (required) |
+| `role` | `str \| None` | No | Role the character plays in the event (optional; defaults to "participant" per DB schema) |
+| `notes` | `str \| None` | No | Freeform notes about the character's involvement (optional) |
+
+**Returns:** `EventParticipant | NotFoundResponse | ValidationFailure` — The created or updated `EventParticipant`; `NotFoundResponse` if event_id or character_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called after logging a timeline event to record which characters were present — used to build event participant lists for narrative reference.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `events`, `characters`. Writes `event_participants`.
+
+---
+
+#### `remove_event_participant`
+
+**Purpose:** Remove a character from a timeline event. Idempotent: returns NotFoundResponse if the association does not exist. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | FK to events (required) |
+| `character_id` | `int` | Yes | FK to characters (required) |
+
+**Returns:** `NotFoundResponse | dict` — `{"removed": True, "event_id": event_id, "character_id": character_id}` on success; `NotFoundResponse` if the association does not exist.
+
+**Invocation reason:** Called to remove a character from an event that was added in error or retconned out of a scene.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `event_participants`. Writes `event_participants`.
+
+---
+
+#### `get_event_participants`
+
+**Purpose:** Return all characters associated with a timeline event. Verifies the event exists first.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | Primary key of the event to look up participants for |
+
+**Returns:** `list[EventParticipant] | NotFoundResponse` — List of `EventParticipant` records (may be empty); `NotFoundResponse` if the event does not exist.
+
+**Invocation reason:** Called before drafting a scene to confirm which characters are participating in a specific timeline event — ensures all participants are accounted for in the scene.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `events`, `event_participants`.
+
+---
+
+#### `add_event_artifact`
+
+**Purpose:** Associate an artifact with a timeline event. Idempotent: updates involvement if the association already exists. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | FK to events — the event to associate the artifact with (required) |
+| `artifact_id` | `int` | Yes | FK to artifacts — the artifact to associate (required) |
+| `involvement` | `str \| None` | No | Description of the artifact's role — e.g. "weapon", "target", "trophy" (optional) |
+
+**Returns:** `EventArtifact | NotFoundResponse | ValidationFailure` — The created or updated `EventArtifact`; `NotFoundResponse` if event_id or artifact_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to link a significant prop or artifact to the event where it plays a role — enables artifact tracking across the story timeline.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `events`, `artifacts`. Writes `event_artifacts`.
+
+---
+
+#### `remove_event_artifact`
+
+**Purpose:** Remove an artifact from a timeline event. NOT gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | FK to events (required) |
+| `artifact_id` | `int` | Yes | FK to artifacts (required) |
+
+**Returns:** `NotFoundResponse | dict` — `{"removed": True, "event_id": event_id, "artifact_id": artifact_id}` on success; `NotFoundResponse` if the association does not exist.
+
+**Invocation reason:** Called to remove an artifact link from an event that was added in error or retconned.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `event_artifacts`. Writes `event_artifacts`.
+
+---
+
+#### `get_event_artifacts`
+
+**Purpose:** Return all artifacts associated with a timeline event. Verifies the event exists first.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `event_id` | `int` | Yes | Primary key of the event to look up artifacts for |
+
+**Returns:** `list[EventArtifact] | NotFoundResponse` — List of `EventArtifact` records (may be empty); `NotFoundResponse` if the event does not exist.
+
+**Invocation reason:** Called to audit which artifacts are involved in a specific event — useful for prop continuity checks and scene prop verification.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `events`, `event_artifacts`.
+
+---
+
 ## Canon Domain
 
 Manages the canonical record: canon facts, story decisions log, and continuity issues. Canon facts, decisions, and continuity issues all use append-only INSERT (no ON CONFLICT) — they are audit log tables.
@@ -2075,6 +4131,66 @@ Manages the canonical record: canon facts, story decisions log, and continuity i
 
 ---
 
+#### `delete_canon_fact`
+
+**Purpose:** Delete a canon fact entry by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `canon_fact_id` | `int` | Yes | Primary key of the canon fact to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": canon_fact_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a canon fact that was logged in error or invalidated by a story revision — requires gate certification since canon management is a prose-phase operation.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `canon_facts`. Writes `canon_facts`.
+
+---
+
+#### `delete_continuity_issue`
+
+**Purpose:** Delete a continuity issue entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `issue_id` | `int` | Yes | Primary key of the continuity issue to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": issue_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a continuity issue that was logged in error — continuity_issues is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `continuity_issues`. Writes `continuity_issues`.
+
+---
+
+#### `delete_decision`
+
+**Purpose:** Delete a story decision log entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `decision_id` | `int` | Yes | Primary key of the decision log entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": decision_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a decision log entry that was recorded in error — decisions_log is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `decisions_log`. Writes `decisions_log`.
+
+---
+
 ## Knowledge Domain
 
 Manages reader-facing information asymmetry: what the reader knows vs what characters know. Includes dramatic irony inventory, reader reveals, and reader information states. All tools are gated.
@@ -2195,6 +4311,157 @@ Manages reader-facing information asymmetry: what the reader knows vs what chara
 **Gate status:** Requires gate certification.
 
 **Tables touched:** Writes `dramatic_irony_inventory`.
+
+---
+
+#### `delete_reader_state`
+
+**Purpose:** Delete a reader information state entry by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader_state_id` | `int` | Yes | Primary key of the reader state entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": reader_state_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a reader information state entry that was logged in error — requires gate certification since knowledge management is a prose-phase operation.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `reader_information_states`. Writes `reader_information_states`.
+
+---
+
+#### `delete_dramatic_irony`
+
+**Purpose:** Delete a dramatic irony entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `dramatic_irony_id` | `int` | Yes | Primary key of the dramatic irony entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": dramatic_irony_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a dramatic irony entry that was logged in error — dramatic_irony_inventory is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `dramatic_irony_inventory`. Writes `dramatic_irony_inventory`.
+
+---
+
+#### `upsert_reader_reveal`
+
+**Purpose:** Create or update a reader reveal entry. Pre-checks chapter_id if provided.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reveal_id` | `int \| None` | Yes | Existing reveal ID to update, or None to create |
+| `reveal_type` | `str` | Yes | Category of reader reveal — e.g. "exposition", "twist", "confirmation" (required) |
+| `chapter_id` | `int \| None` | No | FK to chapters where the reveal occurs (optional) |
+| `scene_id` | `int \| None` | No | FK to scenes where the reveal occurs (optional) |
+| `character_id` | `int \| None` | No | FK to characters involved in the reveal (optional) |
+| `planned_reveal` | `str \| None` | No | Description of the planned reveal (optional) |
+| `actual_reveal` | `str \| None` | No | Description of what was actually revealed (optional) |
+| `reader_impact` | `str \| None` | No | Notes on the reader's expected experience (optional) |
+| `notes` | `str \| None` | No | Free-form notes (optional) |
+
+**Returns:** `GateViolation | ReaderReveal | NotFoundResponse | ValidationFailure` — The created or updated `ReaderReveal`; `GateViolation` if gate not certified; `NotFoundResponse` if chapter_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to plan a deliberate information disclosure to the reader — tracks the gap between planned and actual reveals for consistency and reader experience analysis.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `chapters`. Writes `reader_reveals`.
+
+---
+
+#### `delete_reader_reveal`
+
+**Purpose:** Delete a reader reveal entry by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reveal_id` | `int` | Yes | Primary key of the reader reveal entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": reveal_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a reader reveal that was logged in error or retconned from the story.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `reader_reveals`. Writes `reader_reveals`.
+
+---
+
+#### `get_reader_experience_notes`
+
+**Purpose:** Retrieve all reader experience notes for a given chapter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chapter_id` | `int` | Yes | The chapter whose reader experience notes to retrieve |
+
+**Returns:** `list[ReaderExperienceNote] | GateViolation` — List of `ReaderExperienceNote` records ordered by `id` (may be empty); `GateViolation` if gate not certified.
+
+**Invocation reason:** Called to review the reader experience notes logged for a chapter — used for pacing and reader impact analysis during revision.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `reader_experience_notes`.
+
+---
+
+#### `log_reader_experience_note`
+
+**Purpose:** Log a new reader experience note (append-only). Pre-checks chapter_id and scene_id if provided.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `note_type` | `str` | Yes | Category of note — e.g. "pacing", "tension", "confusion", "satisfaction" (required) |
+| `content` | `str` | Yes | The note content describing the reader experience (required) |
+| `chapter_id` | `int \| None` | No | FK to chapters (optional; validated if provided) |
+| `scene_id` | `int \| None` | No | FK to scenes (optional; validated if provided) |
+
+**Returns:** `ReaderExperienceNote | GateViolation | NotFoundResponse | ValidationFailure` — The newly created `ReaderExperienceNote`; `GateViolation` if gate not certified; `NotFoundResponse` if chapter_id or scene_id does not exist; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called during or after drafting to record observations about the expected reader experience — accumulates feedback used for revision planning.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `chapters`, `scenes`. Writes `reader_experience_notes`.
+
+---
+
+#### `delete_reader_experience_note`
+
+**Purpose:** Delete a reader experience note by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `note_id` | `int` | Yes | Primary key of the reader experience note to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": note_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a reader experience note that was logged in error — reader_experience_notes is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `reader_experience_notes`. Writes `reader_experience_notes`.
 
 ---
 
@@ -2367,6 +4634,237 @@ Manages foreshadowing plants and payoffs, prophecies, motifs, thematic mirrors, 
 
 ---
 
+#### `delete_foreshadowing`
+
+**Purpose:** Delete a foreshadowing entry by ID. Gate-gated. foreshadowing_registry is a log table with no FK children.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `foreshadowing_id` | `int` | Yes | Primary key of the foreshadowing entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": foreshadowing_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a foreshadowing entry that was logged in error or retconned from the story.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `foreshadowing_registry`. Writes `foreshadowing_registry`.
+
+---
+
+#### `delete_motif_occurrence`
+
+**Purpose:** Delete a motif occurrence entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `motif_occurrence_id` | `int` | Yes | Primary key of the motif occurrence to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": motif_occurrence_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a motif occurrence that was logged in error — motif_occurrences is a log table with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `motif_occurrences`. Writes `motif_occurrences`.
+
+---
+
+#### `upsert_motif`
+
+**Purpose:** Create or update a motif in the motif_registry table.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `str` | Yes | Unique name for the motif (required) |
+| `description` | `str` | Yes | Description of the motif (required) |
+| `motif_id` | `int \| None` | No | Existing motif ID to update, or None to create |
+| `motif_type` | `str` | No | Type of motif (default: "symbol") |
+| `thematic_role` | `str \| None` | No | Thematic role the motif plays (optional) |
+| `first_appearance_chapter_id` | `int \| None` | No | FK to chapter of first appearance (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `GateViolation | MotifEntry | ValidationFailure` — The created or updated `MotifEntry`; `GateViolation` if gate not certified; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to define a recurring motif in the story — provides the structured record that motif occurrences reference via FK for frequency and pattern analysis.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `motif_registry`. Writes `motif_registry`.
+
+---
+
+#### `delete_motif`
+
+**Purpose:** Delete a motif from motif_registry by ID. Gate-gated — FK-safe (motif_occurrences reference motif_id).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `motif_id` | `int` | Yes | Primary key of the motif to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": motif_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK children (motif_occurrences) prevent deletion.
+
+**Invocation reason:** Called to remove a motif that was created in error — only safe when no motif occurrences reference it.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `motif_registry`. Writes `motif_registry`.
+
+---
+
+#### `upsert_prophecy`
+
+**Purpose:** Create or update a prophecy in the prophecy_registry table.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `str` | Yes | Name of the prophecy (required) |
+| `text` | `str` | Yes | Full text of the prophecy (required) |
+| `prophecy_id` | `int \| None` | No | Existing prophecy ID to update, or None to create |
+| `subject_character_id` | `int \| None` | No | FK to characters — character the prophecy is about (optional) |
+| `source_character_id` | `int \| None` | No | FK to characters — character who uttered it (optional) |
+| `uttered_chapter_id` | `int \| None` | No | FK to chapters — chapter where uttered (optional) |
+| `fulfilled_chapter_id` | `int \| None` | No | FK to chapters — chapter where fulfilled (optional) |
+| `status` | `str` | No | Current status (default: "active") |
+| `interpretation` | `str \| None` | No | Interpretation notes (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+| `canon_status` | `str` | No | Canon status (default: "draft") |
+
+**Returns:** `GateViolation | ProphecyEntry | ValidationFailure` — The created or updated `ProphecyEntry`; `GateViolation` if gate not certified; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to define a prophecy or prediction within the story — provides the structured record for tracking prophecy fulfillment across the narrative.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `prophecy_registry`. Writes `prophecy_registry`.
+
+---
+
+#### `delete_prophecy`
+
+**Purpose:** Delete a prophecy from prophecy_registry by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `prophecy_id` | `int` | Yes | Primary key of the prophecy to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": prophecy_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a prophecy that was created in error or written out of the story.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `prophecy_registry`. Writes `prophecy_registry`.
+
+---
+
+#### `upsert_thematic_mirror`
+
+**Purpose:** Create or update a thematic mirror in the thematic_mirrors table.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `str` | Yes | Name of the thematic mirror (required) |
+| `element_a_id` | `int` | Yes | ID of the first element being mirrored (required) |
+| `element_b_id` | `int` | Yes | ID of the second element being mirrored (required) |
+| `mirror_id` | `int \| None` | No | Existing mirror ID to update, or None to create |
+| `mirror_type` | `str` | No | Type of mirror relationship (default: "character") |
+| `element_a_type` | `str` | No | Type of first element (default: "character") |
+| `element_b_type` | `str` | No | Type of second element (default: "character") |
+| `mirror_description` | `str \| None` | No | Description of the mirror relationship (optional) |
+| `thematic_purpose` | `str \| None` | No | Thematic purpose of the mirror (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `GateViolation | ThematicMirror | ValidationFailure` — The created or updated `ThematicMirror`; `GateViolation` if gate not certified; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to document a deliberate structural parallel between two story elements — used for thematic coherence analysis and pattern tracking.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `thematic_mirrors`. Writes `thematic_mirrors`.
+
+---
+
+#### `delete_thematic_mirror`
+
+**Purpose:** Delete a thematic mirror from thematic_mirrors by ID. Gate-gated — thematic_mirrors has no FK children.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mirror_id` | `int` | Yes | Primary key of the thematic mirror to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": mirror_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to remove a thematic mirror that was defined in error or restructured out of the story.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `thematic_mirrors`. Writes `thematic_mirrors`.
+
+---
+
+#### `upsert_opposition_pair`
+
+**Purpose:** Create or update an opposition pair in the opposition_pairs table.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `str` | Yes | Name of the opposition pair (required) |
+| `concept_a` | `str` | Yes | First concept in the opposition (required) |
+| `concept_b` | `str` | Yes | Second concept in the opposition (required) |
+| `pair_id` | `int \| None` | No | Existing pair ID to update, or None to create |
+| `manifested_in` | `str \| None` | No | How the opposition manifests in the narrative (optional) |
+| `resolved_chapter_id` | `int \| None` | No | FK to chapters where the opposition resolves (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `GateViolation | OppositionPair | ValidationFailure` — The created or updated `OppositionPair`; `GateViolation` if gate not certified; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to document a thematic tension between opposing concepts — tracks whether and how the opposition resolves across the narrative arc.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `opposition_pairs`. Writes `opposition_pairs`.
+
+---
+
+#### `delete_opposition_pair`
+
+**Purpose:** Delete an opposition pair from opposition_pairs by ID. Gate-gated — opposition_pairs has no FK children.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pair_id` | `int` | Yes | Primary key of the opposition pair to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": pair_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to remove an opposition pair that was defined in error or resolved into a different narrative structure.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `opposition_pairs`. Writes `opposition_pairs`.
+
+---
+
 ## Voice Domain
 
 Manages character voice profiles, supernatural voice guidelines, and voice drift detection. All tools are gated — voice is a prose-phase concern requiring gate certification.
@@ -2485,6 +4983,92 @@ Manages character voice profiles, supernatural voice guidelines, and voice drift
 **Gate status:** Requires gate certification.
 
 **Tables touched:** Reads `voice_drift_log`.
+
+---
+
+#### `delete_voice_profile`
+
+**Purpose:** Delete a voice profile by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `voice_profile_id` | `int` | Yes | Primary key of the voice profile to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": voice_profile_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a voice profile that was created in error — requires gate certification since voice management is a prose-phase operation.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `voice_profiles`. Writes `voice_profiles`.
+
+---
+
+#### `delete_voice_drift`
+
+**Purpose:** Delete a voice drift log entry by primary key. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `voice_drift_id` | `int` | Yes | Primary key of the voice drift log entry to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | dict` — `{"deleted": True, "id": voice_drift_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found.
+
+**Invocation reason:** Called to remove a voice drift entry that was logged in error — voice_drift_log is an append-only log with no FK children so deletion is always safe once gate-certified.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `voice_drift_log`. Writes `voice_drift_log`.
+
+---
+
+#### `upsert_supernatural_voice_guideline`
+
+**Purpose:** Create or update a supernatural voice guideline. Gate-gated.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `guideline_id` | `int \| None` | Yes | Existing guideline ID to update, or None to create |
+| `element_name` | `str` | Yes | Name of the supernatural element — UNIQUE in table (required) |
+| `writing_rules` | `str` | Yes | Writing rules for this element's voice (required) |
+| `element_type` | `str` | No | Category of element — e.g. "creature", "spirit" (default: "creature") |
+| `avoid` | `str \| None` | No | Things to avoid when writing this element (optional) |
+| `example_phrases` | `str \| None` | No | Example phrases for this element's voice (optional) |
+| `notes` | `str \| None` | No | Additional notes (optional) |
+
+**Returns:** `GateViolation | SupernaturalVoiceGuideline | ValidationFailure` — The created or updated `SupernaturalVoiceGuideline`; `GateViolation` if gate not certified; `ValidationFailure` on DB error.
+
+**Invocation reason:** Called to define writing rules for supernatural entities — ensures consistent and distinctive voice treatment for non-human characters and phenomena.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `supernatural_voice_guidelines`. Writes `supernatural_voice_guidelines`.
+
+---
+
+#### `delete_supernatural_voice_guideline`
+
+**Purpose:** Delete a supernatural voice guideline by ID. Gate-gated — FK-safe pattern.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `guideline_id` | `int` | Yes | Primary key of the supernatural voice guideline to delete |
+
+**Returns:** `GateViolation | NotFoundResponse | ValidationFailure | dict` — `{"deleted": True, "id": guideline_id}` on success; `GateViolation` if gate not certified; `NotFoundResponse` if not found; `ValidationFailure` if FK constraints prevent deletion.
+
+**Invocation reason:** Called to remove a supernatural voice guideline that was created in error or for an entity written out of the story.
+
+**Gate status:** Gated — returns `GateViolation` if gate not certified.
+
+**Tables touched:** Reads `supernatural_voice_guidelines`. Writes `supernatural_voice_guidelines`.
 
 ---
 
@@ -2609,6 +5193,178 @@ Manages publishing assets (query letters, synopses), submission tracking, and su
 **Gate status:** Requires gate certification.
 
 **Tables touched:** Reads `submission_tracker`. Writes `submission_tracker`.
+
+---
+
+#### `delete_publishing_asset`
+
+**Purpose:** Delete a publishing asset by ID (FK-safe — submission_tracker references publishing_assets via asset_id FK).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `asset_id` | `int` | Yes | Primary key of the publishing_assets row to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — Dict with `deleted=True` and `id` on success; `NotFoundResponse` if asset not found; `ValidationFailure` if linked submission_tracker entries exist.
+
+**Invocation reason:** Called to remove a publishing asset record that is no longer needed — e.g., after a draft version is superseded. Returns `ValidationFailure` if submissions still reference the asset.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `publishing_assets`. Writes `publishing_assets`.
+
+---
+
+#### `delete_submission`
+
+**Purpose:** Delete a submission tracker entry by ID (log-delete — submission_tracker is an append-only log with no FK children).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `submission_id` | `int` | Yes | Primary key of the submission_tracker row to delete |
+
+**Returns:** `NotFoundResponse | dict` — Dict with `deleted=True` and `id` on success; `NotFoundResponse` if submission not found.
+
+**Invocation reason:** Called to remove an erroneously entered submission record or clean up test data. The submission_tracker table has no FK children so no try/except is needed.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `submission_tracker`. Writes `submission_tracker`.
+
+---
+
+#### `get_documentation_tasks`
+
+**Purpose:** Retrieve all documentation tasks with an optional status filter.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `status` | `str \| None` | No | Filter by task status (e.g. `"pending"`, `"in_progress"`, `"done"`) |
+
+**Returns:** `list[DocumentationTask]` — List of `DocumentationTask` records ordered by `id` ASC (may be empty).
+
+**Invocation reason:** Called to review outstanding documentation tasks — pass `status="pending"` to see only pending work, or omit to retrieve all tasks.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `documentation_tasks`.
+
+---
+
+#### `upsert_documentation_task`
+
+**Purpose:** Create or update a documentation task (two-branch upsert on `id` PK — create if no `task_id`, update if `task_id` provided).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `title` | `str` | Yes | Title of the documentation task |
+| `task_id` | `int \| None` | No | Existing task ID for update branch |
+| `status` | `str` | No (default: `"pending"`) | Task status |
+| `description` | `str \| None` | No | Detailed description of the task |
+| `priority` | `str` | No (default: `"normal"`) | Task priority |
+| `due_chapter_id` | `int \| None` | No | FK to `chapters` — chapter when task is due |
+| `completed_at` | `str \| None` | No | ISO datetime when task was completed |
+| `notes` | `str \| None` | No | Additional notes |
+
+**Returns:** `DocumentationTask | ValidationFailure` — The created or updated `DocumentationTask` record; `ValidationFailure` on error.
+
+**Invocation reason:** Called to create a new documentation task or update an existing one — e.g., mark a task as completed by providing `task_id` and `status="done"`.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `documentation_tasks`. Writes `documentation_tasks`.
+
+---
+
+#### `delete_documentation_task`
+
+**Purpose:** Delete a documentation task by ID (FK-safe pattern for consistency, though documentation_tasks is unlikely to have FK children).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `task_id` | `int` | Yes | Primary key of the documentation_tasks row to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — Dict with `deleted=True` and `id` on success; `NotFoundResponse` if task not found; `ValidationFailure` if a FK constraint prevents deletion.
+
+**Invocation reason:** Called to remove a completed or cancelled documentation task from the tracking table.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `documentation_tasks`. Writes `documentation_tasks`.
+
+---
+
+#### `get_research_notes`
+
+**Purpose:** Retrieve all research notes with an optional relevance filter (LIKE match — partial values supported).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `relevance` | `str \| None` | No | Filter by relevance using `LIKE '%value%'` match |
+
+**Returns:** `list[ResearchNote]` — List of `ResearchNote` records ordered by `id` ASC (may be empty).
+
+**Invocation reason:** Called to look up research notes on a topic — pass a keyword as `relevance` to find notes with matching relevance tags, or omit to retrieve all notes.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `research_notes`.
+
+---
+
+#### `upsert_research_note`
+
+**Purpose:** Create or update a research note (two-branch upsert on `id` PK — create if no `note_id`, update if `note_id` provided).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `topic` | `str` | Yes | Topic or subject of the research note |
+| `content` | `str` | Yes | Full content/body of the research note |
+| `note_id` | `int \| None` | No | Existing note ID for update branch |
+| `source` | `str \| None` | No | Source reference for the research |
+| `relevance` | `str \| None` | No | How this research relates to the novel |
+| `notes` | `str \| None` | No | Additional notes |
+
+**Returns:** `ResearchNote | ValidationFailure` — The created or updated `ResearchNote` record; `ValidationFailure` on error.
+
+**Invocation reason:** Called to record research findings relevant to the novel — e.g., historical facts, cultural details, or technical information that informs the narrative.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `research_notes`. Writes `research_notes`.
+
+---
+
+#### `delete_research_note`
+
+**Purpose:** Delete a research note by ID (FK-safe pattern — research_notes is a leaf table with no FK children).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `note_id` | `int` | Yes | Primary key of the research_notes row to delete |
+
+**Returns:** `NotFoundResponse | ValidationFailure | dict` — Dict with `deleted=True` and `id` on success; `NotFoundResponse` if note not found; `ValidationFailure` if a FK constraint prevents deletion.
+
+**Invocation reason:** Called to remove obsolete research notes that are no longer relevant to the novel.
+
+**Gate status:** Gate-free.
+
+**Tables touched:** Reads `research_notes`. Writes `research_notes`.
 
 ---
 
