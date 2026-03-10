@@ -116,4 +116,4 @@ Plans:
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 13. Tech Debt Clearance | 2/2 | Complete    | 2026-03-09 | - |
 | 14. MCP API Completeness | 19/19 | Complete    | 2026-03-09 | - |
-| 15. Documentation Restructure | v1.1 | 0/5 | Not started | - |
+| 15. Documentation Restructure | 1/5 | In Progress|  | - |
