@@ -185,7 +185,7 @@ Named historical periods that provide temporal grounding for characters, faction
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_era` (world.py), `delete_era` (world.py).
 
 ---
 
@@ -206,7 +206,7 @@ Top-level containers for the narrative. Each book gets its own chapters, acts, a
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_book` (world.py), `delete_book` (world.py).
 
 ---
 
@@ -281,7 +281,7 @@ Defines the three-act structure for a book. Each act can optionally mark its bou
 
 **Constraints:** `UNIQUE(book_id, act_number)` — one row per act number per book.
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_act` (world.py), `delete_act` (world.py).
 
 ---
 
@@ -518,7 +518,7 @@ Named cultural groups that define naming conventions, aesthetics, and social nor
 
 **Constraints:** `UNIQUE(name)`.
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_culture` (world.py), `delete_culture` (world.py).
 
 ---
 
@@ -600,7 +600,7 @@ Physical objects with narrative significance — weapons, relics, MacGuffins, et
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_artifact` (world.py), `delete_artifact` (world.py).
 
 ---
 
@@ -623,7 +623,7 @@ Defines elements of the magic system: abilities, spells, schools of magic. Rules
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_magic_element` (magic.py), `delete_magic_element` (magic.py).
 
 ---
 
@@ -645,7 +645,7 @@ Creatures, entities, or phenomena that are supernatural but distinct from the ma
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_supernatural_element` (magic.py), `delete_supernatural_element` (magic.py).
 
 ---
 
@@ -668,7 +668,7 @@ Time-stamped log of a faction's political state at a specific chapter. Append-or
 
 **Constraints:** `UNIQUE(faction_id, chapter_id)` — one political state record per faction per chapter.
 
-**Populated by:** `get_faction_political_state` reads; direct insert for writes (no dedicated upsert tool — faction political states are managed by the world tools but tracked as a separate log).
+**Populated by:** `log_faction_political_state` (world.py), `delete_faction_political_state` (world.py). Read via `get_faction_political_state`.
 
 ---
 
@@ -689,7 +689,7 @@ Time-stamped log of an artifact's state at a specific chapter. Tracks ownership 
 
 **Constraints:** `UNIQUE(artifact_id, chapter_id)` — one object state record per artifact per chapter.
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_object_state` (world.py), `delete_object_state` (world.py).
 
 ---
 
@@ -731,7 +731,7 @@ Tracks which magic system elements a character has the ability to use, and at wh
 
 **Constraints:** `UNIQUE(character_id, magic_element_id)` — one ability record per character per magic element.
 
-**Populated by:** `get_practitioner_abilities` reads; direct DB insert or seed for writes (no dedicated MCP write tool).
+**Populated by:** `upsert_practitioner_ability` (magic.py), `delete_practitioner_ability` (magic.py). Read via `get_practitioner_abilities`.
 
 ---
 
@@ -901,7 +901,7 @@ Records a character's held beliefs with optional chapter markers for when belief
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_character_belief` (characters.py), `delete_character_belief` (characters.py).
 
 ---
 
@@ -918,7 +918,7 @@ Append-only log of a character's chapter-by-chapter location. Multiple rows per 
 | `location_note` | TEXT | Free-form location description when no location record exists |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** `get_character_location` reads. Writes via direct DB insert or CLI only.
+**Populated by:** `log_character_location` (characters.py), `delete_character_location` (characters.py). Read via `get_character_location`.
 
 ---
 
@@ -940,7 +940,7 @@ Records injuries a character sustains, the chapter when injured, severity, and o
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** `get_character_injuries` reads. Writes via direct DB insert or CLI only.
+**Populated by:** `log_injury_state` (characters.py), `delete_injury_state` (characters.py). Read via `get_character_injuries`.
 
 ---
 
@@ -958,7 +958,7 @@ Append-only log of titles and honors a character holds at a given chapter. Title
 | `notes` | TEXT | Standard annotation field |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_title_state` (characters.py), `delete_title_state` (characters.py).
 
 ---
 
@@ -1181,7 +1181,7 @@ Ordered sequence of beats within a chapter or scene for pacing analysis. Each be
 | `notes` | TEXT | Standard annotation field |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_pacing_beat` (scenes.py), `delete_pacing_beat` (scenes.py).
 
 ---
 
@@ -1198,7 +1198,7 @@ Spot measurements of tension level at a chapter. Multiple measurements per chapt
 | `notes` | TEXT | Standard annotation field |
 | `measured_at` | TEXT | Timestamp of the measurement |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_tension_measurement` (scenes.py), `delete_tension_measurement` (scenes.py).
 
 ---
 
@@ -1217,7 +1217,7 @@ Tracks structural obligations a chapter must fulfill (setups, payoffs, foreshado
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** `get_chapter_obligations` reads. Writes via direct DB insert.
+**Populated by:** `upsert_chapter_obligation` (chapters.py), `delete_chapter_obligation` (chapters.py). Read via `get_chapter_obligations`.
 
 ---
 
@@ -1467,7 +1467,7 @@ Junction table linking characters to events with a role description. The UNIQUE 
 
 **Constraints:** `UNIQUE(event_id, character_id)`.
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `add_event_participant` (timeline.py), `remove_event_participant` (timeline.py).
 
 ---
 
@@ -1484,7 +1484,7 @@ Junction table linking artifacts to events. Records which artifacts were involve
 
 **Constraints:** `UNIQUE(event_id, artifact_id)`.
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `add_event_artifact` (timeline.py), `remove_event_artifact` (timeline.py).
 
 ---
 
@@ -1506,7 +1506,7 @@ Records individual travel legs between locations. Each segment captures the char
 | `notes` | TEXT | Standard annotation field |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** `get_travel_segments` reads. Writes via direct DB insert.
+**Populated by:** `log_travel_segment` (timeline.py), `delete_travel_segment` (timeline.py). Read via `get_travel_segments`.
 
 ---
 
@@ -1662,7 +1662,7 @@ One arc per character per story arc (a character may have multiple arcs across a
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** `get_arc` reads. Writes via direct DB insert.
+**Populated by:** `upsert_arc` (arcs.py), `delete_arc` (arcs.py). Read via `get_arc`.
 
 ---
 
@@ -1681,7 +1681,7 @@ Junction table tracking arc progression per chapter. Each chapter records the ar
 
 **Constraints:** `UNIQUE(chapter_id, arc_id)`.
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `link_chapter_to_arc` (arcs.py), `unlink_chapter_from_arc` (arcs.py).
 
 ---
 
@@ -1738,7 +1738,7 @@ Append-only log of subplot appearance in chapters. Used by `get_subplot_touchpoi
 | `notes` | TEXT | Standard annotation field |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_subplot_touchpoint` (arcs.py), `delete_subplot_touchpoint` (arcs.py).
 
 ---
 
@@ -1867,7 +1867,7 @@ Historical POV balance measurements showing chapter and word count by POV charac
 | `chapter_count` | INTEGER | Number of chapters with this POV character (default: 0) |
 | `word_count` | INTEGER | Total word count for this POV character (default: 0) |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_pov_balance_snapshot` (session.py), `delete_pov_balance_snapshot` (session.py).
 
 ---
 
@@ -2222,7 +2222,7 @@ Freeform notes about reader experience at specific chapters or scenes — pacing
 | `content` | TEXT | The note content |
 | `created_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `log_reader_experience_note` (knowledge.py), `delete_reader_experience_note` (knowledge.py).
 
 ---
 
@@ -2564,7 +2564,7 @@ Writing guidelines for supernatural entities — creatures, spirits, and phenome
 
 **Constraints:** `UNIQUE(element_name)`.
 
-**Populated by:** Not writable via MCP — CLI seed data or direct DB insert only.
+**Populated by:** `upsert_supernatural_voice_guideline` (voice.py), `delete_supernatural_voice_guideline` (voice.py). Gate-enforced writes.
 
 ---
 
@@ -2670,7 +2670,7 @@ Log of individual submissions to agencies or publishers. Each row tracks one sub
 
 ## 16. Utility
 
-The Utility domain contains two research and documentation support tables that are populated through the CLI or direct insert, not via MCP tools.
+The Utility domain contains two research and documentation support tables. Both have full MCP write coverage added in Phase 14: research notes are managed by publishing.py and documentation tasks are tracked and updated via publishing.py tools.
 
 ```mermaid
 erDiagram
@@ -2715,7 +2715,7 @@ Free-form notes on research topics relevant to the novel — historical facts, t
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `upsert_research_note` (publishing.py), `get_research_notes` (publishing.py), `delete_research_note` (publishing.py).
 
 ---
 
@@ -2736,7 +2736,7 @@ Tracks documentation and continuity tasks that need to be completed at or before
 | `created_at` | TEXT | Standard audit timestamp |
 | `updated_at` | TEXT | Standard audit timestamp |
 
-**Populated by:** Not writable via MCP — direct DB insert only.
+**Populated by:** `upsert_documentation_task` (publishing.py), `get_documentation_tasks` (publishing.py), `delete_documentation_task` (publishing.py).
 
 ---
 
