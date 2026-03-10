@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
 status: planning
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-10T02:18:40.014Z"
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-03-10T02:34:44.244Z"
 last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 26
-  completed_plans: 22
+  completed_plans: 23
   percent: 0
 ---
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/TBD p
 | Phase 14-mcp-api-completeness P18 | 3 | 2 tasks | 4 files |
 | Phase 14-mcp-api-completeness P19 | 4 | 3 tasks | 2 files |
 | Phase 15-documentation-restructure P02 | 18 | 2 tasks | 1 files |
+| Phase 15-documentation-restructure P01 | 45 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,8 @@ Recent decisions affecting current work:
 - [Phase 14-mcp-api-completeness]: delete_gate_checklist_item Task 2 was no-op — tool fully implemented in Plan 06 (commit 79aad80)
 - [Phase 15-02]: schema.md corrected for all 28 tables with stale Populated-by notes — full-file audit rather than only the 5 explicitly listed
 - [Phase 15-02]: architecture_gate gets Read-only note alongside Populated-by certify_gate — clarifies no direct write tool bypasses gate flow
+- [Phase 15-01]: Timeline Phase 14 junction/delete tools are gate-free per source; AST ast.unparse() erroneously flags them as gated due to outer function scope — direct ast.Await check used for accurate gate detection
+- [Phase 15-01]: Publishing delete/documentation/research tools are gate-free; existing publishing_assets and submission_tracker tools remain gated — mixed domain pattern documented in Index
 
 ### Pending Todos
 
@@ -144,6 +147,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T02:18:40.012Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-03-10T02:34:44.243Z
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None

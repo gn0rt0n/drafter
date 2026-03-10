@@ -23,7 +23,7 @@
 
 ### Documentation
 
-- [ ] **DOCS-01**: docs/mcp-tools.md updated to reflect newly added write tools from MCP phase, then split into per-domain files
+- [x] **DOCS-01**: docs/mcp-tools.md updated to reflect newly added write tools from MCP phase, then split into per-domain files
 - [x] **DOCS-02**: docs/schema.md updated to reflect read-only justifications and any new write tools from MCP phase, then split into per-domain files
 - [ ] **DOCS-03**: Master index file (docs/README.md or docs/index.md) links to all per-domain doc files
 
@@ -50,7 +50,7 @@
 | DEBT-08 | Phase 13 | Complete |
 | MCP-01 | Phase 14 | Complete |
 | MCP-02 | Phase 14 | Complete |
-| DOCS-01 | Phase 15 | Pending |
+| DOCS-01 | Phase 15 | Complete |
 | DOCS-02 | Phase 15 | Complete |
 | DOCS-03 | Phase 15 | Pending |
 
