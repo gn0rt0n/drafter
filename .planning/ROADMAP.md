@@ -90,7 +90,13 @@ Plans:
   1. `docs/mcp-tools.md` no longer exists as a monolith — it is replaced by per-domain files (e.g., `docs/tools/characters.md`, `docs/tools/gate.md`) that include all tools from Phase 14
   2. `docs/schema.md` no longer exists as a monolith — it is replaced by per-domain files (e.g., `docs/schema/characters.md`) that include read-only justifications from Phase 14
   3. A master index file (`docs/README.md` or `docs/index.md`) links to every per-domain tool file and every per-domain schema file so the full documentation surface is navigable from one location
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 15-01-PLAN.md — Update docs/mcp-tools.md with all 128 Phase 14 tool additions (Wave 1)
+- [ ] 15-02-PLAN.md — Update docs/schema.md with read-only justifications and corrected Populated-by notes (Wave 1)
+- [ ] 15-03-PLAN.md — Split docs/mcp-tools.md into 18 per-domain docs/tools/{domain}.md files (Wave 2)
+- [ ] 15-04-PLAN.md — Split docs/schema.md into 18 per-domain docs/schema/{domain}.md files (Wave 2)
+- [ ] 15-05-PLAN.md — Overhaul docs/README.md into master index, delete monoliths (Wave 3)
 
 ## Progress
 
@@ -110,4 +116,4 @@ Plans:
 | 12. Schema & MCP System Documentation | v1.0 | 4/4 | Complete | 2026-03-09 |
 | 13. Tech Debt Clearance | 2/2 | Complete    | 2026-03-09 | - |
 | 14. MCP API Completeness | 19/19 | Complete    | 2026-03-09 | - |
-| 15. Documentation Restructure | v1.1 | 0/TBD | Not started | - |
+| 15. Documentation Restructure | v1.1 | 0/5 | Not started | - |
