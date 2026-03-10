@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt & API Completeness
-status: planning
-stopped_at: Completed 15-05-PLAN.md
-last_updated: "2026-03-10T03:01:39.495Z"
-last_activity: 2026-03-09 — v1.1 roadmap created, 3 phases defined (13–15)
+status: complete
+stopped_at: v1.1 milestone archived
+last_updated: "2026-03-10T00:00:00.000Z"
+last_activity: 2026-03-10 — v1.1 milestone complete (3 phases, 26 plans, 231 tools, per-domain docs)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-09 after v1.0 milestone)
+See: .planning/PROJECT.md (updated 2026-03-10 after v1.1 milestone)
 
 **Core value:** Claude Code can query and update all story data through typed MCP tool calls — no raw SQL, no markdown parsing — enabling consistent AI collaboration at novel scale.
-**Current focus:** Phase 13 — Tech Debt Clearance (ready to plan)
+**Current focus:** Planning next milestone — run `/gsd:new-milestone`
 
 ## Current Position
 

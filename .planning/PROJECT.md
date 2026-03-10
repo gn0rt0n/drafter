@@ -2,11 +2,11 @@
 
 ## What This Is
 
-Drafter is the Python engine for a Claude Code–native novel management system. It provides a SQLite narrative database (22 migration files, 71 tables), a Python MCP server (103 tools across 18 domains), and a UV/Python CLI (`novel` command) that gives Claude Code structured, queryable access to all story data for a 250,000-word epic fantasy novel.
+Drafter is the Python engine for a Claude Code–native novel management system. It provides a SQLite narrative database (22 migration files, 71 tables), a Python MCP server (231 tools across 18 domains), and a UV/Python CLI (`novel` command) that gives Claude Code structured, queryable access to all story data for a 250,000-word epic fantasy novel.
 
 This repo is the engine layer. The Claude Code plugin (`novel-plugin/`, separate repo) wraps it. The actual novel content repo lives separately and stays untouched during development — all testing uses minimal seed files.
 
-**v1.0 shipped 2026-03-09.** All 12 phases complete. Engine is stable and ready for plugin integration.
+**v1.1 shipped 2026-03-10.** All 15 phases complete. Engine has full CRUD coverage and per-domain documentation.
 
 ## Core Value
 
@@ -25,19 +25,21 @@ Claude Code can query and update all story data through typed MCP tool calls —
 - ✓ Gate system (`get_gate_status`, `run_gate_audit`, `certify_gate`) correctly blocks prose-phase operations when 36-item checklist is incomplete — v1.0 Phase 6
 - ✓ 7-point structure tracking at story level and per-POV-character arc, with 2 gate items added — v1.0 Phase 11
 - ✓ Complete reference documentation: schema.md (71 tables), mcp-tools.md (103 tools), README.md — v1.0 Phase 12
+- ✓ Fix stale gate count strings ("33"/"34") → 36 in gate.py, cli.py — v1.1 Phase 13
+- ✓ Fix `novel db seed gate-ready` CLI help text (hyphen → underscore) — v1.1 Phase 13
+- ✓ Fix 4 doc bugs in docs/README.md (migration claim, export command, GateViolation type, table names) — v1.1 Phase 13
+- ✓ Add pydantic as direct dependency in pyproject.toml — v1.1 Phase 13
+- ✓ Fix gate audit/certify count inconsistency (audit: 36, certify: 36) — v1.1 Phase 13
+- ✓ Audit and add missing MCP write tools for all 71 schema tables — v1.1 Phase 14 (128 tools added, 231 total)
+- ✓ Split docs/mcp-tools.md into 18 per-domain tool files under docs/tools/ — v1.1 Phase 15
+- ✓ Split docs/schema.md into 18 per-domain schema files under docs/schema/ — v1.1 Phase 15
+- ✓ Master navigation index at docs/README.md linking all 37 documentation files — v1.1 Phase 15
 
 ### Active
 
-<!-- v1.1: Tech debt clearance and API completeness -->
+<!-- v1.2+: plugin integration, real-world validation, performance tuning -->
 
-- [ ] Fix stale gate count strings ("33"/"34") → 36 in gate.py, cli.py, REQUIREMENTS.md
-- [ ] Fix `novel db seed gate-ready` CLI help text (hyphen → underscore)
-- [ ] Fix 4 doc bugs in docs/README.md (migration claim, export command, GateViolation type, table names)
-- [ ] Add pydantic as direct dependency in pyproject.toml
-- [ ] Fix gate audit/certify count inconsistency (audit: 36, certify: 37)
-- [ ] Audit and add missing MCP write tools for read-only schema tables
-- [ ] Split docs/mcp-tools.md into per-domain files
-- [ ] Split docs/schema.md into per-domain files
+(None defined — start next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -48,21 +50,18 @@ Claude Code can query and update all story data through typed MCP tool calls —
 
 ## Context
 
-**v1.0 shipped 2026-03-09** — complete engine in 12 phases over 2 days.
+**v1.1 shipped 2026-03-10** — 3 phases, 26 plans, 1 day of execution.
 
 **Current state:**
 - 22 migration files, 71 tables across 16 domains
-- 103 MCP tools across 18 domains (18 tool modules in `src/novel/tools/`)
+- 231 MCP tools across 18 domains (18 tool modules in `src/novel/tools/`)
 - `novel` CLI with 7 subcommand groups (db, session, gate, export, import, query, name)
 - Architecture gate: 36 SQL-verifiable items, enforced at MCP tool level via `check_gate()`
 - Gate-ready seed profile: "Age of Embers" fantasy world, 2 books, 5 characters, 3 chapters, 6 scenes
-- ~448k Python LOC, UV-managed, Hatchling build, pytest test suite
+- Full per-domain documentation: `docs/tools/` (18 files), `docs/schema/` (18 files), `docs/README.md` (master index)
+- ~16,841 Python LOC, UV-managed, Hatchling build, pytest test suite
 
-**Known tech debt (from v1.0 audit):**
-- Stale count strings ("33 items", "34 items") in gate.py, cli.py — actual is 36
-- `novel db seed gate-ready` CLI help text typo (hyphen vs underscore)
-- 4 doc bugs in docs/README.md (migration auto-apply claim, export command name, GateViolation type, table names)
-- pydantic not declared as direct dependency (pulled transitively via mcp>=1.26.0)
+**Known tech debt:** None — all v1.0 and v1.1 debt cleared.
 
 **User feedback:** None yet — engine pre-release, plugin integration next.
 
@@ -70,14 +69,13 @@ The system treats a 250,000-word epic fantasy novel (55 chapters, 6 POV characte
 
 Reference documents in `project-overview/`:
 - `drafter-prd.md` — Full PRD with build sequence (Phases A–I)
-- `database-schema.md` — Complete SQLite schema, all 21 migrations (pre-Phase 11)
 - `agent-roster.md` — All 40 agent/skill definitions
 - `plugin-ecosystem.md` — Ecosystem overview
 
 Live docs in `docs/`:
-- `docs/schema.md` — Implementation-accurate schema (71 tables, 16 domains, Mermaid ER diagrams)
-- `docs/mcp-tools.md` — Full tool reference (103 tools, 18 domains)
-- `docs/README.md` — Architecture overview and navigation
+- `docs/README.md` — Master navigation index (18 tool links, 18 schema links, error contract)
+- `docs/tools/` — Per-domain tool reference (18 files, 231 tools total)
+- `docs/schema/` — Per-domain schema reference (18 files, 71 tables, read-only justifications)
 
 ## Constraints
 
@@ -106,20 +104,11 @@ Live docs in `docs/`:
 | CLI SQL intentionally duplicated from MCP tools | Isolation between sync CLI and async MCP layers | ✓ Phase 10 — no shared code, no async-in-sync bugs |
 | Python source files as single source of truth for tool names | REQUIREMENTS.md confirmed to drift from implementation | ✓ Phase 12 — docs/mcp-tools.md accurate at 103 tools |
 | 7-point structure tracked at story level + per-POV arc | Required for 6-POV epic fantasy with distinct character journeys | ✓ Phase 11 — 4 MCP tools, 2 gate items, 2 migrations |
-
-## Current Milestone: v1.1 Tech Debt & API Completeness
-
-**Goal:** Clear all v1.0 tech debt, fill MCP write-tool gaps, and split monolithic docs into per-domain files.
-
-**Target features:**
-- Fix stale gate count strings in gate.py, cli.py, REQUIREMENTS.md
-- Fix CLI help text bug (seed gate-ready)
-- Fix 4 doc bugs in docs/README.md
-- Add pydantic as direct dependency
-- Fix gate audit/certify count inconsistency
-- Audit and add missing MCP write tools for read-only tables
-- Split docs/mcp-tools.md into per-domain files
-- Split docs/schema.md into per-domain files
+| pydantic>=2.11 declared as direct dependency | Was pulled transitively only; explicit declaration ensures version contract | ✓ Phase 13 — pyproject.toml matches >=major.minor style |
+| FK-safe pattern for parent-table deletes; log-delete for leaf tables | Parent tables with FK children need ValidationFailure on FK violation; leaf tables don't | ✓ Phase 14 — consistent error contract across all 128 new tools |
+| No gate check on Phase 14 delete tools | Deletes are administrative ops; gate guards existing read/write tools in same modules | ✓ Phase 14 — consistent with module-level gate patterns |
+| Per-domain doc files (docs/tools/, docs/schema/) over monoliths | Monoliths hit context limits and become stale; per-domain files are scoped and AI-navigable | ✓ Phase 15 — 37 files replace 2 monoliths; master index at docs/README.md |
+| docs/README.md as condensed master index (not architecture doc) | Full architecture detail lives in project-overview/; README.md should be navigation-focused | ✓ Phase 15 — 79-line index with tool + schema links and error contract |
 
 ---
-*Last updated: 2026-03-09 after v1.1 milestone started*
+*Last updated: 2026-03-10 after v1.1 milestone*

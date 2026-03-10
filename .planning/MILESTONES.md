@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.1 Tech Debt & API Completeness (Shipped: 2026-03-10)
+
+**Phases completed:** 3 phases (13–15), 26 plans
+**Git range:** docs(13) → docs(phase-15) (2026-03-09, 1 day)
+**Stats:** 136 files changed, 16,841 Python LOC
+
+**Key accomplishments:**
+1. Cleared tech debt: fixed stale gate count strings (33/34→36) in gate.py and cli.py, corrected `novel db seed` CLI help text, fixed 4 README doc bugs, added pydantic as direct dependency
+2. Fixed gate audit/certify count inconsistency — both now operate on 36-item set
+3. Added 128 new MCP tools (delete, write, junction) across all 14 domains — achieving full CRUD coverage for all 71 schema tables (231 total tools)
+4. Split `docs/mcp-tools.md` (231-tool monolith) into 18 per-domain tool reference files under `docs/tools/`
+5. Split `docs/schema.md` into 18 per-domain schema files under `docs/schema/` with read-only justifications
+6. Created `docs/README.md` as master navigation index; deleted both monoliths
+
+---
+
 ## v1.0 MVP (Shipped: 2026-03-09)
 
 **Phases completed:** 12 phases, 41 plans

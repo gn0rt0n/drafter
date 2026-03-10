@@ -62,6 +62,56 @@
 
 ---
 
+## Milestone: v1.1 — Tech Debt & API Completeness
+
+**Shipped:** 2026-03-10
+**Phases:** 3 (13–15) | **Plans:** 26
+**Timeline:** 1 day (2026-03-09 → 2026-03-10)
+
+### What Was Built
+
+- Cleared all v1.0 tech debt: stale gate count strings, CLI help text bug, 4 README doc bugs, missing pydantic dependency
+- 128 new MCP tools (delete, write, junction) across all 18 domains — completing full CRUD for all 71 schema tables (231 tools total)
+- Per-domain documentation: 18 tool files under `docs/tools/`, 18 schema files under `docs/schema/`
+- `docs/README.md` as master navigation index; deleted both former monoliths (`mcp-tools.md`, `schema.md`)
+
+### What Worked
+
+- **Wave-based parallelization (Phase 14)**: 19 plans executed across 4 waves by domain — delete tools, write tools, full CRUD, junction tools. Parallelism within waves was high and clean.
+- **FK-safe / log-delete pattern split**: Two-pattern approach (FK-safe with ValidationFailure for parent tables; simpler log-delete for leaf tables) was clear and consistently applied across all 128 tools.
+- **Audit-first again**: Milestone audit pre-checked requirements, integration, and E2E flows before completion — found only known tech debt, no hidden gaps.
+- **Phase 15 doc split**: Splitting by domain (not alphabetically) kept each file scoped and AI-navigable. The master index pattern at `docs/README.md` gives a single entry point.
+- **Schema-source verification habit**: Checking real migration SQL before implementing tools caught multiple plan-prose column name mismatches (era, act, artifact, object_state, pacing_beat, research_note, etc.) — same lesson as v1.0, now applied proactively.
+
+### What Was Inefficient
+
+- **SUMMARY.md one_liner still unpopulated**: Same problem as v1.0 — `gsd-tools summary-extract` returned None for all 26 SUMMARY.md files. Accomplishments had to be written manually again. The frontmatter field is still not being populated during phase execution.
+- **STATE.md stale at completion**: STATE.md showed `status: planning` and `percent: 0` at milestone completion — not updated during execution. The CLI `milestone complete` updated it but the intermediate state was misleading.
+- **ROADMAP.md progress table format drift**: Phase 13-15 rows in the progress table had misaligned columns (milestone column shifted). Minor cosmetic issue.
+
+### Patterns Established
+
+- **FK-safe delete** (`try/except ValidationFailure`): use for any table that is referenced as a FK by another table
+- **Log-delete** (simple DELETE + None check): use for append-only log tables with no FK children
+- **No gate check on delete tools**: deletes are administrative; gate guards apply to write/read tools that compose with the domain's existing gate pattern
+- **Per-domain doc files over monoliths**: domain-scoped files don't hit context limits and are individually updatable
+- **Master index pattern**: condensed navigation-only file with tool table + schema table + quick stats + error contract — not an architecture doc
+
+### Key Lessons
+
+1. **Populate SUMMARY.md `one_liner` frontmatter.** This is still not happening. The execute-phase workflow needs to explicitly prompt for it as a required post-step, not optional frontmatter.
+2. **Plan column names against real migration SQL first.** Phase 14 caught mismatches in ~10 plans. A pre-plan step that runs `PRAGMA table_info` on the target tables would catch these before execution.
+3. **Per-domain documentation doesn't drift the way monoliths do.** Smaller scope means updates are surgical. The `docs/tools/` and `docs/schema/` split is the correct long-term pattern.
+4. **Delete tool patterns are consistent and learnable.** The FK-safe / log-delete split covered 100% of cases without exceptions. It's a stable pattern worth documenting in MEMORY.md.
+
+### Cost Observations
+
+- Model mix: Quality profile (Opus for research/plan/verify agents, Sonnet for execution)
+- Sessions: Multiple within 1 day
+- Notable: 26 plans in 1 day — Phase 14's 19-plan wave structure executed efficiently in parallel
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -69,9 +119,11 @@
 | Milestone | Phases | Plans | Key Change |
 |-----------|--------|-------|------------|
 | v1.0 | 12 | 41 | Initial build — established all patterns |
+| v1.1 | 3 | 26 | Tech debt clearance + API completion + doc restructure |
 
 ### Cumulative Quality
 
 | Milestone | LOC | Domains | Tools | Gate Items |
 |-----------|-----|---------|-------|-----------|
 | v1.0 | ~448k | 18 | 103 | 36 |
+| v1.1 | 16,841 | 18 | 231 | 36 |
