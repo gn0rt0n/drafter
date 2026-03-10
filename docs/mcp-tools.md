@@ -1,8 +1,8 @@
 # Drafter MCP Tools Reference
 
-**Status:** Derived from Python tool module source files — implementation-accurate as of Phase 11
+**Status:** Derived from Python tool module source files — implementation-accurate as of Phase 14
 
-**Quick stats:** 103 tools across 18 domain modules
+**Quick stats:** 231 tools across 18 domain modules
 
 **Transport:** FastMCP stdio transport (`mcp>=1.26.0,<2.0.0`). Tools are callable by any MCP client, including Claude Code. All tools are async and return structured Pydantic model data — no tool ever raises an uncaught exception.
 
@@ -47,53 +47,133 @@ If `architecture_gate.is_certified = 0`, `check_gate()` returns a `GateViolation
 | `get_character_knowledge` | Characters | Free | Return knowledge records for a character |
 | `log_character_knowledge` | Characters | Free | Insert a new knowledge record for a character |
 | `get_character_location` | Characters | Free | Return location records for a character |
+| `delete_character` | Characters | Free | Delete a character by ID (FK-safe) |
+| `delete_character_knowledge` | Characters | Free | Delete a character knowledge record by ID (log-delete) |
+| `log_character_belief` | Characters | Free | Append a belief record for a character |
+| `delete_character_belief` | Characters | Free | Delete a character belief record by ID (log-delete) |
+| `log_character_location` | Characters | Free | Append a location record for a character |
+| `get_current_character_location` | Characters | Free | Return the most recent location record for a character |
+| `delete_character_location` | Characters | Free | Delete a character location record by ID (log-delete) |
+| `log_injury_state` | Characters | Free | Append an injury state record for a character |
+| `delete_injury_state` | Characters | Free | Delete an injury state record by ID (log-delete) |
+| `log_title_state` | Characters | Free | Append a title or role state record for a character |
+| `delete_title_state` | Characters | Free | Delete a title state record by ID (log-delete) |
 | `get_relationship` | Relationships | Free | Look up the relationship between two characters |
 | `list_relationships` | Relationships | Free | Return all relationships for a character |
 | `upsert_relationship` | Relationships | Free | Create or update a character relationship |
 | `get_perception_profile` | Relationships | Free | Return one character's perception of another |
 | `upsert_perception_profile` | Relationships | Free | Create or update a perception profile |
 | `log_relationship_change` | Relationships | Free | Record a change event for a relationship |
+| `delete_relationship` | Relationships | Free | Delete a relationship between two characters (FK-safe) |
+| `delete_relationship_change` | Relationships | Free | Delete a relationship change log entry by ID (log-delete) |
+| `delete_perception_profile` | Relationships | Free | Delete a perception profile between two characters (FK-safe) |
 | `get_chapter` | Chapters | Free | Look up a single chapter by ID |
 | `get_chapter_plan` | Chapters | Free | Return the writing-guidance subset of a chapter |
 | `get_chapter_obligations` | Chapters | Free | Return structural obligations for a chapter |
 | `list_chapters` | Chapters | Free | Return all chapters in a book |
 | `upsert_chapter` | Chapters | Free | Create or update a chapter |
+| `delete_chapter` | Chapters | Free | Delete a chapter by ID (FK-safe) |
+| `upsert_chapter_obligation` | Chapters | Free | Create or update a structural obligation for a chapter |
+| `delete_chapter_obligation` | Chapters | Free | Delete a chapter structural obligation by ID (log-delete) |
 | `get_scene` | Scenes | Free | Look up a single scene by ID |
 | `get_scene_character_goals` | Scenes | Free | Return all per-character goals for a scene |
 | `upsert_scene` | Scenes | Free | Create or update a scene |
 | `upsert_scene_goal` | Scenes | Free | Create or update a per-character scene goal |
+| `delete_scene` | Scenes | Free | Delete a scene by ID (FK-safe) |
+| `delete_scene_goal` | Scenes | Free | Delete a per-character scene goal by ID (log-delete) |
+| `get_pacing_beats` | Scenes | Free | Retrieve all pacing beats for a chapter |
+| `log_pacing_beat` | Scenes | Free | Append a pacing beat record for a chapter |
+| `delete_pacing_beat` | Scenes | Free | Delete a pacing beat record by ID (log-delete) |
+| `get_tension_measurements` | Scenes | Free | Retrieve all tension measurements for a chapter |
+| `log_tension_measurement` | Scenes | Free | Append a tension measurement record for a chapter |
+| `delete_tension_measurement` | Scenes | Free | Delete a tension measurement record by ID (log-delete) |
+| `get_book` | World | Free | Look up a single book by ID |
+| `list_books` | World | Free | Return all books ordered by sequence_order |
+| `upsert_book` | World | Free | Create or update a book record |
+| `delete_book` | World | Free | Delete a book by ID (FK-safe) |
+| `get_era` | World | Free | Look up a single era by ID |
+| `list_eras` | World | Free | Return all eras ordered by sequence_order |
+| `upsert_era` | World | Free | Create or update a historical era record |
+| `delete_era` | World | Free | Delete an era by ID (FK-safe) |
 | `get_location` | World | Free | Look up a single location by ID |
 | `get_faction` | World | Free | Look up a single faction by ID |
 | `get_faction_political_state` | World | Free | Return the political state for a faction |
 | `get_culture` | World | Free | Look up a single culture by ID |
 | `upsert_location` | World | Free | Create or update a location |
 | `upsert_faction` | World | Free | Create or update a faction |
+| `delete_location` | World | Free | Delete a location by ID (FK-safe) |
+| `delete_faction` | World | Free | Delete a faction by ID (FK-safe) |
+| `upsert_culture` | World | Free | Create or update a culture record (upsert on name) |
+| `list_cultures` | World | Free | Return all cultures ordered alphabetically |
+| `delete_culture` | World | Free | Delete a culture by ID (FK-safe) |
+| `log_faction_political_state` | World | Free | Append a political state record for a faction |
+| `get_current_faction_political_state` | World | Free | Return the most recent political state for a faction |
+| `delete_faction_political_state` | World | Free | Delete a faction political state record by ID (log-delete) |
+| `get_act` | World | Free | Look up a single act by ID |
+| `list_acts` | World | Free | Return all acts for a book ordered by sequence_order |
+| `upsert_act` | World | Free | Create or update a narrative act record |
+| `delete_act` | World | Free | Delete an act by ID (FK-safe) |
+| `get_artifact` | World | Free | Look up a single artifact by ID |
+| `list_artifacts` | World | Free | Return all artifacts ordered by name |
+| `upsert_artifact` | World | Free | Create or update an artifact record |
+| `delete_artifact` | World | Free | Delete an artifact by ID (FK-safe) |
+| `get_object_states` | World | Free | Retrieve all object state records for an artifact |
+| `log_object_state` | World | Free | Append an object state record for an artifact at a chapter |
+| `delete_object_state` | World | Free | Delete an object state record by ID (log-delete) |
 | `get_magic_element` | Magic | Free | Look up a single magic system element by ID |
 | `get_practitioner_abilities` | Magic | Free | Return all magic abilities for a character |
 | `log_magic_use` | Magic | Free | Append a magic use event to the immutable log |
 | `check_magic_compliance` | Magic | Free | Check whether a proposed magic action complies with rules |
+| `upsert_magic_element` | Magic | Free | Create or update a magic system element record |
+| `list_magic_elements` | Magic | Free | Return all magic system elements ordered by name |
+| `upsert_practitioner_ability` | Magic | Free | Create or update a practitioner ability for a character |
+| `delete_magic_element` | Magic | Free | Delete a magic system element by ID (FK-safe) |
+| `delete_practitioner_ability` | Magic | Free | Delete a practitioner ability by ID (FK-safe) |
+| `delete_magic_use_log` | Magic | Free | Delete a magic use log entry by ID (log-delete) |
+| `get_supernatural_element` | Magic | Free | Look up a single supernatural element by ID |
+| `list_supernatural_elements` | Magic | Free | Return all supernatural elements ordered by name |
+| `upsert_supernatural_element` | Magic | Free | Create or update a supernatural element record |
+| `delete_supernatural_element` | Magic | Free | Delete a supernatural element by ID (FK-safe) |
 | `get_plot_thread` | Plot | Free | Look up a single plot thread by ID |
 | `list_plot_threads` | Plot | Free | List all plot threads with optional filters |
 | `upsert_plot_thread` | Plot | Free | Create or update a plot thread |
+| `delete_plot_thread` | Plot | Free | Delete a plot thread by ID (FK-safe) |
+| `link_chapter_to_plot_thread` | Plot | Free | Link a chapter to a plot thread (upsert junction) |
+| `unlink_chapter_from_plot_thread` | Plot | Free | Remove the link between a chapter and a plot thread |
+| `get_plot_threads_for_chapter` | Plot | Free | Return all plot threads linked to a chapter |
 | `get_chekovs_guns` | Arcs | Free | Retrieve Chekhov's gun entries from the registry |
 | `get_arc` | Arcs | Free | Retrieve character arc(s) by arc_id or character_id |
 | `get_arc_health` | Arcs | Free | Retrieve arc health log entries for a character |
 | `get_subplot_touchpoint_gaps` | Arcs | Free | Return active subplots overdue for a touchpoint |
 | `upsert_chekov` | Arcs | Free | Create or update a Chekhov's gun entry |
 | `log_arc_health` | Arcs | Free | Append an arc health log entry |
+| `delete_arc` | Arcs | Free | Delete a character arc by ID (FK-safe) |
+| `delete_arc_health_log` | Arcs | Free | Delete an arc health log entry by ID (log-delete) |
+| `delete_chekov` | Arcs | Free | Delete a Chekhov's gun entry by ID (FK-safe) |
+| `upsert_arc` | Arcs | Free | Create or update a character arc record |
+| `log_subplot_touchpoint` | Arcs | Free | Append a subplot touchpoint log entry |
+| `delete_subplot_touchpoint` | Arcs | Free | Delete a subplot touchpoint log entry by ID (log-delete) |
+| `link_chapter_to_arc` | Arcs | Free | Link a chapter to a character arc (upsert junction) |
+| `unlink_chapter_from_arc` | Arcs | Free | Remove the link between a chapter and a character arc |
+| `get_arcs_for_chapter` | Arcs | Free | Return all character arcs linked to a chapter |
 | `get_gate_status` | Gate | Free | Return the current gate certification status |
 | `get_gate_checklist` | Gate | Free | Return all gate checklist items |
 | `run_gate_audit` | Gate | Free | Execute all gate evidence queries and update checklist |
 | `update_checklist_item` | Gate | Free | Manually override a gate checklist item |
 | `certify_gate` | Gate | Free | Certify the gate if all checklist items pass |
+| `delete_gate_checklist_item` | Gate | Free | Delete a gate checklist item by ID (admin cleanup) |
 | `check_name` | Names | Free | Check if a name is already registered |
 | `register_name` | Names | Free | Register a new name in the name registry |
 | `get_name_registry` | Names | Free | Retrieve all name registry entries |
 | `generate_name_suggestions` | Names | Free | Retrieve name data to support consistent name generation |
+| `upsert_name_registry_entry` | Names | Free | Create or update a name registry entry |
+| `delete_name_registry_entry` | Names | Free | Delete a name registry entry by ID (FK-safe) |
 | `get_story_structure` | Structure | Free | Retrieve the story structure for a book |
 | `upsert_story_structure` | Structure | Free | Create or update story structure 7-point beats |
 | `get_arc_beats` | Structure | Free | Retrieve all 7-point beat records for a character arc |
 | `upsert_arc_beat` | Structure | Free | Create or update a single 7-point arc beat |
+| `delete_story_structure` | Structure | Free | Delete a story structure record by ID (FK-safe) |
+| `delete_arc_beat` | Structure | Free | Delete a 7-point arc beat record by ID (log-delete) |
 | `start_session` | Session | Gated | Start a new writing session with prior-session briefing |
 | `close_session` | Session | Gated | Close an open session and record summary |
 | `get_last_session` | Session | Gated | Retrieve the most recent session log entry |
@@ -104,6 +184,12 @@ If `architecture_gate.is_certified = 0`, `check_gate()` returns a `GateViolation
 | `get_open_questions` | Session | Gated | Retrieve all unanswered open questions |
 | `log_open_question` | Session | Gated | Append a new open question to the log |
 | `answer_open_question` | Session | Gated | Mark an open question as answered |
+| `delete_session_log` | Session | Gated | Delete a session log entry by ID (FK-safe) |
+| `delete_agent_run_log` | Session | Gated | Delete an agent run log entry by ID (log-delete) |
+| `delete_open_question` | Session | Gated | Delete an open question log entry by ID (log-delete) |
+| `delete_project_snapshot` | Session | Gated | Delete a project metrics snapshot by ID (log-delete) |
+| `log_pov_balance_snapshot` | Session | Gated | Persist a POV balance snapshot for a chapter |
+| `delete_pov_balance_snapshot` | Session | Gated | Delete a POV balance snapshot by ID (log-delete) |
 | `get_pov_positions` | Timeline | Gated | Retrieve all POV positions at a given chapter |
 | `get_pov_position` | Timeline | Gated | Retrieve a specific POV position at a chapter |
 | `get_event` | Timeline | Gated | Retrieve a single timeline event by ID |
@@ -112,6 +198,16 @@ If `architecture_gate.is_certified = 0`, `check_gate()` returns a `GateViolation
 | `validate_travel_realism` | Timeline | Gated | Validate whether travel is realistic given elapsed time |
 | `upsert_event` | Timeline | Gated | Create or update a timeline event |
 | `upsert_pov_position` | Timeline | Gated | Create or update a POV chronological position |
+| `log_travel_segment` | Timeline | Free | Append a travel segment record for a character journey |
+| `delete_event` | Timeline | Free | Delete a timeline event by ID (FK-safe) |
+| `delete_pov_position` | Timeline | Free | Delete a POV chronological position by ID (FK-safe) |
+| `delete_travel_segment` | Timeline | Free | Delete a travel segment record by ID (log-delete) |
+| `add_event_participant` | Timeline | Free | Associate a character with a timeline event |
+| `remove_event_participant` | Timeline | Free | Remove a character association from a timeline event |
+| `get_event_participants` | Timeline | Free | Return all participant associations for a timeline event |
+| `add_event_artifact` | Timeline | Free | Associate an artifact with a timeline event |
+| `remove_event_artifact` | Timeline | Free | Remove an artifact association from a timeline event |
+| `get_event_artifacts` | Timeline | Free | Return all artifact associations for a timeline event |
 | `get_canon_facts` | Canon | Gated | Retrieve all canon facts for a domain |
 | `log_canon_fact` | Canon | Gated | Log a new canon fact (append-only) |
 | `log_decision` | Canon | Gated | Log a story decision with rationale |
@@ -119,11 +215,21 @@ If `architecture_gate.is_certified = 0`, `check_gate()` returns a `GateViolation
 | `log_continuity_issue` | Canon | Gated | Log a new continuity issue |
 | `get_continuity_issues` | Canon | Gated | Retrieve open continuity issues |
 | `resolve_continuity_issue` | Canon | Gated | Resolve a continuity issue by ID |
+| `delete_canon_fact` | Canon | Gated | Delete a canon fact by ID (FK-safe) |
+| `delete_continuity_issue` | Canon | Gated | Delete a continuity issue log entry by ID (log-delete) |
+| `delete_decision` | Canon | Gated | Delete a story decision log entry by ID (log-delete) |
 | `get_reader_state` | Knowledge | Gated | Retrieve cumulative reader information state up to a chapter |
 | `get_dramatic_irony_inventory` | Knowledge | Gated | Retrieve the dramatic irony inventory |
 | `get_reader_reveals` | Knowledge | Gated | Retrieve planned and actual reader reveals |
 | `upsert_reader_state` | Knowledge | Gated | Create or update a reader information state entry |
 | `log_dramatic_irony` | Knowledge | Gated | Log a new dramatic irony entry (append-only) |
+| `delete_reader_state` | Knowledge | Gated | Delete a reader information state entry by ID (FK-safe) |
+| `delete_dramatic_irony` | Knowledge | Gated | Delete a dramatic irony log entry by ID (log-delete) |
+| `upsert_reader_reveal` | Knowledge | Gated | Create or update a planned or actual reader reveal |
+| `delete_reader_reveal` | Knowledge | Gated | Delete a reader reveal entry by ID (FK-safe) |
+| `get_reader_experience_notes` | Knowledge | Gated | Retrieve reader experience notes with optional filters |
+| `log_reader_experience_note` | Knowledge | Gated | Append a reader experience note (append-only) |
+| `delete_reader_experience_note` | Knowledge | Gated | Delete a reader experience note by ID (log-delete) |
 | `get_foreshadowing` | Foreshadowing | Gated | Retrieve foreshadowing entries with optional filters |
 | `get_prophecies` | Foreshadowing | Gated | Retrieve all prophecy registry entries |
 | `get_motifs` | Foreshadowing | Gated | Retrieve all motif registry entries |
@@ -132,16 +238,38 @@ If `architecture_gate.is_certified = 0`, `check_gate()` returns a `GateViolation
 | `get_opposition_pairs` | Foreshadowing | Gated | Retrieve all opposition pairs |
 | `log_foreshadowing` | Foreshadowing | Gated | Log or update a foreshadowing entry (upsert) |
 | `log_motif_occurrence` | Foreshadowing | Gated | Log a new motif occurrence (append-only) |
+| `delete_foreshadowing` | Foreshadowing | Gated | Delete a foreshadowing entry by ID (log-delete) |
+| `delete_motif_occurrence` | Foreshadowing | Gated | Delete a motif occurrence log entry by ID (log-delete) |
+| `upsert_motif` | Foreshadowing | Gated | Create or update a motif registry entry |
+| `delete_motif` | Foreshadowing | Gated | Delete a motif registry entry by ID (FK-safe) |
+| `upsert_prophecy` | Foreshadowing | Gated | Create or update a prophecy registry entry |
+| `delete_prophecy` | Foreshadowing | Gated | Delete a prophecy registry entry by ID (FK-safe) |
+| `upsert_thematic_mirror` | Foreshadowing | Gated | Create or update a thematic mirror pair entry |
+| `delete_thematic_mirror` | Foreshadowing | Gated | Delete a thematic mirror pair by ID (FK-safe) |
+| `upsert_opposition_pair` | Foreshadowing | Gated | Create or update an opposition pair entry |
+| `delete_opposition_pair` | Foreshadowing | Gated | Delete an opposition pair by ID (FK-safe) |
 | `get_voice_profile` | Voice | Gated | Retrieve the voice profile for a character |
 | `upsert_voice_profile` | Voice | Gated | Create or update a voice profile for a character |
 | `get_supernatural_voice_guidelines` | Voice | Gated | Retrieve all supernatural voice guidelines |
 | `log_voice_drift` | Voice | Gated | Log a voice drift event (append-only) |
 | `get_voice_drift_log` | Voice | Gated | Retrieve voice drift log entries for a character |
+| `delete_voice_profile` | Voice | Gated | Delete a voice profile by ID (FK-safe) |
+| `delete_voice_drift` | Voice | Gated | Delete a voice drift log entry by ID (log-delete) |
+| `upsert_supernatural_voice_guideline` | Voice | Gated | Create or update a supernatural voice guideline entry |
+| `delete_supernatural_voice_guideline` | Voice | Gated | Delete a supernatural voice guideline by ID (FK-safe) |
 | `get_publishing_assets` | Publishing | Gated | Retrieve all publishing assets with optional filter |
 | `upsert_publishing_asset` | Publishing | Gated | Create or update a publishing asset |
 | `get_submissions` | Publishing | Gated | Retrieve all submission tracker entries |
 | `log_submission` | Publishing | Gated | Log a new submission (append-only) |
 | `update_submission` | Publishing | Gated | Partially update a submission tracker entry |
+| `delete_publishing_asset` | Publishing | Free | Delete a publishing asset by ID (FK-safe) |
+| `delete_submission` | Publishing | Free | Delete a submission tracker entry by ID (log-delete) |
+| `get_documentation_tasks` | Publishing | Free | Retrieve all documentation tasks with optional status filter |
+| `upsert_documentation_task` | Publishing | Free | Create or update a documentation task |
+| `delete_documentation_task` | Publishing | Free | Delete a documentation task by ID (FK-safe) |
+| `get_research_notes` | Publishing | Free | Retrieve all research notes with optional relevance filter |
+| `upsert_research_note` | Publishing | Free | Create or update a research note |
+| `delete_research_note` | Publishing | Free | Delete a research note by ID (FK-safe) |
 
 ---
 
@@ -151,7 +279,7 @@ Manages the core character registry, character state across chapters (injuries, 
 
 **Gate status:** All tools in this domain are gate-free.
 
-**8 tools**
+**19 tools**
 
 ---
 
@@ -584,7 +712,7 @@ Manages character-to-character relationships (bidirectional bond) and directiona
 
 **Gate status:** All tools in this domain are gate-free.
 
-**6 tools**
+**9 tools**
 
 ---
 
@@ -798,7 +926,7 @@ Manages book chapters, chapter writing plans (a focused subset of chapter fields
 
 **Gate status:** All tools in this domain are gate-free.
 
-**5 tools**
+**8 tools**
 
 ---
 
@@ -988,7 +1116,7 @@ Manages individual scenes within chapters, including per-character scene goals. 
 
 **Gate status:** All tools in this domain are gate-free.
 
-**4 tools**
+**12 tools**
 
 ---
 
@@ -1267,7 +1395,7 @@ Manages world-building entities: locations, factions, faction political states, 
 
 **Gate status:** All tools in this domain are gate-free.
 
-**6 tools**
+**33 tools**
 
 ---
 
@@ -2003,7 +2131,7 @@ Manages the magic system, practitioner abilities, magic use events, and complian
 
 **Gate status:** All tools in this domain are gate-free.
 
-**4 tools**
+**14 tools**
 
 ---
 
@@ -2316,7 +2444,7 @@ Manages plot threads (main, subplot, backstory). Does NOT touch the `chapter_plo
 
 **Gate status:** All tools in this domain are gate-free.
 
-**3 tools**
+**7 tools**
 
 ---
 
@@ -2482,7 +2610,7 @@ Manages character arcs, Chekhov's gun registry, subplot touchpoint tracking, and
 
 **Gate status:** All tools in this domain are gate-free.
 
-**6 tools**
+**15 tools**
 
 ---
 
@@ -2825,7 +2953,7 @@ Manages the architecture gate — the certification mechanism that blocks prose-
 
 **Gate status:** All tools in this domain are gate-free (gate tools manage the gate, they do not check it).
 
-**5 tools**
+**6 tools**
 
 ---
 
@@ -2946,7 +3074,7 @@ Manages the name registry — a global uniqueness tracker for all names used in 
 
 **Gate status:** All tools in this domain are gate-free (by design — name conflict checking is a pre-gate worldbuilding operation).
 
-**4 tools**
+**6 tools**
 
 ---
 
@@ -3088,7 +3216,7 @@ Manages story-level 7-point structural beats (story_structure table with one row
 
 **Gate status:** All tools in this domain are gate-free (structure tools populate data that gate queries check — they must work before certification).
 
-**4 tools**
+**6 tools**
 
 ---
 
@@ -3232,7 +3360,7 @@ Manages writing session lifecycle, project metrics snapshots, POV balance analys
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**10 tools**
+**16 tools**
 
 ---
 
@@ -3564,7 +3692,7 @@ Manages story timeline events, POV character chronological positions, and travel
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**8 tools**
+**18 tools**
 
 ---
 
@@ -3968,7 +4096,7 @@ Manages the canonical record: canon facts, story decisions log, and continuity i
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**7 tools**
+**10 tools**
 
 ---
 
@@ -4197,7 +4325,7 @@ Manages reader-facing information asymmetry: what the reader knows vs what chara
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**5 tools**
+**12 tools**
 
 ---
 
@@ -4471,7 +4599,7 @@ Manages foreshadowing plants and payoffs, prophecies, motifs, thematic mirrors, 
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**8 tools**
+**18 tools**
 
 ---
 
@@ -4871,7 +4999,7 @@ Manages character voice profiles, supernatural voice guidelines, and voice drift
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**5 tools**
+**9 tools**
 
 ---
 
@@ -5078,7 +5206,7 @@ Manages publishing assets (query letters, synopses), submission tracking, and su
 
 **Gate status:** All tools in this domain require gate certification (returns `GateViolation` if not certified).
 
-**5 tools**
+**13 tools**
 
 ---
 
@@ -5368,4 +5496,4 @@ Manages publishing assets (query letters, synopses), submission tracking, and su
 
 ---
 
-*End of Drafter MCP Tools Reference — 103 tools across 18 domains*
+*End of Drafter MCP Tools Reference — 231 tools across 18 domains*
