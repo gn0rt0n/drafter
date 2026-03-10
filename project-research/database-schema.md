@@ -1,4 +1,4 @@
-> **Note: This is a historical design document.** It was written before implementation and field names may differ from the actual database schema. For implementation-accurate documentation, see [`docs/schema.md`](../docs/schema.md) (schema reference) and [`docs/mcp-tools.md`](../docs/mcp-tools.md) (MCP tool reference).
+> **Note: This is a historical design document.** It was written before implementation and field names may differ from the actual database schema. For implementation-accurate documentation, see [`docs/README.md`](../docs/README.md) (documentation index), the per-domain schema files under [`docs/schema/`](../docs/schema/), and the per-domain tool files under [`docs/tools/`](../docs/tools/).
 
 # Complete Narrative Database Schema
 ## Epic Fantasy Novel — Full Agent Ecosystem
