@@ -1,8 +1,8 @@
 # Drafter Database Schema Reference
 
-**Status:** Generated from migration SQL files — implementation-accurate as of the build completing Phase 11.
+**Status:** Generated from migration SQL files — implementation-accurate as of Phase 14.
 
-**Quick stats:** 71 tables · 22 migrations · 16 documentation domains
+**Quick stats:** 71 tables · 22 migrations · 18 documentation domains · 2 intentionally read-only tables (schema_migrations, architecture_gate)
 
 > **Design doc note:** `project-research/database-schema.md` is the pre-build design document. Field names there may differ from actual columns. This file is the authoritative reference.
 
@@ -32,7 +32,7 @@
 
 ## System Integration
 
-The 16 documentation domains are organized in dependency order. Foundation tables (eras, books) have no dependencies. Most domains depend on Characters and Chapters, which are the two most-referenced tables in the schema.
+The 18 documentation domains are organized in dependency order. Foundation tables (eras, books) have no dependencies. Most domains depend on Characters and Chapters, which are the two most-referenced tables in the schema.
 
 ```mermaid
 flowchart TD
@@ -163,7 +163,7 @@ Tracks which SQL migrations have been applied. The migration runner inserts one 
 | `name` | TEXT | Migration filename without extension (e.g. `001_schema_tracking`) |
 | `applied_at` | TEXT | ISO timestamp when this migration was applied |
 
-**Populated by:** Not writable via MCP — migration runner only (`novel db migrate` CLI command).
+**Read-only:** Managed exclusively by the migration runner (`novel db migrate`). Writing outside the runner corrupts migration state and could cause destructive re-runs or skipped migrations. No MCP read or write tool is exposed for this table.
 
 ---
 
@@ -1808,6 +1808,8 @@ Single-row table (id=1) that acts as the global gate certification record. All g
 | `updated_at` | TEXT | Standard audit timestamp |
 
 **Populated by:** `certify_gate` (gate domain).
+
+**Read-only:** Managed exclusively through the `certify_gate` tool flow. Exposing a direct write tool would bypass the gate enforcement mechanism. Note: the child table `gate_checklist_items` does have write coverage via `delete_gate_checklist_item`.
 
 ---
 
